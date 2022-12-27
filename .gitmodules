@@ -1,0 +1,4 @@
+[submodule "irgLab/dependencies/glad"]
+	path = VitraeEngine/dependencies/glad
+	url = https://github.com/Dav1dde/glad.git
+	branch = c
