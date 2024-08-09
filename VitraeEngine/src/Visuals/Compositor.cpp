@@ -10,7 +10,12 @@ Compositor::Compositor(ComponentRoot &root) : m_root(root), m_pipeline() {}
 
 Compositor::Compositor(ComponentRoot &root, dynasma::FirmPtr<Method<ComposeTask>> p_method,
                        dynasma::FirmPtr<FrameStore> p_output)
-    : m_root(root), m_pipeline(p_method, {})
+    : m_root(root), m_pipeline(p_method, {},
+                               RenderSetupContext{
+                                   .renderer = m_root.getComponent<Renderer>(),
+                                   .p_defaultVertexMethod = m_defaultVertexMethod,
+                                   .p_defaultFragmentMethod = m_defaultFragmentMethod,
+                               })
 {
     m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_output;
 
@@ -25,9 +30,17 @@ std::size_t Compositor::memory_cost() const
 
 void Compositor::setComposeMethod(dynasma::FirmPtr<Method<ComposeTask>> p_method)
 {
+    RenderSetupContext context{
+        .renderer = m_root.getComponent<Renderer>(),
+        .p_defaultVertexMethod = m_defaultVertexMethod,
+        .p_defaultFragmentMethod = m_defaultFragmentMethod,
+    };
+
     m_pipeline = Pipeline<ComposeTask>(
-        p_method, {{PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
-                                 .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}}});
+        p_method,
+        {{PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
+                       .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}}},
+        context);
 
     // reset the output to trigger framestore regeneration
     if (auto it = m_preparedFrameStores.find(StandardCompositorOutputNames::OUTPUT);

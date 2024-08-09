@@ -58,14 +58,11 @@ class Task : public dynasma::PolymorphicBase
 };
 
 template <class T>
-concept TaskChild =
-    std::is_base_of_v<Task, T> && requires { typename T::IOSpecsDeducingContext; } &&
-    (std::same_as<typename T::IOSpecsDeducingContext, void> &&
-     requires(T task) {
-         { task.getInputSpecs() } -> std::convertible_to<std::map<StringId, PropertySpec>>;
-     } ||  requires(
-        T task, typename T::IOSpecsDeducingContext ctx) {
+concept TaskChild = std::is_base_of_v<Task, T> && requires {
+    typename T::InputSpecsDeducingContext;
+} && requires(const T task, typename T::InputSpecsDeducingContext ctx) {
     { task.getInputSpecs(ctx) } -> std::convertible_to<std::map<StringId, PropertySpec>>;
-    });
+    { task.getOutputSpecs() } -> std::convertible_to<std::map<StringId, PropertySpec>>;
+};
 
 } // namespace Vitrae

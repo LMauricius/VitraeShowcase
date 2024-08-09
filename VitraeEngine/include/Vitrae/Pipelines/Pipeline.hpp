@@ -25,7 +25,8 @@ template <TaskChild BasicTask> class Pipeline
      * @param desiredOutputNameIds The desired outputs
      */
     Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method,
-             std::span<const PropertySpec> desiredOutputSpecs)
+             std::span<const PropertySpec> desiredOutputSpecs,
+             const BasicTask::InputSpecsDeducingContext &ctx)
     {
         // store outputs
         for (auto &outputSpec : desiredOutputSpecs) {
@@ -36,7 +37,7 @@ template <TaskChild BasicTask> class Pipeline
         std::set<StringId> visitedOutputs;
 
         for (auto &outputSpec : desiredOutputSpecs) {
-            tryAddDependency(*p_method, visitedOutputs, outputSpec, true);
+            tryAddDependency(*p_method, ctx, visitedOutputs, outputSpec, true);
         }
     }
 
@@ -46,8 +47,10 @@ template <TaskChild BasicTask> class Pipeline
     std::vector<PipeItem> items;
 
   protected:
-    void tryAddDependency(const Method<BasicTask> &method, std::set<StringId> &visitedOutputs,
-                          const PropertySpec &desiredOutputSpec, bool isFinalOutput)
+    void tryAddDependency(const Method<BasicTask> &method,
+                          const BasicTask::InputSpecsDeducingContext &ctx,
+                          std::set<StringId> &visitedOutputs, const PropertySpec &desiredOutputSpec,
+                          bool isFinalOutput)
     {
         if (visitedOutputs.find(desiredOutputSpec.name) == visitedOutputs.end()) {
             std::optional<dynasma::FirmPtr<BasicTask>> task =
@@ -71,12 +74,12 @@ template <TaskChild BasicTask> class Pipeline
 
                 // task inputs (also handle deps)
                 std::map<StringId, StringId> inputToLocalVariables;
-                for (auto [inputNameId, inputSpec] : task.value()->getInputSpecs()) {
+                for (auto [inputNameId, inputSpec] : task.value()->getInputSpecs(ctx)) {
                     if (task.value()->getOutputSpecs().find(inputNameId) !=
                         task.value()->getOutputSpecs().end()) {
                         inputSpecs.emplace(inputNameId, inputSpec);
                     } else {
-                        tryAddDependency(method, visitedOutputs, inputSpec, false);
+                        tryAddDependency(method, ctx, visitedOutputs, inputSpec, false);
                     }
                     inputToLocalVariables.emplace(inputSpec.name, inputSpec.name);
                 }

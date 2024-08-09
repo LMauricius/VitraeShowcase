@@ -32,7 +32,7 @@ class ComposeTask : public Task
 {
   protected:
   public:
-    using IOSpecsDeducingContext = RenderSetupContext;
+    using InputSpecsDeducingContext = RenderSetupContext;
 
     using Task::Task;
 
@@ -43,13 +43,14 @@ class ComposeTask : public Task
 
     /// TODO: implement this and move to sources
 
-    std::size_t memory_cost() const override { return 1; }
+    inline std::size_t memory_cost() const override { return 1; }
 
-    virtual std::map<StringId, PropertySpec> &getInputSpecs(const RenderSetupContext &args)
+    inline virtual const std::map<StringId, PropertySpec> &getInputSpecs(
+        const RenderSetupContext &args) const
     {
         return m_inputSpecs;
     }
-    virtual std::map<StringId, PropertySpec> &getOutputSpecs(const RenderSetupContext &args)
+    inline virtual const std::map<StringId, PropertySpec> &getOutputSpecs() const
     {
         return m_outputSpecs;
     }

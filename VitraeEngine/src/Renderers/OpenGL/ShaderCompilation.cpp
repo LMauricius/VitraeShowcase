@@ -114,7 +114,7 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
                                  .typeInfo = StandardShaderPropertyTypes::VERTEX_OUTPUT});
             }
 
-            p_helper->pipeline = Pipeline<ShaderTask>(p_helper->p_method, passedVarSpecs);
+            p_helper->pipeline = Pipeline<ShaderTask>(p_helper->p_method, passedVarSpecs, {});
 
             passedVarSpecs.clear();
             for (auto [reqNameId, reqSpec] : p_helper->pipeline.inputSpecs) {

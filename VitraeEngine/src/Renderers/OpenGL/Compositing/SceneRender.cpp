@@ -42,6 +42,17 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
     }
 }
 
+const std::map<StringId, PropertySpec> &OpenGLComposeSceneRender::getInputSpecs(
+    const RenderSetupContext &args) const
+{
+    return m_inputSpecs;
+}
+
+const std::map<StringId, PropertySpec> &OpenGLComposeSceneRender::getOutputSpecs() const
+{
+    return m_outputSpecs;
+}
+
 void OpenGLComposeSceneRender::run(RenderRunContext args) const
 {
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_root.getComponent<Renderer>());

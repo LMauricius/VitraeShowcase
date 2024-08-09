@@ -18,6 +18,10 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
 
     OpenGLComposeSceneRender(const SetupParams &params);
 
+    const std::map<StringId, PropertySpec> &getInputSpecs(
+        const RenderSetupContext &args) const override;
+    const std::map<StringId, PropertySpec> &getOutputSpecs() const override;
+
     void run(RenderRunContext args) const override;
     void prepareRequiredLocalAssets(
         std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
