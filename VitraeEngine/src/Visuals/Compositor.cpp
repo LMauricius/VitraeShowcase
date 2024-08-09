@@ -10,12 +10,13 @@ Compositor::Compositor(ComponentRoot &root) : m_root(root), m_pipeline() {}
 
 Compositor::Compositor(ComponentRoot &root, dynasma::FirmPtr<Method<ComposeTask>> p_method,
                        dynasma::FirmPtr<FrameStore> p_output)
-    : m_root(root), m_pipeline(p_method, {},
-                               RenderSetupContext{
-                                   .renderer = m_root.getComponent<Renderer>(),
-                                   .p_defaultVertexMethod = m_defaultVertexMethod,
-                                   .p_defaultFragmentMethod = m_defaultFragmentMethod,
-                               })
+    : m_root(root), m_needsRebuild(false), m_needsFrameStoreRegeneration(false),
+      m_pipeline(p_method, {},
+                 RenderSetupContext{
+                     .renderer = m_root.getComponent<Renderer>(),
+                     .p_defaultVertexMethod = m_defaultVertexMethod,
+                     .p_defaultFragmentMethod = m_defaultFragmentMethod,
+                 })
 {
     m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_output;
 
@@ -30,23 +31,8 @@ std::size_t Compositor::memory_cost() const
 
 void Compositor::setComposeMethod(dynasma::FirmPtr<Method<ComposeTask>> p_method)
 {
-    RenderSetupContext context{
-        .renderer = m_root.getComponent<Renderer>(),
-        .p_defaultVertexMethod = m_defaultVertexMethod,
-        .p_defaultFragmentMethod = m_defaultFragmentMethod,
-    };
-
-    m_pipeline = Pipeline<ComposeTask>(
-        p_method,
-        {{PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
-                       .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}}},
-        context);
-
-    // reset the output to trigger framestore regeneration
-    if (auto it = m_preparedFrameStores.find(StandardCompositorOutputNames::OUTPUT);
-        it != m_preparedFrameStores.end()) {
-        setOutput(it->second);
-    }
+    mp_composeMethod = p_method;
+    m_needsRebuild = true;
 }
 
 void Compositor::setDefaultShadingMethod(dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod,
@@ -58,15 +44,9 @@ void Compositor::setDefaultShadingMethod(dynasma::FirmPtr<Method<ShaderTask>> p_
 
 void Compositor::setOutput(dynasma::FirmPtr<FrameStore> p_store)
 {
-    // clear the buffers (except for the final output)
-    m_preparedFrameStores.clear();
-    m_preparedTextures.clear();
     m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_store;
 
-    // fill the buffers
-    for (auto &pipeitem : std::ranges::reverse_view{m_pipeline.items}) {
-        pipeitem.p_task->prepareRequiredLocalAssets(m_preparedFrameStores, m_preparedTextures);
-    }
+    m_needsFrameStoreRegeneration = true;
 }
 
 void Compositor::compose()
@@ -87,18 +67,73 @@ void Compositor::compose()
                              .preparedCompositorFrameStores = m_preparedFrameStores,
                              .preparedCompositorTextures = m_preparedTextures};
 
-    // execute the pipeline
-    for (auto &pipeitem : m_pipeline.items) {
-        pipeitem.p_task->run(context);
-    }
+    bool tryExecute = true;
 
-    // sync the framebuffers
-    std::set<dynasma::FirmPtr<FrameStore>> uniqueFrameStores;
-    for (auto [nameId, p_store] : m_preparedFrameStores) {
-        uniqueFrameStores.insert(p_store);
+    while (tryExecute) {
+        tryExecute = false;
+
+        // rebuild the pipeline if needed
+        if (m_needsRebuild) {
+            rebuildPipeline();
+        }
+        if (m_needsFrameStoreRegeneration) {
+            regenerateFrameStores();
+        }
+
+        try {
+            // execute the pipeline
+            for (auto &pipeitem : m_pipeline.items) {
+                pipeitem.p_task->run(context);
+            }
+
+            // sync the framebuffers
+            std::set<dynasma::FirmPtr<FrameStore>> uniqueFrameStores;
+            for (auto [nameId, p_store] : m_preparedFrameStores) {
+                uniqueFrameStores.insert(p_store);
+            }
+            for (auto p_store : uniqueFrameStores) {
+                p_store->sync();
+            }
+        }
+        catch (ComposeTaskRequirementsChangedException) {
+            m_needsRebuild = true;
+            tryExecute = true;
+        }
     }
-    for (auto p_store : uniqueFrameStores) {
-        p_store->sync();
+}
+
+void Compositor::rebuildPipeline()
+{
+    m_needsRebuild = false;
+
+    RenderSetupContext context{
+        .renderer = m_root.getComponent<Renderer>(),
+        .p_defaultVertexMethod = m_defaultVertexMethod,
+        .p_defaultFragmentMethod = m_defaultFragmentMethod,
+    };
+
+    m_pipeline = Pipeline<ComposeTask>(
+        mp_composeMethod,
+        {{PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
+                       .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}}},
+        context);
+
+    m_needsFrameStoreRegeneration = true;
+}
+
+void Compositor::regenerateFrameStores()
+{
+    m_needsFrameStoreRegeneration = false;
+
+    // clear the buffers (except for the final output)
+    auto p_finalFrame = m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT];
+    m_preparedFrameStores.clear();
+    m_preparedTextures.clear();
+    m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_finalFrame;
+
+    // fill the buffers
+    for (auto &pipeitem : std::ranges::reverse_view{m_pipeline.items}) {
+        pipeitem.p_task->prepareRequiredLocalAssets(m_preparedFrameStores, m_preparedTextures);
     }
 }
 

@@ -28,6 +28,23 @@ struct RenderRunContext
     const std::map<StringId, dynasma::FirmPtr<Texture>> &preparedCompositorTextures;
 };
 
+/*
+Common exceptions of compose tasks
+*/
+
+/**
+ * Thrown if an error occurs during the execution of a compose task
+ */
+class ComposeTaskException
+{};
+
+/**
+ * Thrown if the requirements of the task have been changed while running and the pipeline needs to
+ * be rebuilt
+ */
+class ComposeTaskRequirementsChangedException : public ComposeTaskException
+{};
+
 class ComposeTask : public Task
 {
   protected:
@@ -36,6 +53,10 @@ class ComposeTask : public Task
 
     using Task::Task;
 
+    /**
+     * Execute the task
+     * @throws ComposeTaskRequirementsChangedException if the pipeline needs to be rebuilt
+     */
     virtual void run(RenderRunContext args) const = 0;
     virtual void prepareRequiredLocalAssets(
         std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,

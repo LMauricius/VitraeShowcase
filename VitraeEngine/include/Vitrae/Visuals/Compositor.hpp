@@ -34,11 +34,17 @@ class Compositor : public dynasma::PolymorphicBase
 
   protected:
     ComponentRoot &m_root;
+    bool m_needsRebuild;
+    bool m_needsFrameStoreRegeneration;
     Pipeline<ComposeTask> m_pipeline;
     MethodCombinator<ShaderTask> m_shadingMethodCombinator;
     std::map<StringId, dynasma::FirmPtr<FrameStore>> m_preparedFrameStores;
     std::map<StringId, dynasma::FirmPtr<Texture>> m_preparedTextures;
+    dynasma::FirmPtr<Method<ComposeTask>> mp_composeMethod;
     dynasma::FirmPtr<Method<ShaderTask>> m_defaultVertexMethod, m_defaultFragmentMethod;
+
+    void rebuildPipeline();
+    void regenerateFrameStores();
 };
 
 } // namespace Vitrae
