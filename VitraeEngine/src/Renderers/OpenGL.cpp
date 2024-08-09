@@ -178,6 +178,8 @@ void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
     /*
     Main window
     */
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     mp_mainWindow = glfwCreateWindow(640, 480, "", nullptr, nullptr);
     if (mp_mainWindow == nullptr) {
         fprintf(stderr, "Failed to Create OpenGL Context");
