@@ -1,9 +1,11 @@
 #include "assetCollection.hpp"
 
 #include "Methods/classic.hpp"
+#include "Methods/shadowBiLin.hpp"
 #include "Methods/shadowEBR.hpp"
-#include "Methods/shadowMapResolution.hpp"
 #include "Methods/shadowPCF.hpp"
+#include "Methods/shadowRough.hpp"
+#include "Methods/smResolution.hpp"
 
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/ComponentRoot.hpp"
@@ -34,16 +36,23 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     methodCategories = {
         {"Base shading", {std::make_shared<MethodsClassic>(root)}, 0},
         {"Shadows",
-         {std::make_shared<MethodsShadowPCF>(root), std::make_shared<MethodsShadowEBR>(root)},
-         0},
+         {
+             std::make_shared<MethodsShadowRough>(root),
+             std::make_shared<MethodsShadowBiLin>(root),
+             std::make_shared<MethodsShadowPCF>(root),
+             std::make_shared<MethodsShadowEBR>(root),
+         },
+         2},
         {"Shadow map resolution",
-         {std::make_shared<MethodsShadowMapResolution>(root, 256),
-          std::make_shared<MethodsShadowMapResolution>(root, 512),
-          std::make_shared<MethodsShadowMapResolution>(root, 1024),
-          std::make_shared<MethodsShadowMapResolution>(root, 2048),
-          std::make_shared<MethodsShadowMapResolution>(root, 4096),
-          std::make_shared<MethodsShadowMapResolution>(root, 8192),
-          std::make_shared<MethodsShadowMapResolution>(root, 16384)},
+         {
+             std::make_shared<MethodsShadowMapResolution>(root, 256),
+             std::make_shared<MethodsShadowMapResolution>(root, 512),
+             std::make_shared<MethodsShadowMapResolution>(root, 1024),
+             std::make_shared<MethodsShadowMapResolution>(root, 2048),
+             std::make_shared<MethodsShadowMapResolution>(root, 4096),
+             std::make_shared<MethodsShadowMapResolution>(root, 8192),
+             std::make_shared<MethodsShadowMapResolution>(root, 16384),
+         },
          3},
     };
     reapplyChoosenMethods();
