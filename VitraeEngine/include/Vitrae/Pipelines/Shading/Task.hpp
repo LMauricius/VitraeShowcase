@@ -13,6 +13,8 @@ class Renderer;
 class ShaderTask : public Task
 {
   public:
+    using IOSpecsDeducingContext = void;
+
     struct BuildContext
     {
         std::stringstream &output;
@@ -32,6 +34,9 @@ class ShaderTask : public Task
     };
 
     using Task::Task;
+
+    inline std::map<StringId, PropertySpec> &getInputSpecs() { return m_inputSpecs; }
+    inline std::map<StringId, PropertySpec> &getOutputSpecs() { return m_outputSpecs; }
 
     virtual void outputDeclarationCode(BuildContext args) const = 0;
     virtual void outputDefinitionCode(BuildContext args) const = 0;

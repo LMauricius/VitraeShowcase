@@ -12,6 +12,12 @@ class Renderer;
 class FrameStore;
 class Texture;
 
+struct RenderSetupContext
+{
+    Renderer &renderer;
+    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod, p_defaultFragmentMethod;
+};
+
 struct RenderRunContext
 {
     ScopedDict &properties;
@@ -26,6 +32,8 @@ class ComposeTask : public Task
 {
   protected:
   public:
+    using IOSpecsDeducingContext = RenderSetupContext;
+
     using Task::Task;
 
     virtual void run(RenderRunContext args) const = 0;
@@ -36,6 +44,15 @@ class ComposeTask : public Task
     /// TODO: implement this and move to sources
 
     std::size_t memory_cost() const override { return 1; }
+
+    virtual std::map<StringId, PropertySpec> &getInputSpecs(const RenderSetupContext &args)
+    {
+        return m_inputSpecs;
+    }
+    virtual std::map<StringId, PropertySpec> &getOutputSpecs(const RenderSetupContext &args)
+    {
+        return m_outputSpecs;
+    }
 
     inline void extractUsedTypes(std::set<const TypeInfo *> &typeSet) const override
     {

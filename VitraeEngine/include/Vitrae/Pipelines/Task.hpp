@@ -53,13 +53,19 @@ class Task : public dynasma::PolymorphicBase
 
     virtual std::size_t memory_cost() const = 0;
 
-    inline std::map<StringId, PropertySpec> &getInputSpecs() { return m_inputSpecs; }
-    inline std::map<StringId, PropertySpec> &getOutputSpecs() { return m_outputSpecs; }
     virtual void extractUsedTypes(std::set<const TypeInfo *> &typeSet) const = 0;
     virtual void extractSubTasks(std::set<const Task *> &taskSet) const = 0;
 };
 
 template <class T>
-concept TaskChild = std::is_base_of_v<Task, T>;
+concept TaskChild =
+    std::is_base_of_v<Task, T> && requires { typename T::IOSpecsDeducingContext; } &&
+    (std::same_as<typename T::IOSpecsDeducingContext, void> &&
+     requires(T task) {
+         { task.getInputSpecs() } -> std::convertible_to<std::map<StringId, PropertySpec>>;
+     } ||  requires(
+        T task, typename T::IOSpecsDeducingContext ctx) {
+    { task.getInputSpecs(ctx) } -> std::convertible_to<std::map<StringId, PropertySpec>>;
+    });
 
 } // namespace Vitrae
