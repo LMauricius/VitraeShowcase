@@ -2,6 +2,7 @@
 
 #include "Methods/classic.hpp"
 #include "Methods/shadowEBR.hpp"
+#include "Methods/shadowMapResolution.hpp"
 #include "Methods/shadowPCF.hpp"
 
 #include "Vitrae/Assets/FrameStore.hpp"
@@ -35,6 +36,15 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
         {"Shadows",
          {std::make_shared<MethodsShadowPCF>(root), std::make_shared<MethodsShadowEBR>(root)},
          0},
+        {"Shadow map resolution",
+         {std::make_shared<MethodsShadowMapResolution>(root, 256),
+          std::make_shared<MethodsShadowMapResolution>(root, 512),
+          std::make_shared<MethodsShadowMapResolution>(root, 1024),
+          std::make_shared<MethodsShadowMapResolution>(root, 2048),
+          std::make_shared<MethodsShadowMapResolution>(root, 4096),
+          std::make_shared<MethodsShadowMapResolution>(root, 8192),
+          std::make_shared<MethodsShadowMapResolution>(root, 16384)},
+         3},
     };
     reapplyChoosenMethods();
 

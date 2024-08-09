@@ -52,6 +52,8 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
                 QString::fromStdString(std::string(method->p_composeMethod->getFriendlyName())));
         }
 
+        combobox->setCurrentIndex(category.selectedIndex);
+
         connect(combobox, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 [this, &category](int index) {
                     std::unique_lock lock1(this->m_assetCollection.accessMutex);

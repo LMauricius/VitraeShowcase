@@ -25,7 +25,7 @@ struct MethodsShadowEBR : MethodCollection
         VERTEX SHADING
         */
         p_vertexMethod = dynasma::makeStandalone<Method<ShaderTask>>(
-            Method<ShaderTask>::MethodParams{.tasks = {}, .friendlyName = "ShadowEBR"});
+            Method<ShaderTask>::MethodParams{.tasks = {}});
 
         /*
         FRAGMENT SHADING
@@ -146,22 +146,10 @@ struct MethodsShadowEBR : MethodCollection
                                              .cullingMode =
                                                  ComposeSceneRender::CullingMode::Frontface}});
 
-        auto p_shadowTexture = dynasma::makeStandalone<ComposeFrameToTexture>(
-            ComposeFrameToTexture::SetupParams{.root = root,
-                                               .frameInputPropertyName = "rendered_shadow",
-                                               .colorTextureOutputPropertyName = "",
-                                               .depthTextureOutputPropertyName = "tex_shadow",
-                                               .size = {2048, 2048},
-                                               .horWrap = Texture::WrappingType::BORDER_COLOR,
-                                               .verWrap = Texture::WrappingType::BORDER_COLOR,
-                                               .minFilter = Texture::FilterType::NEAREST,
-                                               .magFilter = Texture::FilterType::NEAREST,
-                                               .useMipMaps = false});
-
         // compose method
         p_composeMethod =
             dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
-                .tasks = {p_extractLightProperties, p_shadowClear, p_shadowRender, p_shadowTexture},
+                .tasks = {p_extractLightProperties, p_shadowClear, p_shadowRender},
                 .friendlyName = "ShadowEBR"});
     }
 };
