@@ -108,6 +108,33 @@ OpenGLRenderer::OpenGLRenderer() : m_vertexBufferFreeIndex(0)
 
 OpenGLRenderer::~OpenGLRenderer() {}
 
+namespace
+{
+void APIENTRY globalDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+                                  GLsizei length, const GLchar *message, const void *userParam)
+{
+    const ComponentRoot &root = *reinterpret_cast<const ComponentRoot *>(userParam);
+
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR:
+        root.getErrStream() << "OpenGL error: " << message << std::endl;
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        root.getErrStream() << "OpenGL deprecated behavior: " << message << std::endl;
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        root.getErrStream() << "OpenGL undefined behavior: " << message << std::endl;
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY:
+        root.getErrStream() << "OpenGL portability issue: " << message << std::endl;
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        root.getErrStream() << "OpenGL performance issue: " << message << std::endl;
+        break;
+    }
+}
+} // namespace
+
 void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
 {
     // threading stuff
@@ -158,6 +185,22 @@ void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
     }
     glfwMakeContextCurrent(mp_mainWindow);
     gladLoadGL(); // seems we need to do this after setting the first context... for whatev reason
+
+    /*
+    List extensions
+    */
+    GLint no_of_extensions = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &no_of_extensions);
+
+    root.getInfoStream() << "OpenGL extensions:" << std::endl;
+    for (int i = 0; i < no_of_extensions; ++i)
+        root.getInfoStream() << "\t" << (const char *)glGetStringi(GL_EXTENSIONS, i) << std::endl;
+    root.getInfoStream() << "OpenGL end of extensions" << std::endl;
+
+    /*
+    Error handling
+    */
+    glDebugMessageCallback(globalDebugCallback, &root);
 }
 
 void OpenGLRenderer::mainThreadFree()

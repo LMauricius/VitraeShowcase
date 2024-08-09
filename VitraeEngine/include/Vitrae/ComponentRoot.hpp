@@ -166,9 +166,9 @@ class ComponentRoot
     === Streams ===
     */
 
-    inline std::ostream &getErrStream() { return *mErrStream; }
-    inline std::ostream &getInfoStream() { return *mInfoStream; }
-    inline std::ostream &getWarningStream() { return *mWarningStream; }
+    inline std::ostream &getErrStream() const { return *mErrStream; }
+    inline std::ostream &getInfoStream() const { return *mInfoStream; }
+    inline std::ostream &getWarningStream() const { return *mWarningStream; }
     inline void setErrStream(std::ostream &os) { mErrStream = &os; }
     inline void setInfoStream(std::ostream &os) { mInfoStream = &os; }
     inline void setWarningStr(std::ostream &os) { mWarningStream = &os; }
