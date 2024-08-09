@@ -135,28 +135,44 @@ void AssetCollection::reapplyChoosenMethods()
     std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenVertexMethods;
     std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenFragMethods;
     std::vector<dynasma::FirmPtr<Method<ComposeTask>>> choosenComposeMethods;
-    Vitrae::String name = "";
+    Vitrae::String vertName = "";
+    Vitrae::String fragName = "";
+    Vitrae::String compName = "";
 
     for (auto &category : methodCategories) {
         choosenVertexMethods.push_back(category.methods[category.selectedIndex]->p_vertexMethod);
         choosenFragMethods.push_back(category.methods[category.selectedIndex]->p_fragmentMethod);
         choosenComposeMethods.push_back(category.methods[category.selectedIndex]->p_composeMethod);
 
-        name += category.methods[category.selectedIndex]->p_vertexMethod->getFriendlyName();
-        name += "_";
+        if (category.methods[category.selectedIndex]->p_vertexMethod->getFriendlyName() != "") {
+            vertName += category.methods[category.selectedIndex]->p_vertexMethod->getFriendlyName();
+            vertName += "_";
+        }
+
+        if (category.methods[category.selectedIndex]->p_fragmentMethod->getFriendlyName() != "") {
+            fragName +=
+                category.methods[category.selectedIndex]->p_fragmentMethod->getFriendlyName();
+            fragName += "_";
+        }
+
+        if (category.methods[category.selectedIndex]->p_composeMethod->getFriendlyName() != "") {
+            compName +=
+                category.methods[category.selectedIndex]->p_composeMethod->getFriendlyName();
+            compName += "_";
+        }
     }
 
     auto p_aggregateVertexMethod =
         dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-            .fallbackMethods = choosenVertexMethods, .friendlyName = name});
+            .fallbackMethods = choosenVertexMethods, .friendlyName = vertName});
 
     auto p_aggregateFragmentMethod =
         dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-            .fallbackMethods = choosenFragMethods, .friendlyName = name});
+            .fallbackMethods = choosenFragMethods, .friendlyName = fragName});
 
     auto p_aggregateComposeMethod =
         dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
-            .fallbackMethods = choosenComposeMethods, .friendlyName = name});
+            .fallbackMethods = choosenComposeMethods, .friendlyName = compName});
 
     comp.setDefaultShadingMethod(p_aggregateVertexMethod, p_aggregateFragmentMethod);
     comp.setComposeMethod(p_aggregateComposeMethod);
