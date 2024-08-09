@@ -1,6 +1,7 @@
 #include "assetCollection.hpp"
 
 #include "Methods/classic.hpp"
+#include "Methods/lightSpaceStable.hpp"
 #include "Methods/shadowBiLin.hpp"
 #include "Methods/shadowEBR.hpp"
 #include "Methods/shadowPCF.hpp"
@@ -35,7 +36,8 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     modeSetter.setModes(root);
     methodCategories = {
         {"Base shading", {std::make_shared<MethodsClassic>(root)}, 0},
-        {"Shadows",
+        {"Light/shadow space", {std::make_shared<MethodsLSStable>(root)}, 0},
+        {"Shadow filtering",
          {
              std::make_shared<MethodsShadowRough>(root),
              std::make_shared<MethodsShadowBiLin>(root),
