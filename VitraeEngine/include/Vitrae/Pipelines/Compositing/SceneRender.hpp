@@ -22,6 +22,7 @@ class ComposeSceneRender : public ComposeTask
     {
         ComponentRoot &root;
         String sceneInputPropertyName;
+        String vertexPositionOutputPropertyName;
         String displayInputPropertyName;
         String displayOutputPropertyName;
         CullingMode cullingMode = CullingMode::Backface;

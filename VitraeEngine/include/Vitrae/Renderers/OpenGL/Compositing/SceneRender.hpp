@@ -29,6 +29,7 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
 
   protected:
     ComponentRoot &m_root;
+    String m_viewPositionOutputPropertyName;
     StringId m_sceneInputNameId, m_displayOutputNameId;
     std::optional<StringId> m_displayInputNameId;
 

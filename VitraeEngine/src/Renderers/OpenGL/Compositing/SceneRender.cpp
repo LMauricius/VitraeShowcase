@@ -21,7 +21,9 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
           std::span<const PropertySpec>{
               {PropertySpec{.name = params.displayOutputPropertyName,
                             .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()}}}),
-      m_root(params.root), m_sceneInputNameId(params.sceneInputPropertyName),
+      m_root(params.root),
+      m_viewPositionOutputPropertyName(params.vertexPositionOutputPropertyName),
+      m_sceneInputNameId(params.sceneInputPropertyName),
       m_displayInputNameId(params.displayInputPropertyName.empty()
                                ? std::optional<StringId>()
                                : params.displayInputPropertyName),
@@ -128,7 +130,7 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                 args.methodCombinator.getCombinedMethod(args.p_defaultVertexMethod, vertexMethod),
                 args.methodCombinator.getCombinedMethod(args.p_defaultFragmentMethod,
                                                         fragmentMethod),
-                p_frame->getRenderComponents(), m_root)});
+                m_viewPositionOutputPropertyName, p_frame->getRenderComponents(), m_root)});
 
         glUseProgram(p_compiledShader->programGLName);
 

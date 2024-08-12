@@ -420,8 +420,13 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
             // built-in variables
             for (auto [predefName, outNameId] : p_helper->p_compSpec->predefinedVarsToOutputs) {
-                auto &globVarName = outputParametersToGlobalVars.at(outNameId);
-                ss << "    " << predefName << " = " << globVarName << ";\n";
+                if (auto it = outputParametersToGlobalVars.find(outNameId);
+                    it != outputParametersToGlobalVars.end()) {
+                    ss << "    " << predefName << " = " << it->second << ";\n";
+                } else {
+                    auto &globVarName = inputParametersToGlobalVars.at(outNameId);
+                    ss << "    " << predefName << " = " << globVarName << ";\n";
+                }
             }
 
             ss << "}\n";
