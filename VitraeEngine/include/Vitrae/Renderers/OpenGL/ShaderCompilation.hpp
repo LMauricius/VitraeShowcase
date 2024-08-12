@@ -3,6 +3,7 @@
 #include "Vitrae/Pipelines/Pipeline.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Types/Typedefs.hpp"
+#include "Vitrae/Util/MovableSpan.hpp"
 #include "Vitrae/Util/Variant.hpp"
 
 #include "dynasma/cachers/abstract.hpp"
@@ -25,6 +26,10 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
         // the specified shading method
         dynasma::FirmPtr<Method<ShaderTask>> p_method;
 
+        // property mapping (for built-in variables),
+        std::map<StringId, String> inputsToPredefinedVars;
+        std::map<String, String> predefinedVarsToOutputs;
+
         // prefix for output variables
         String outVarPrefix;
 
@@ -36,6 +41,7 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
     {
         dynasma::FirmPtr<Method<ShaderTask>> mp_vertexMethod;
         dynasma::FirmPtr<Method<ShaderTask>> mp_fragmentMethod;
+        String m_vertexPositionOutputName;
         dynasma::FirmPtr<const PropertyList> mp_fragmentOutputs;
         ComponentRoot *mp_root;
         std::size_t m_hash;
@@ -43,11 +49,16 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
       public:
         SurfaceShaderParams(dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod,
                             dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod,
+                            String vertexPositionOutputName,
                             dynasma::FirmPtr<const PropertyList> p_fragmentOutputs,
                             ComponentRoot &root);
 
         inline auto getVertexMethodPtr() const { return mp_vertexMethod; }
         inline auto getFragmentMethodPtr() const { return mp_fragmentMethod; }
+        inline const String &getVertexPositionOutputName() const
+        {
+            return m_vertexPositionOutputName;
+        }
         inline auto getFragmentOutputsPtr() const { return mp_fragmentOutputs; }
         inline ComponentRoot &getRoot() const { return *mp_root; }
 
@@ -85,7 +96,7 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
         GLint glNameId;
     };
 
-    CompiledGLSLShader(std::span<const CompilationSpec> compilationSpecs, ComponentRoot &root,
+    CompiledGLSLShader(MovableSpan<CompilationSpec> compilationSpecs, ComponentRoot &root,
                        const PropertyList &desiredOutputs);
     CompiledGLSLShader(const SurfaceShaderParams &params);
     CompiledGLSLShader(const ComputeShaderParams &params);

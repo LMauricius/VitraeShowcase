@@ -9,12 +9,14 @@ namespace Vitrae
 
 CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(
     dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod,
-    dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod,
+    dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod, String vertexPositionOutputName,
     dynasma::FirmPtr<const PropertyList> p_fragmentOutputs, ComponentRoot &root)
     : mp_vertexMethod(p_vertexMethod), mp_fragmentMethod(p_fragmentMethod),
-      mp_fragmentOutputs(p_fragmentOutputs), mp_root(&root),
-      m_hash(combinedHashes<3>(
-          {{p_vertexMethod->getHash(), p_fragmentMethod->getHash(), p_fragmentOutputs->getHash()}}))
+      m_vertexPositionOutputName(vertexPositionOutputName), mp_fragmentOutputs(p_fragmentOutputs),
+      mp_root(&root),
+      m_hash(combinedHashes<4>({{p_vertexMethod->getHash(), p_fragmentMethod->getHash(),
+                                 std::hash<StringId>{}(StringId(vertexPositionOutputName)),
+                                 p_fragmentOutputs->getHash()}}))
 {}
 
 CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
@@ -25,15 +27,20 @@ CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
 {}
 
 CompiledGLSLShader::CompiledGLSLShader(const SurfaceShaderParams &params)
-    : CompiledGLSLShader({{
-                             CompilationSpec{.p_method = params.getVertexMethodPtr(),
-                                             .outVarPrefix = "vert_",
-                                             .shaderType = GL_VERTEX_SHADER},
-                             CompilationSpec{.p_method = params.getFragmentMethodPtr(),
-                                             .outVarPrefix = "frag_",
-                                             .shaderType = GL_FRAGMENT_SHADER},
-                         }},
-                         params.getRoot(), *params.getFragmentOutputsPtr())
+    : CompiledGLSLShader(
+          {{
+              CompilationSpec{.p_method = params.getVertexMethodPtr(),
+                              .predefinedVarsToOutputs =
+                                  {
+                                      {"gl_Position", params.getVertexPositionOutputName()},
+                                  },
+                              .outVarPrefix = "vert_",
+                              .shaderType = GL_VERTEX_SHADER},
+              CompilationSpec{.p_method = params.getFragmentMethodPtr(),
+                              .outVarPrefix = "frag_",
+                              .shaderType = GL_FRAGMENT_SHADER},
+          }},
+          params.getRoot(), *params.getFragmentOutputsPtr())
 {}
 
 CompiledGLSLShader::CompiledGLSLShader(const ComputeShaderParams &params)
@@ -45,7 +52,7 @@ CompiledGLSLShader::CompiledGLSLShader(const ComputeShaderParams &params)
                          params.getRoot(), *params.getDesiredResultsPtr())
 {}
 
-CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilationSpecs,
+CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationSpecs,
                                        ComponentRoot &root, const PropertyList &desiredOutputs)
 {
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(root.getComponent<Renderer>());
@@ -73,17 +80,11 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
 
     struct CompilationHelp
     {
-        // the specified shading method
-        dynasma::FirmPtr<Method<ShaderTask>> p_method;
+        // source specification for this stage
+        CompilationSpec *p_compSpec;
 
         // items converted to OpenGLShaderTask
         Pipeline<ShaderTask> pipeline;
-
-        // prefix for output variables
-        String outVarPrefix;
-
-        // gl shader type
-        GLenum shaderType;
 
         // id of the compiled shader
         GLuint shaderId;
@@ -93,9 +94,7 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
     std::vector<CompilationHelp *> helperOrder;
     std::vector<CompilationHelp *> invHelperOrder;
     for (auto &comp_spec : compilationSpecs) {
-        helpers.push_back(CompilationHelp{.p_method = comp_spec.p_method,
-                                          .outVarPrefix = comp_spec.outVarPrefix,
-                                          .shaderType = comp_spec.shaderType});
+        helpers.push_back(CompilationHelp{.p_compSpec = &comp_spec});
     }
     for (int i = 0; i < helpers.size(); i++) {
         helperOrder.push_back(&helpers[i]);
@@ -108,13 +107,14 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
                                                  desiredOutputs.getSpecList().end());
 
         for (auto p_helper : invHelperOrder) {
-            if (p_helper->shaderType == GL_VERTEX_SHADER) {
-                passedVarSpecs.push_back(
-                    PropertySpec{.name = StandardShaderPropertyNames::VERTEX_OUTPUT,
-                                 .typeInfo = StandardShaderPropertyTypes::VERTEX_OUTPUT});
+            if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
+                passedVarSpecs.push_back(PropertySpec{
+                    .name = p_helper->p_compSpec->predefinedVarsToOutputs.at("gl_Position"),
+                    .typeInfo = StandardShaderPropertyTypes::VERTEX_OUTPUT});
             }
 
-            p_helper->pipeline = Pipeline<ShaderTask>(p_helper->p_method, passedVarSpecs, {});
+            p_helper->pipeline =
+                Pipeline<ShaderTask>(p_helper->p_compSpec->p_method, passedVarSpecs, {});
 
             passedVarSpecs.clear();
             for (auto [reqNameId, reqSpec] : p_helper->pipeline.inputSpecs) {
@@ -170,7 +170,7 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
             uniformVarSpecs.emplace(nameId, spec);
         }
     }
-    if (helperOrder[0]->shaderType == GL_COMPUTE_SHADER) {
+    if (helperOrder[0]->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
         for (auto [nameId, spec] : helperOrder[0]->pipeline.outputSpecs) {
             // uniformVarSpecs.emplace(nameId, spec);
         }
@@ -209,16 +209,7 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
             }
 
             // predefined variables
-            std::map<StringId, String> predefinedInputParameters;
-            std::map<StringId, String> predefinedOutputParameters;
-            if (p_helper->shaderType == GL_VERTEX_SHADER) {
-                predefinedInputParameters = {};
-                predefinedOutputParameters = {
-                    {StandardShaderPropertyNames::VERTEX_OUTPUT, "gl_Position"}};
-            } else if (p_helper->shaderType == GL_FRAGMENT_SHADER) {
-                predefinedInputParameters = {};
-                predefinedOutputParameters = {};
-            }
+            auto &predefinedInputParameterMap = p_helper->p_compSpec->inputsToPredefinedVars;
 
             ss << "\n"
                << "\n";
@@ -262,7 +253,7 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
                     }
                 } else if (p_helper->pipeline.outputSpecs.find(nameId) !=
                                p_helper->pipeline.outputSpecs.end() &&
-                           p_helper->shaderType == GL_COMPUTE_SHADER) {
+                           p_helper->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
                     switch (minimalMethod) {
                     case OpenGLRenderer::GpuValueStorageMethod::UniformBinding:
 
@@ -348,9 +339,9 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
             for (auto [nameId, spec] : p_helper->pipeline.inputSpecs) {
                 if (spec.typeInfo != Variant::getTypeInfo<void>() &&
                     uniformVarSpecs.find(nameId) == uniformVarSpecs.end() &&
-                    predefinedInputParameters.find(nameId) == predefinedInputParameters.end()) {
+                    predefinedInputParameterMap.find(nameId) == predefinedInputParameterMap.end()) {
 
-                    if (p_helper->shaderType == GL_VERTEX_SHADER) {
+                    if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
 
                         // VERTEX ATTRIBUTES
 
@@ -370,28 +361,25 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
                     }
                 }
             }
-            inputParametersToGlobalVars.merge(std::move(predefinedInputParameters));
+            inputParametersToGlobalVars.merge(std::move(predefinedInputParameterMap));
 
             ss << "\n";
 
             // output variables
             for (auto [nameId, spec] : p_helper->pipeline.outputSpecs) {
                 if (spec.typeInfo != Variant::getTypeInfo<void>() &&
-                    uniformVarSpecs.find(nameId) == uniformVarSpecs.end() &&
-                    predefinedOutputParameters.find(nameId) == predefinedOutputParameters.end()) {
+                    uniformVarSpecs.find(nameId) == uniformVarSpecs.end()) {
 
                     // NORMAL OUTPUTS
 
                     ss << "out " << specToMutableGlName(spec.typeInfo) << " "
-                       << p_helper->outVarPrefix << spec.name << ";\n";
-                    inputParametersToGlobalVars.emplace(nameId, p_helper->outVarPrefix + spec.name);
-                    outputParametersToGlobalVars.emplace(nameId,
-                                                         p_helper->outVarPrefix + spec.name);
+                       << p_helper->p_compSpec->outVarPrefix << spec.name << ";\n";
+                    inputParametersToGlobalVars.emplace(nameId, p_helper->p_compSpec->outVarPrefix +
+                                                                    spec.name);
+                    outputParametersToGlobalVars.emplace(
+                        nameId, p_helper->p_compSpec->outVarPrefix + spec.name);
                 }
             }
-            inputParametersToGlobalVars.insert(predefinedOutputParameters.begin(),
-                                               predefinedOutputParameters.end());
-            outputParametersToGlobalVars.merge(std::move(predefinedOutputParameters));
 
             ss << "\n";
 
@@ -429,23 +417,31 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
                        << inputParametersToGlobalVars.at(nameId) << ";\n";
                 }
             }
+
+            // built-in variables
+            for (auto [predefName, outNameId] : p_helper->p_compSpec->predefinedVarsToOutputs) {
+                auto &globVarName = outputParametersToGlobalVars.at(outNameId);
+                ss << "    " << predefName << " = " << globVarName << ";\n";
+            }
+
             ss << "}\n";
 
             // create the shader with the source
             std::string srcCode = ss.str();
             const char *c_code = srcCode.c_str();
-            p_helper->shaderId = glCreateShader(p_helper->shaderType);
+            p_helper->shaderId = glCreateShader(p_helper->p_compSpec->shaderType);
             glShaderSource(p_helper->shaderId, 1, &c_code, NULL);
 
             // debug
             std::ofstream file;
-            file.open(std::string("shaderdebug/") + String(p_helper->p_method->getFriendlyName()) +
-                      +"_" + p_helper->outVarPrefix + std::to_string(desiredOutputs.getHash()) +
-                      ".glsl");
+            file.open(std::string("shaderdebug/") +
+                      String(p_helper->p_compSpec->p_method->getFriendlyName()) + +"_" +
+                      p_helper->p_compSpec->outVarPrefix +
+                      std::to_string(desiredOutputs.getHash()) + ".glsl");
             file << srcCode;
             file.close();
 
-            prevVarPrefix = p_helper->outVarPrefix;
+            prevVarPrefix = p_helper->p_compSpec->outVarPrefix;
         }
     }
 
