@@ -89,8 +89,7 @@ struct MethodsShadowPCF : MethodCollection
 
         auto p_shadowRender = root.getComponent<ComposeSceneRenderKeeper>().new_asset(
             {ComposeSceneRender::SetupParams{.root = root,
-                                             .viewInputPropertyName = "mat_shadow_view",
-                                             .perspectiveInputPropertyName = "mat_shadow_persp",
+                                             .sceneInputPropertyName = "scene",
                                              .displayInputPropertyName = "shadow_cleared",
                                              .displayOutputPropertyName = "rendered_shadow",
                                              .cullingMode =

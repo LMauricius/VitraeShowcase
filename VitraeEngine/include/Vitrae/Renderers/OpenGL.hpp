@@ -25,6 +25,7 @@ namespace Vitrae
 class Mesh;
 class Texture;
 class RawSharedBuffer;
+class ComposeTask;
 
 struct GLTypeSpec
 {
@@ -106,6 +107,19 @@ class OpenGLRenderer : public Renderer
     };
     GpuValueStorageMethod getGpuStorageMethod(const GLTypeSpec &spec) const;
 
+    bool specifySceneRenderInputDependency(
+        const ComposeTask *p_composeTask,
+        dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
+        dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod, const PropertySpec &newSpec);
+    bool specifySceneRenderInputDependencies(
+        const ComposeTask *p_composeTask,
+        dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
+        dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod, PropertyList newSpecs);
+    const std::map<StringId, PropertySpec> &getSceneRenderInputDependencies(
+        const ComposeTask *p_composeTask,
+        dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
+        dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod) const;
+
   protected:
     std::thread::id m_mainThreadId;
     std::mutex m_contextMutex;
@@ -117,6 +131,8 @@ class OpenGLRenderer : public Renderer
     std::map<StringId, std::size_t> m_vertexBufferIndices;
     std::size_t m_vertexBufferFreeIndex;
     std::map<StringId, const GLTypeSpec &> m_vertexBufferSpecs;
+
+    mutable std::map<std::size_t, std::map<StringId, PropertySpec>> m_sceneRenderInputDependencies;
 };
 
 } // namespace Vitrae

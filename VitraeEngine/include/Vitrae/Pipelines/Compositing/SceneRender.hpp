@@ -21,12 +21,10 @@ class ComposeSceneRender : public ComposeTask
     struct SetupParams
     {
         ComponentRoot &root;
-        String viewInputPropertyName;
-        String perspectiveInputPropertyName;
+        String sceneInputPropertyName;
         String displayInputPropertyName;
         String displayOutputPropertyName;
         CullingMode cullingMode = CullingMode::Backface;
-        PropertyList customInputPropertyNames;
     };
 
     using ComposeTask::ComposeTask;

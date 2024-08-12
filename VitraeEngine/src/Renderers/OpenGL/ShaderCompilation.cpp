@@ -495,12 +495,12 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
                       uniNameId) != desiredOutputs.getSpecNameIds().end()) {
             if (minimalStorageMethod == OpenGLRenderer::GpuValueStorageMethod::UniformBinding) {
                 bindingSpecs.emplace(
-                    uniNameId, VariableSpec{.srcSpec = uniSpec.typeInfo,
+                    uniNameId, VariableSpec{.srcSpec = uniSpec,
                                             .glNameId = glGetUniformLocation(programGLName,
                                                                              uniFullName.c_str())});
             } else {
                 ssboSpecs.emplace(uniNameId,
-                                  VariableSpec{.srcSpec = uniSpec.typeInfo,
+                                  VariableSpec{.srcSpec = uniSpec,
                                                .glNameId = (GLint)glGetProgramResourceIndex(
                                                    programGLName, GL_SHADER_STORAGE_BLOCK,
                                                    uniSpec.name.c_str())});
@@ -510,24 +510,24 @@ CompiledGLSLShader::CompiledGLSLShader(std::span<const CompilationSpec> compilat
             switch (minimalStorageMethod) {
             case OpenGLRenderer::GpuValueStorageMethod::Uniform:
                 uniformSpecs.emplace(
-                    uniNameId, VariableSpec{.srcSpec = uniSpec.typeInfo,
+                    uniNameId, VariableSpec{.srcSpec = uniSpec,
                                             .glNameId = glGetUniformLocation(programGLName,
                                                                              uniFullName.c_str())});
                 break;
             case OpenGLRenderer::GpuValueStorageMethod::UniformBinding:
                 bindingSpecs.emplace(
-                    uniNameId, VariableSpec{.srcSpec = uniSpec.typeInfo,
+                    uniNameId, VariableSpec{.srcSpec = uniSpec,
                                             .glNameId = glGetUniformLocation(programGLName,
                                                                              uniFullName.c_str())});
                 break;
             case OpenGLRenderer::GpuValueStorageMethod::UBO:
-                uboSpecs.emplace(uniNameId, VariableSpec{.srcSpec = uniSpec.typeInfo,
+                uboSpecs.emplace(uniNameId, VariableSpec{.srcSpec = uniSpec,
                                                          .glNameId = (GLint)glGetUniformBlockIndex(
                                                              programGLName, uniFullName.c_str())});
                 break;
             case OpenGLRenderer::GpuValueStorageMethod::SSBO:
                 ssboSpecs.emplace(uniNameId,
-                                  VariableSpec{.srcSpec = uniSpec.typeInfo,
+                                  VariableSpec{.srcSpec = uniSpec,
                                                .glNameId = (GLint)glGetProgramResourceIndex(
                                                    programGLName, GL_SHADER_STORAGE_BLOCK,
                                                    uniSpec.name.c_str())});

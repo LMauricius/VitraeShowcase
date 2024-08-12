@@ -81,7 +81,7 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     struct VariableSpec
     {
-        const TypeInfo &srcSpec;
+        PropertySpec srcSpec;
         GLint glNameId;
     };
 

@@ -292,25 +292,10 @@ struct MethodsClassic : MethodCollection
         auto p_normalRender = root.getComponent<ComposeSceneRenderKeeper>().new_asset(
             {ComposeSceneRender::SetupParams{
                 .root = root,
-                .viewInputPropertyName = "camera_view",
-                .perspectiveInputPropertyName = "camera_persp",
+                .sceneInputPropertyName = "scene",
                 .displayInputPropertyName = "display_cleared",
                 .displayOutputPropertyName = StandardCompositorOutputNames::OUTPUT,
-                .customInputPropertyNames = {
-                    PropertySpec{.name = "tex_shadow",
-                                 .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
-                    PropertySpec{.name = "mat_shadow_view",
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    PropertySpec{.name = "mat_shadow_persp",
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    PropertySpec{.name = "camera_position",
-                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    PropertySpec{.name = "light_direction",
-                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    PropertySpec{.name = "light_color_primary",
-                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    PropertySpec{.name = "light_color_ambient",
-                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()}}}});
+            }});
 
         p_composeMethod =
             dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
