@@ -66,37 +66,9 @@ struct MethodsClassic : MethodCollection
                 )",
                 .functionName = "vertexViewPosition"}});
 
-        auto p_shadowPosition =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "position_world",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec4>()},
-                        PropertySpec{.name = "mat_shadow_view",
-                                     .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                        PropertySpec{.name = "mat_shadow_persp",
-                                     .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "position_shadow",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .snippet = R"(
-                    void shadowPosition(
-                        in vec4 position_world, in mat4 mat_shadow_view, in mat4 mat_shadow_persp,
-                        out vec3 position_shadow
-                    ) {
-                        vec4 position_shadow_h = mat_shadow_persp * mat_shadow_view * position_world;
-                        position_shadow = position_shadow_h.xyz / position_shadow_h.w * 0.5 + 0.5;
-                    }
-                )",
-                .functionName = "shadowPosition"}});
-
         p_vertexMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-                .tasks = {p_worldPosition, p_shadowPosition, p_viewPosition},
-                .friendlyName = "Classic"});
+                .tasks = {p_worldPosition, p_viewPosition}, .friendlyName = "Classic"});
 
         /*
         FRAGMENT SHADING
@@ -258,29 +230,35 @@ struct MethodsClassic : MethodCollection
         */
 
         // camera matrices extractor
-        auto p_extractCameraProperties =
-            dynasma::makeStandalone<ComposeFunction>(ComposeFunction::SetupParams{
-                .inputSpecs = {{PropertySpec{
-                    .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()}}},
-                .outputSpecs = {{
-                    PropertySpec{.name = "camera_view",
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    PropertySpec{.name = "camera_persp",
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    PropertySpec{.name = "camera_position",
-                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                }},
-                .p_function = [](const RenderRunContext &context) {
+        auto p_extractCameraProperties = dynasma::makeStandalone<
+            ComposeFunction>(ComposeFunction::SetupParams{
+            .inputSpecs = {{PropertySpec{
+                .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()}}},
+            .outputSpecs = {{
+                PropertySpec{.name = StandardShaderPropertyNames::INPUT_VIEW,
+                             .typeInfo = Variant::getTypeInfo<glm::mat4>()},
+                PropertySpec{.name = StandardShaderPropertyNames::INPUT_PROJECTION,
+                             .typeInfo = Variant::getTypeInfo<glm::mat4>()},
+                PropertySpec{.name = "camera_position",
+                             .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+            }},
+            .p_function = [](const RenderRunContext &context) {
+                try {
                     auto p_scene = context.properties.get("scene").get<dynasma::FirmPtr<Scene>>();
                     auto p_windowFrame =
                         context.properties.get(StandardCompositorOutputNames::OUTPUT)
                             .get<dynasma::FirmPtr<FrameStore>>();
-                    context.properties.set("camera_view", p_scene->camera.getViewMatrix());
-                    context.properties.set("camera_persp", p_scene->camera.getPerspectiveMatrix(
-                                                               p_windowFrame->getSize().x,
-                                                               p_windowFrame->getSize().y));
+                    context.properties.set(StandardShaderPropertyNames::INPUT_VIEW,
+                                           p_scene->camera.getViewMatrix());
+                    context.properties.set(
+                        StandardShaderPropertyNames::INPUT_PROJECTION,
+                        p_scene->camera.getPerspectiveMatrix(p_windowFrame->getSize().x,
+                                                             p_windowFrame->getSize().y));
                     context.properties.set("camera_position", p_scene->camera.position);
-                }});
+                }
+                catch (const std::out_of_range &e) {
+                }
+            }});
 
         // normal render
 
