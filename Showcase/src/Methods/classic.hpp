@@ -53,7 +53,7 @@ struct MethodsClassic : MethodCollection
                         PropertySpec{.name = "position_world",
                                      .typeInfo = Variant::getTypeInfo<glm::vec4>()},
                     },
-                .outputSpecs = {PropertySpec{.name = StandardShaderPropertyNames::VERTEX_OUTPUT,
+                .outputSpecs = {PropertySpec{.name = "position_view",
                                              .typeInfo =
                                                  StandardShaderPropertyTypes::VERTEX_OUTPUT}},
                 .snippet = R"(
@@ -271,6 +271,7 @@ struct MethodsClassic : MethodCollection
             {ComposeSceneRender::SetupParams{
                 .root = root,
                 .sceneInputPropertyName = "scene",
+                .vertexPositionOutputPropertyName = "position_view",
                 .displayInputPropertyName = "display_cleared",
                 .displayOutputPropertyName = StandardCompositorOutputNames::OUTPUT,
             }});

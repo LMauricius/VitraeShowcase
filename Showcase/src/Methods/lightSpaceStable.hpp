@@ -39,14 +39,16 @@ struct MethodsLSStable : MethodCollection
                     {
                         PropertySpec{.name = "position_shadow",
                                      .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                        PropertySpec{.name = "position_shadow_view",
+                                     .typeInfo = Variant::getTypeInfo<glm::vec4>()},
                     },
                 .snippet = R"(
                     void shadowPosition(
                         in vec4 position_world, in mat4 mat_shadow_view, in mat4 mat_shadow_persp,
-                        out vec3 position_shadow
+                        out vec3 position_shadow, out vec4 position_shadow_view
                     ) {
-                        vec4 position_shadow_h = mat_shadow_persp * mat_shadow_view * position_world;
-                        position_shadow = position_shadow_h.xyz / position_shadow_h.w * 0.5 + 0.5;
+                        position_shadow_view = mat_shadow_persp * mat_shadow_view * position_world;
+                        position_shadow = position_shadow_view.xyz / position_shadow_view.w * 0.5 + 0.5;
                     }
                 )",
                 .functionName = "shadowPosition"}});

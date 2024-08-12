@@ -104,12 +104,13 @@ struct MethodsShadowEBR : MethodCollection
                                              .displayOutputPropertyName = "shadow_cleared"}});
 
         auto p_shadowRender = root.getComponent<ComposeSceneRenderKeeper>().new_asset(
-            {ComposeSceneRender::SetupParams{.root = root,
-                                             .sceneInputPropertyName = "scene",
-                                             .displayInputPropertyName = "shadow_cleared",
-                                             .displayOutputPropertyName = "rendered_shadow",
-                                             .cullingMode =
-                                                 ComposeSceneRender::CullingMode::Frontface}});
+            {ComposeSceneRender::SetupParams{
+                .root = root,
+                .sceneInputPropertyName = "scene",
+                .vertexPositionOutputPropertyName = "position_shadow_view",
+                .displayInputPropertyName = "shadow_cleared",
+                .displayOutputPropertyName = "rendered_shadow",
+                .cullingMode = ComposeSceneRender::CullingMode::Frontface}});
 
         // compose method
         p_composeMethod =
