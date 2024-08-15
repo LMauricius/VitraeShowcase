@@ -43,6 +43,9 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    String glLabel = String("FB ") + String(params.friendlyName);
+    glObjectLabel(GL_FRAMEBUFFER, glFramebufferId, glLabel.size(), glLabel.data());
+
     m_contextSwitcher = FramebufferContextSwitcher{width, height, glFramebufferId};
     mp_renderComponents =
         dynasma::makeStandalone<PropertyList, std::vector<Vitrae::PropertySpec> &&>(

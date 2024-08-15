@@ -7,6 +7,8 @@ OpenGLRawSharedBuffer::OpenGLRawSharedBuffer(const SetupParams &params)
     : RawSharedBuffer(), m_usage(params.usage)
 {
     glGenBuffers(1, &m_glBufferHandle);
+    String glLabel = String("Buffer ") + params.friendlyName;
+    glObjectLabel(GL_BUFFER, m_glBufferHandle, glLabel.size(), glLabel.data());
 
     if (params.size > 0) {
         resize(params.size);

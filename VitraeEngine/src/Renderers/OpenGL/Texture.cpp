@@ -106,12 +106,12 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
     if (stbi_failure_reason()) {
         params.root.getErrStream() << "Texture load from '" << params.filepath
                                    << "' failed: " << stbi_failure_reason() << std::endl;
-        loadToGPU(nullptr);
+        loadToGPU(nullptr, params.filepath.filename().string());
 
         stbi_image_free(data);
     } else {
         params.root.getInfoStream() << "Texture '" << params.filepath << "' loaded." << std::endl;
-        loadToGPU(data);
+        loadToGPU(data, params.filepath.filename().string());
     }
 }
 
@@ -150,7 +150,7 @@ OpenGLTexture::OpenGLTexture(const EmptyParams &params)
     mWidth = params.size.x;
     mHeight = params.size.y;
 
-    loadToGPU(nullptr);
+    loadToGPU(nullptr, params.friendlyName);
 }
 
 OpenGLTexture::OpenGLTexture(const PureColorParams &params)
@@ -167,7 +167,10 @@ OpenGLTexture::OpenGLTexture(const PureColorParams &params)
     unsigned char data[4] = {255.0 * params.color.r, 255.0 * params.color.g, 255.0 * params.color.b,
                              255.0 * params.color.a};
 
-    loadToGPU(data);
+    loadToGPU(data, String("rgba(") + std::to_string((int)(255 * params.color.r)) + " " +
+                        std::to_string((int)(255 * params.color.g)) + " " +
+                        std::to_string((int)(255 * params.color.b)) + " " +
+                        std::to_string((int)(255 * params.color.a)) + ")");
 }
 
 OpenGLTexture::~OpenGLTexture()
@@ -180,7 +183,7 @@ std::size_t OpenGLTexture::memory_cost() const
     return mWidth * mHeight * 3; /// TODO: properly calculate num channels
 }
 
-void OpenGLTexture::loadToGPU(const unsigned char *data)
+void OpenGLTexture::loadToGPU(const unsigned char *data, StringView friendlyName)
 {
     if (!m_sentToGPU) {
         m_sentToGPU = true;
@@ -202,6 +205,9 @@ void OpenGLTexture::loadToGPU(const unsigned char *data)
         glGenerateMipmap(GL_TEXTURE_2D);
 
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        String glLabel = String("texture ") + String(friendlyName);
+        glObjectLabel(GL_TEXTURE, glTextureId, glLabel.size(), glLabel.data());
     }
 }
 

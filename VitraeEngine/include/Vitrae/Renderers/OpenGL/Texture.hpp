@@ -21,7 +21,7 @@ class OpenGLTexture : public Texture
     OpenGLTexture(const PureColorParams &params);
     ~OpenGLTexture();
 
-    void loadToGPU(const unsigned char *data);
+    void loadToGPU(const unsigned char *data, StringView friendlyName);
     void unloadFromGPU();
 
     std::size_t memory_cost() const override;

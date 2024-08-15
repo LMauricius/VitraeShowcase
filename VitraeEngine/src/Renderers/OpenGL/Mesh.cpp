@@ -3,6 +3,7 @@
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/TypeConversion/AssimpTypeConvert.hpp"
+#include "Vitrae/TypeConversion/StringConvert.hpp"
 #include "Vitrae/Types/Typedefs.hpp"
 
 #include <map>
@@ -55,6 +56,9 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
     extractVertexData(params.root.getAiMeshBufferInfos<aiVector3D>(), namedVec3Buffers);
     extractVertexData(params.root.getAiMeshBufferInfos<aiColor3D>(), namedVec3Buffers);
     extractVertexData(params.root.getAiMeshBufferInfos<aiColor4D>(), namedVec4Buffers);
+
+    // debug
+    m_friendlyname = toString(params.p_extMesh->mName);
 }
 
 OpenGLMesh::~OpenGLMesh() {}
@@ -104,6 +108,10 @@ void OpenGLMesh::loadToGPU(OpenGLRenderer &rend)
                      (void *)(mTriangles.data()), GL_STATIC_DRAW);
 
         glBindVertexArray(0);
+
+        // debug
+        String glLabel = String("mesh ") + String(m_friendlyname);
+        glObjectLabel(GL_VERTEX_ARRAY, VAO, glLabel.size(), glLabel.data());
     }
 }
 

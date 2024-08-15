@@ -39,6 +39,7 @@ class OpenGLMesh : public Mesh
     GLuint EBO;
 
   protected:
+    String m_friendlyname;
     std::optional<dynasma::LazyPtr<Material>> mMaterial;
     std::vector<Triangle> mTriangles;
     std::map<StringId, std::valarray<glm::vec1>> namedVec1Buffers;
