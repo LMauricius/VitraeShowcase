@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vitrae/Types/Typedefs.hpp"
+
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/keepers/abstract.hpp"
 #include "dynasma/managers/abstract.hpp"
@@ -57,6 +59,7 @@ class Texture : public dynasma::PolymorphicBase
         FilterType magFilter = FilterType::LINEAR;
         bool useMipMaps = true;
         glm::vec4 borderColor = {0.0f, 0.0f, 0.0f, 0.0f};
+        String friendlyName = "";
     };
     struct PureColorParams
     {

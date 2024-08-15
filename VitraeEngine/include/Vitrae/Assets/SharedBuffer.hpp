@@ -38,6 +38,7 @@ class RawSharedBuffer : public dynasma::PolymorphicBase
         ComponentRoot &root;
         BufferUsageHints usage = BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW;
         std::size_t size = 0;
+        String friendlyName = "";
     };
 
     RawSharedBuffer();

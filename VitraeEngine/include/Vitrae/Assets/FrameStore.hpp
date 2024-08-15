@@ -27,6 +27,7 @@ class FrameStore : public dynasma::PolymorphicBase
         ComponentRoot &root;
         std::optional<dynasma::FirmPtr<Texture>> p_colorTexture;
         std::optional<dynasma::FirmPtr<Texture>> p_depthTexture;
+        String friendlyName = "";
     };
     struct WindowDisplayParams
     {

@@ -23,7 +23,10 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
               ? std::span<const PropertySpec>{{{params.depthTextureOutputPropertyName,
                                                 Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()}}}
               : std::span<const PropertySpec>()),
-      m_root(params.root), m_frameInputNameId(params.frameInputPropertyName),
+      m_root(params.root), m_frameInputName(params.frameInputPropertyName),
+      m_colorTextureOutputName(params.colorTextureOutputPropertyName),
+      m_depthTextureOutputName(params.depthTextureOutputPropertyName),
+      m_frameInputNameId(params.frameInputPropertyName),
       m_colorTextureOutputNameId(params.colorTextureOutputPropertyName),
       m_depthTextureOutputNameId(params.depthTextureOutputPropertyName), m_size(params.size),
       m_channelType(params.channelType), m_horWrap(params.horWrap), m_verWrap(params.verWrap),
@@ -51,19 +54,23 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
     FrameStoreManager &frameManager = m_root.getComponent<FrameStoreManager>();
     TextureManager &textureManager = m_root.getComponent<TextureManager>();
 
-    FrameStore::TextureBindParams frameParams = {m_root, {}, {}};
+    FrameStore::TextureBindParams frameParams = {.root = m_root,
+                                                 .p_colorTexture = {},
+                                                 .p_depthTexture = {},
+                                                 .friendlyName = m_frameInputName};
 
     if (m_colorTextureOutputNameId != "") {
-        auto texture =
-            textureManager.register_asset({Texture::EmptyParams{.root = m_root,
-                                                                .size = m_size,
-                                                                .channelType = m_channelType,
-                                                                .horWrap = m_horWrap,
-                                                                .verWrap = m_verWrap,
-                                                                .minFilter = m_minFilter,
-                                                                .magFilter = m_magFilter,
-                                                                .useMipMaps = m_useMipMaps,
-                                                                .borderColor = m_borderColor}});
+        auto texture = textureManager.register_asset(
+            {Texture::EmptyParams{.root = m_root,
+                                  .size = m_size,
+                                  .channelType = m_channelType,
+                                  .horWrap = m_horWrap,
+                                  .verWrap = m_verWrap,
+                                  .minFilter = m_minFilter,
+                                  .magFilter = m_magFilter,
+                                  .useMipMaps = m_useMipMaps,
+                                  .borderColor = m_borderColor,
+                                  .friendlyName = m_colorTextureOutputName}});
         frameParams.p_colorTexture = texture;
         textures.emplace(m_colorTextureOutputNameId, texture);
     }
@@ -77,7 +84,8 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
                                   .minFilter = m_minFilter,
                                   .magFilter = m_magFilter,
                                   .useMipMaps = m_useMipMaps,
-                                  .borderColor = {1.0f, 1.0f, 1.0f, 1.0f}}});
+                                  .borderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+                                  .friendlyName = m_depthTextureOutputName}});
         frameParams.p_depthTexture = texture;
         textures.emplace(m_depthTextureOutputNameId, texture);
     }

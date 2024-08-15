@@ -42,6 +42,7 @@ class ComposeFrameToTexture : public ComposeTask
 
   protected:
     ComponentRoot &m_root;
+    String m_frameInputName, m_colorTextureOutputName, m_depthTextureOutputName;
     StringId m_frameInputNameId, m_colorTextureOutputNameId, m_depthTextureOutputNameId;
     glm::vec2 m_size;
     Texture::ChannelType m_channelType;
