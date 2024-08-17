@@ -8,6 +8,8 @@
 
 #include "Vitrae/Renderers/OpenGL.hpp"
 
+#include "MMeter.h"
+
 using namespace Vitrae;
 
 int main(int argc, char **argv)
@@ -53,7 +55,11 @@ int main(int argc, char **argv)
                 std::unique_lock lock1(collection.accessMutex);
 
                 auto startTime = std::chrono::high_resolution_clock::now();
-                collection.render();
+                {
+                    MMETER_SCOPE_PROFILER("Render iteration");
+
+                    collection.render();
+                }
                 auto endTime = std::chrono::high_resolution_clock::now();
 
                 status.update(endTime - startTime);

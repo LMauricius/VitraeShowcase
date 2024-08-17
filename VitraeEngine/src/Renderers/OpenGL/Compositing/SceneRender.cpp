@@ -62,6 +62,8 @@ const std::map<StringId, PropertySpec> &OpenGLComposeSceneRender::getOutputSpecs
 
 void OpenGLComposeSceneRender::run(RenderRunContext args) const
 {
+    MMETER_SCOPE_PROFILER("OpenGLComposeSceneRender::run");
+
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_root.getComponent<Renderer>());
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
 
@@ -96,61 +98,76 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
              std::map<dynasma::FirmPtr<const Material>, std::vector<const MeshProp *>>>
         methods2materials2props;
 
-    for (auto &meshProp : scene.meshProps) {
-        auto mat = meshProp.p_mesh->getMaterial().getLoaded();
+    {
 
-        methods2materials2props[{mat->getVertexMethod(), mat->getFragmentMethod()}]
-                               [meshProp.p_mesh->getMaterial()]
-                                   .push_back(&meshProp);
+        MMETER_SCOPE_PROFILER("Scene struct gen");
+
+        for (auto &meshProp : scene.meshProps) {
+            auto mat = meshProp.p_mesh->getMaterial().getLoaded();
+
+            methods2materials2props[{mat->getVertexMethod(), mat->getFragmentMethod()}]
+                                   [meshProp.p_mesh->getMaterial()]
+                                       .push_back(&meshProp);
+        }
     }
 
-    switch (m_rasterizingMode) {
-    // derivational methods (all methods for now)
-    case RasterizingMode::DerivationalFillCenters:
-    case RasterizingMode::DerivationalFillEdges:
-    case RasterizingMode::DerivationalFillVertices:
-    case RasterizingMode::DerivationalTraceEdges:
-    case RasterizingMode::DerivationalTraceVertices:
-    case RasterizingMode::DerivationalDotVertices: {
-        frame.enterRender(args.properties, {0.0f, 0.0f}, {1.0f, 1.0f});
+    {
+        MMETER_SCOPE_PROFILER("Rendering (multipass)");
 
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
+        switch (m_rasterizingMode) {
+        // derivational methods (all methods for now)
+        case RasterizingMode::DerivationalFillCenters:
+        case RasterizingMode::DerivationalFillEdges:
+        case RasterizingMode::DerivationalFillVertices:
+        case RasterizingMode::DerivationalTraceEdges:
+        case RasterizingMode::DerivationalTraceVertices:
+        case RasterizingMode::DerivationalDotVertices: {
+            frame.enterRender(args.properties, {0.0f, 0.0f}, {1.0f, 1.0f});
 
-        switch (m_cullingMode) {
-        case CullingMode::None:
-            glDisable(GL_CULL_FACE);
-            break;
-        case CullingMode::Backface:
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-            break;
-        case CullingMode::Frontface:
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_FRONT);
-            break;
-        }
+            {
+                MMETER_SCOPE_PROFILER("OGL setup");
 
-        // smoothing
-        if (m_smoothFilling) {
-            glEnable(GL_POLYGON_SMOOTH);
-            glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-        } else {
-            glDisable(GL_POLYGON_SMOOTH);
-        }
-        if (m_smoothTracing) {
-            glEnable(GL_LINE_SMOOTH);
-            glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-        } else {
-            glDisable(GL_LINE_SMOOTH);
-        }
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LESS);
 
-        // generic function for all passes
-        auto runDerivationalPass =
-            [&]() {
+                switch (m_cullingMode) {
+                case CullingMode::None:
+                    glDisable(GL_CULL_FACE);
+                    break;
+                case CullingMode::Backface:
+                    glEnable(GL_CULL_FACE);
+                    glCullFace(GL_BACK);
+                    break;
+                case CullingMode::Frontface:
+                    glEnable(GL_CULL_FACE);
+                    glCullFace(GL_FRONT);
+                    break;
+                }
+
+                // smoothing
+                if (m_smoothFilling) {
+                    glEnable(GL_POLYGON_SMOOTH);
+                    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+                } else {
+                    glDisable(GL_POLYGON_SMOOTH);
+                }
+                if (m_smoothTracing) {
+                    glEnable(GL_LINE_SMOOTH);
+                    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+                } else {
+                    glDisable(GL_LINE_SMOOTH);
+                }
+            }
+
+            // generic function for all passes
+            auto runDerivationalPass = [&]() {
+                MMETER_SCOPE_PROFILER("Pass");
+
                 // render the scene
                 // iterate over shaders
                 for (auto &[methods, materials2props] : methods2materials2props) {
+                    MMETER_SCOPE_PROFILER("Shader iteration");
+
                     auto [vertexMethod, fragmentMethod] = methods;
 
                     // compile shader for this material
@@ -168,36 +185,41 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                     // set the 'environmental' uniforms
                     int freeBindingIndex = 0;
                     GLint glModelMatrixUniformId;
-                    for (auto [propertyNameId, uniSpec] : p_compiledShader->uniformSpecs) {
-                        if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
-                            // this is set per model
-                            glModelMatrixUniformId = uniSpec.glNameId;
+                    {
+                        MMETER_SCOPE_PROFILER("Uniform setup");
 
-                        } else {
+                        for (auto [propertyNameId, uniSpec] : p_compiledShader->uniformSpecs) {
+                            if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
+                                // this is set per model
+                                glModelMatrixUniformId = uniSpec.glNameId;
+
+                            } else {
+                                auto p = args.properties.getPtr(propertyNameId);
+                                if (p) {
+                                    rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                                        .setUniform(uniSpec.glNameId, *p);
+                                } else {
+                                    needsRebuild =
+                                        needsRebuild ||
+                                        rend.specifySceneRenderInputDependency(
+                                            this, args.p_defaultVertexMethod,
+                                            args.p_defaultFragmentMethod, uniSpec.srcSpec);
+                                }
+                            }
+                        }
+                        for (auto [propertyNameId, uniSpec] : p_compiledShader->bindingSpecs) {
                             auto p = args.properties.getPtr(propertyNameId);
                             if (p) {
                                 rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-                                    .setUniform(uniSpec.glNameId, *p);
+                                    .setBinding(freeBindingIndex, *p);
+                                glUniform1i(uniSpec.glNameId, freeBindingIndex);
+                                freeBindingIndex++;
                             } else {
                                 needsRebuild = needsRebuild ||
                                                rend.specifySceneRenderInputDependency(
                                                    this, args.p_defaultVertexMethod,
                                                    args.p_defaultFragmentMethod, uniSpec.srcSpec);
                             }
-                        }
-                    }
-                    for (auto [propertyNameId, uniSpec] : p_compiledShader->bindingSpecs) {
-                        auto p = args.properties.getPtr(propertyNameId);
-                        if (p) {
-                            rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-                                .setBinding(freeBindingIndex, *p);
-                            glUniform1i(uniSpec.glNameId, freeBindingIndex);
-                            freeBindingIndex++;
-                        } else {
-                            needsRebuild =
-                                needsRebuild || rend.specifySceneRenderInputDependency(
-                                                    this, args.p_defaultVertexMethod,
-                                                    args.p_defaultFragmentMethod, uniSpec.srcSpec);
                         }
                     }
 
@@ -220,25 +242,36 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
 
                         // iterate over materials
                         for (auto [material, props] : materials2props) {
+                            MMETER_SCOPE_PROFILER("Material iteration");
 
                             // get the textures and properties
-                            for (auto [nameId, p_texture] : material->getTextures()) {
-                                setPropertyToShader(nameId, p_texture);
-                            }
-                            for (auto [nameId, value] : material->getProperties()) {
-                                setPropertyToShader(nameId, value);
+                            {
+                                MMETER_SCOPE_PROFILER("Material setup");
+
+                                for (auto [nameId, p_texture] : material->getTextures()) {
+                                    setPropertyToShader(nameId, p_texture);
+                                }
+                                for (auto [nameId, value] : material->getProperties()) {
+                                    setPropertyToShader(nameId, value);
+                                }
                             }
 
                             // iterate over meshes
-                            for (auto p_meshProp : props) {
-                                OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
-                                mesh.loadToGPU(rend);
+                            {
+                                MMETER_SCOPE_PROFILER("Prop loop");
 
-                                glBindVertexArray(mesh.VAO);
-                                glUniformMatrix4fv(glModelMatrixUniformId, 1, GL_FALSE,
-                                                   &(p_meshProp->transform.getModelMatrix()[0][0]));
-                                glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(),
-                                               GL_UNSIGNED_INT, 0);
+                                for (auto p_meshProp : props) {
+                                    OpenGLMesh &mesh =
+                                        static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
+                                    mesh.loadToGPU(rend);
+
+                                    glBindVertexArray(mesh.VAO);
+                                    glUniformMatrix4fv(
+                                        glModelMatrixUniformId, 1, GL_FALSE,
+                                        &(p_meshProp->transform.getModelMatrix()[0][0]));
+                                    glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(),
+                                                   GL_UNSIGNED_INT, 0);
+                                }
                             }
                         }
                     }
@@ -247,55 +280,56 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                 }
             };
 
-        // render filled polygons
-        switch (m_rasterizingMode) {
-        case RasterizingMode::DerivationalFillCenters:
-        case RasterizingMode::DerivationalFillEdges:
-        case RasterizingMode::DerivationalFillVertices:
-            glDepthMask(GL_TRUE);
-            glDisable(GL_BLEND);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            runDerivationalPass();
-            break;
-        }
-
-        // render edges
-        switch (m_rasterizingMode) {
-        case RasterizingMode::DerivationalFillEdges:
-        case RasterizingMode::DerivationalTraceEdges:
-        case RasterizingMode::DerivationalTraceVertices:
-            if (m_smoothTracing) {
-                glDepthMask(GL_FALSE);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                glEnable(GL_BLEND);
-                glLineWidth(1.5);
-            } else {
+            // render filled polygons
+            switch (m_rasterizingMode) {
+            case RasterizingMode::DerivationalFillCenters:
+            case RasterizingMode::DerivationalFillEdges:
+            case RasterizingMode::DerivationalFillVertices:
                 glDepthMask(GL_TRUE);
                 glDisable(GL_BLEND);
-                glLineWidth(1.0);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                runDerivationalPass();
+                break;
             }
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            runDerivationalPass();
-            break;
-        }
 
-        // render vertices
-        switch (m_rasterizingMode) {
-        case RasterizingMode::DerivationalFillVertices:
-        case RasterizingMode::DerivationalTraceVertices:
-        case RasterizingMode::DerivationalDotVertices:
+            // render edges
+            switch (m_rasterizingMode) {
+            case RasterizingMode::DerivationalFillEdges:
+            case RasterizingMode::DerivationalTraceEdges:
+            case RasterizingMode::DerivationalTraceVertices:
+                if (m_smoothTracing) {
+                    glDepthMask(GL_FALSE);
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                    glEnable(GL_BLEND);
+                    glLineWidth(1.5);
+                } else {
+                    glDepthMask(GL_TRUE);
+                    glDisable(GL_BLEND);
+                    glLineWidth(1.0);
+                }
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                runDerivationalPass();
+                break;
+            }
+
+            // render vertices
+            switch (m_rasterizingMode) {
+            case RasterizingMode::DerivationalFillVertices:
+            case RasterizingMode::DerivationalTraceVertices:
+            case RasterizingMode::DerivationalDotVertices:
+                glDepthMask(GL_TRUE);
+                glDisable(GL_BLEND);
+                glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+                runDerivationalPass();
+                break;
+            }
+
             glDepthMask(GL_TRUE);
-            glDisable(GL_BLEND);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-            runDerivationalPass();
+
+            frame.exitRender();
             break;
         }
-
-        glDepthMask(GL_TRUE);
-
-        frame.exitRender();
-        break;
-    }
+        }
     }
 
     args.properties.set(m_displayOutputNameId, p_frame);

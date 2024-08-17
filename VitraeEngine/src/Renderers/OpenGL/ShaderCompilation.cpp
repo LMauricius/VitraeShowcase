@@ -2,6 +2,8 @@
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 
+#include "MMeter.h"
+
 #include <fstream>
 
 namespace Vitrae
@@ -55,6 +57,8 @@ CompiledGLSLShader::CompiledGLSLShader(const ComputeShaderParams &params)
 CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationSpecs,
                                        ComponentRoot &root, const PropertyList &desiredOutputs)
 {
+    MMETER_SCOPE_PROFILER("CompiledGLSLShader");
+
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(root.getComponent<Renderer>());
 
     // util lambdas

@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#include "MMeter.h"
+
 using namespace std::chrono_literals;
 
 struct Status
@@ -19,6 +21,7 @@ struct Status
     std::size_t trackingFrameCount;
 
     std::string mmeterMetrics;
+    MMeter::FuncProfilerTree aggregateTree;
 
     Status();
     ~Status() = default;

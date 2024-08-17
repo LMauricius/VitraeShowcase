@@ -1,7 +1,5 @@
 #include "Status.hpp"
 
-#include "MMeter.h"
-
 Status::Status()
     : totalSumFrameDuration(0.0s), totalFrameCount(0), totalAvgFrameDuration(0.0s), totalFPS(0.0f),
       currentAvgFrameDuration(0.0s), currentFPS(0.0f),
@@ -29,7 +27,14 @@ void Status::update(std::chrono::duration<float> lastFrameDuration)
         currentTimeStamp = now;
 
         std::stringstream ss;
-        ss << *MMeter::getThreadLocalTreePtr();
+        ss << "Current:" << std::endl;
+        MMeter::getThreadLocalTreePtr()->outputBranchPercentagesToOStream(ss);
+
+        aggregateTree.merge(*MMeter::getThreadLocalTreePtr());
+        MMeter::getThreadLocalTreePtr()->reset();
+
+        ss << "Total:" << std::endl << aggregateTree;
+
         mmeterMetrics = ss.str();
     }
 }
