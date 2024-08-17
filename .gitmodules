@@ -9,3 +9,6 @@
 [submodule "VitraeEngine/dependencies/DynAsMa"]
 	path = VitraeEngine/dependencies/DynAsMa
 	url = https://github.com/LMauricius/DynAsMa.git
+[submodule "VitraeEngine/dependencies/MMeter"]
+	path = VitraeEngine/dependencies/MMeter
+	url = https://github.com/LMauricius/MMeter.git
