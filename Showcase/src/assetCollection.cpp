@@ -2,6 +2,7 @@
 
 #include "Methods/classic.hpp"
 #include "Methods/lightSpaceStable.hpp"
+#include "Methods/renderShades.hpp"
 #include "Methods/shadowBiLin.hpp"
 #include "Methods/shadowEBR.hpp"
 #include "Methods/shadowPCF.hpp"
@@ -35,6 +36,13 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     */
     modeSetter.setModes(root);
     methodCategories = {
+        {"Render mode",
+         {
+             std::make_shared<MethodsRenderShades>(root, false, false, "Normal"),
+             std::make_shared<MethodsRenderShades>(root, false, true, "Smooth normal"),
+             std::make_shared<MethodsRenderShades>(root, true, false, "Wireframe"),
+         },
+         0},
         {"Base shading", {std::make_shared<MethodsClassic>(root)}, 0},
         {"Light/shadow space", {std::make_shared<MethodsLSStable>(root)}, 0},
         {"Shadow filtering",

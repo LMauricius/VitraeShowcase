@@ -260,25 +260,8 @@ struct MethodsClassic : MethodCollection
                 }
             }});
 
-        // normal render
-
-        auto p_clear = root.getComponent<ComposeClearRenderKeeper>().new_asset(
-            {ComposeClearRender::SetupParams{.root = root,
-                                             .backgroundColor = glm::vec4(0.0f, 0.5f, 0.8f, 1.0f),
-                                             .displayOutputPropertyName = "display_cleared"}});
-
-        auto p_normalRender = root.getComponent<ComposeSceneRenderKeeper>().new_asset(
-            {ComposeSceneRender::SetupParams{
-                .root = root,
-                .sceneInputPropertyName = "scene",
-                .vertexPositionOutputPropertyName = "position_view",
-                .displayInputPropertyName = "display_cleared",
-                .displayOutputPropertyName = StandardCompositorOutputNames::OUTPUT,
-            }});
-
         p_composeMethod =
             dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
-                .tasks = {p_extractCameraProperties, p_clear, p_normalRender},
-                .friendlyName = "Classic"});
+                .tasks = {p_extractCameraProperties}, .friendlyName = "Classic"});
     }
 };
