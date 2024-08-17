@@ -75,6 +75,7 @@ void SettingsWindow::updateValues()
     ui.currentAvgDuration->setText(
         QString::number(m_status.currentAvgFrameDuration.count() * 1000.0) + "ms");
     ui.currentFPS->setText(QString::number(m_status.currentFPS));
+    ui.profilerMetrics->setText(QString::fromStdString(m_status.mmeterMetrics));
 
     // update spinboxes and other controls
     if (ui.camera_x->value() != m_assetCollection.p_scene->camera.position.x) {

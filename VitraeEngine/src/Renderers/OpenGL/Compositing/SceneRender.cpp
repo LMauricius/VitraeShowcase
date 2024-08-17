@@ -9,6 +9,8 @@
 #include "Vitrae/Util/Variant.hpp"
 #include "Vitrae/Visuals/Scene.hpp"
 
+#include "MMeter.h"
+
 namespace Vitrae
 {
 

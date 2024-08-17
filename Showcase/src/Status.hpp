@@ -18,6 +18,8 @@ struct Status
     std::chrono::duration<double> trackingSumFrameDuration;
     std::size_t trackingFrameCount;
 
+    std::string mmeterMetrics;
+
     Status();
     ~Status() = default;
 

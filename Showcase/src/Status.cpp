@@ -1,5 +1,7 @@
 #include "Status.hpp"
 
+#include "MMeter.h"
+
 Status::Status()
     : totalSumFrameDuration(0.0s), totalFrameCount(0), totalAvgFrameDuration(0.0s), totalFPS(0.0f),
       currentAvgFrameDuration(0.0s), currentFPS(0.0f),
@@ -25,5 +27,9 @@ void Status::update(std::chrono::duration<float> lastFrameDuration)
         trackingSumFrameDuration = 0s;
         trackingFrameCount = 0;
         currentTimeStamp = now;
+
+        std::stringstream ss;
+        ss << *MMeter::getThreadLocalTreePtr();
+        mmeterMetrics = ss.str();
     }
 }

@@ -74,13 +74,6 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>lastFPS</string>
-         </property>
-        </widget>
-       </item>
        <item row="2" column="1">
         <widget class="QLabel" name="currentAvgDuration">
          <property name="sizePolicy">
@@ -94,6 +87,13 @@
          </property>
         </widget>
        </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>lastFPS</string>
+         </property>
+        </widget>
+       </item>
        <item row="3" column="1">
         <widget class="QLabel" name="currentFPS">
          <property name="sizePolicy">
@@ -102,6 +102,20 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_14">
+         <property name="text">
+          <string>Profiler metrics:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLabel" name="profilerMetrics">
          <property name="text">
           <string>TextLabel</string>
          </property>
