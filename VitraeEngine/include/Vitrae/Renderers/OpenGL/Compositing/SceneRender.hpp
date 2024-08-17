@@ -34,6 +34,8 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
     std::optional<StringId> m_displayInputNameId;
 
     CullingMode m_cullingMode;
+    RasterizingMode m_rasterizingMode;
+    bool m_smoothFilling, m_smoothTracing, m_smoothDotting;
 };
 
 } // namespace Vitrae

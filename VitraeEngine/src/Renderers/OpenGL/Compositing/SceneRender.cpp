@@ -27,7 +27,9 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
       m_displayInputNameId(params.displayInputPropertyName.empty()
                                ? std::optional<StringId>()
                                : params.displayInputPropertyName),
-      m_displayOutputNameId(params.displayOutputPropertyName), m_cullingMode(params.cullingMode)
+      m_displayOutputNameId(params.displayOutputPropertyName), m_cullingMode(params.cullingMode),
+      m_rasterizingMode(params.rasterizingMode), m_smoothFilling(params.smoothFilling),
+      m_smoothTracing(params.smoothTracing), m_smoothDotting(params.smoothDotting)
 {
 
     /*
@@ -100,120 +102,199 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                                    .push_back(&meshProp);
     }
 
-    frame.enterRender(args.properties, {0.0f, 0.0f}, {1.0f, 1.0f});
+    switch (m_rasterizingMode) {
+    // derivational methods (all methods for now)
+    case RasterizingMode::DerivationalFillCenters:
+    case RasterizingMode::DerivationalFillEdges:
+    case RasterizingMode::DerivationalFillVertices:
+    case RasterizingMode::DerivationalTraceEdges:
+    case RasterizingMode::DerivationalTraceVertices:
+    case RasterizingMode::DerivationalDotVertices: {
+        frame.enterRender(args.properties, {0.0f, 0.0f}, {1.0f, 1.0f});
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
 
-    switch (m_cullingMode) {
-    case CullingMode::None:
-        glDisable(GL_CULL_FACE);
-        break;
-    case CullingMode::Backface:
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        break;
-    case CullingMode::Frontface:
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        break;
-    }
-
-    // render the scene
-    // iterate over shaders
-    for (auto &[methods, materials2props] : methods2materials2props) {
-        auto [vertexMethod, fragmentMethod] = methods;
-
-        // compile shader for this material
-        dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader =
-            shaderCacher.retrieve_asset({CompiledGLSLShader::SurfaceShaderParams(
-                args.methodCombinator.getCombinedMethod(args.p_defaultVertexMethod, vertexMethod),
-                args.methodCombinator.getCombinedMethod(args.p_defaultFragmentMethod,
-                                                        fragmentMethod),
-                m_viewPositionOutputPropertyName, p_frame->getRenderComponents(), m_root)});
-
-        glUseProgram(p_compiledShader->programGLName);
-
-        // set the 'environmental' uniforms
-        int freeBindingIndex = 0;
-        GLint glModelMatrixUniformId;
-        for (auto [propertyNameId, uniSpec] : p_compiledShader->uniformSpecs) {
-            if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
-                // this is set per model
-                glModelMatrixUniformId = uniSpec.glNameId;
-
-            } else {
-                auto p = args.properties.getPtr(propertyNameId);
-                if (p) {
-                    rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-                        .setUniform(uniSpec.glNameId, *p);
-                } else {
-                    needsRebuild =
-                        needsRebuild || rend.specifySceneRenderInputDependency(
-                                            this, args.p_defaultVertexMethod,
-                                            args.p_defaultFragmentMethod, uniSpec.srcSpec);
-                }
-            }
+        switch (m_cullingMode) {
+        case CullingMode::None:
+            glDisable(GL_CULL_FACE);
+            break;
+        case CullingMode::Backface:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+            break;
+        case CullingMode::Frontface:
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_FRONT);
+            break;
         }
-        for (auto [propertyNameId, uniSpec] : p_compiledShader->bindingSpecs) {
-            auto p = args.properties.getPtr(propertyNameId);
-            if (p) {
-                rend.getTypeConversion(uniSpec.srcSpec.typeInfo).setBinding(freeBindingIndex, *p);
-                glUniform1i(uniSpec.glNameId, freeBindingIndex);
-                freeBindingIndex++;
-            } else {
-                needsRebuild = needsRebuild || rend.specifySceneRenderInputDependency(
+
+        // smoothing
+        if (m_smoothFilling) {
+            glEnable(GL_POLYGON_SMOOTH);
+            glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+        } else {
+            glDisable(GL_POLYGON_SMOOTH);
+        }
+        if (m_smoothTracing) {
+            glEnable(GL_LINE_SMOOTH);
+            glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+        } else {
+            glDisable(GL_LINE_SMOOTH);
+        }
+
+        // generic function for all passes
+        auto runDerivationalPass =
+            [&]() {
+                // render the scene
+                // iterate over shaders
+                for (auto &[methods, materials2props] : methods2materials2props) {
+                    auto [vertexMethod, fragmentMethod] = methods;
+
+                    // compile shader for this material
+                    dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader =
+                        shaderCacher.retrieve_asset({CompiledGLSLShader::SurfaceShaderParams(
+                            args.methodCombinator.getCombinedMethod(args.p_defaultVertexMethod,
+                                                                    vertexMethod),
+                            args.methodCombinator.getCombinedMethod(args.p_defaultFragmentMethod,
+                                                                    fragmentMethod),
+                            m_viewPositionOutputPropertyName, frame.getRenderComponents(),
+                            m_root)});
+
+                    glUseProgram(p_compiledShader->programGLName);
+
+                    // set the 'environmental' uniforms
+                    int freeBindingIndex = 0;
+                    GLint glModelMatrixUniformId;
+                    for (auto [propertyNameId, uniSpec] : p_compiledShader->uniformSpecs) {
+                        if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
+                            // this is set per model
+                            glModelMatrixUniformId = uniSpec.glNameId;
+
+                        } else {
+                            auto p = args.properties.getPtr(propertyNameId);
+                            if (p) {
+                                rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                                    .setUniform(uniSpec.glNameId, *p);
+                            } else {
+                                needsRebuild = needsRebuild ||
+                                               rend.specifySceneRenderInputDependency(
                                                    this, args.p_defaultVertexMethod,
                                                    args.p_defaultFragmentMethod, uniSpec.srcSpec);
-            }
+                            }
+                        }
+                    }
+                    for (auto [propertyNameId, uniSpec] : p_compiledShader->bindingSpecs) {
+                        auto p = args.properties.getPtr(propertyNameId);
+                        if (p) {
+                            rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                                .setBinding(freeBindingIndex, *p);
+                            glUniform1i(uniSpec.glNameId, freeBindingIndex);
+                            freeBindingIndex++;
+                        } else {
+                            needsRebuild =
+                                needsRebuild || rend.specifySceneRenderInputDependency(
+                                                    this, args.p_defaultVertexMethod,
+                                                    args.p_defaultFragmentMethod, uniSpec.srcSpec);
+                        }
+                    }
+
+                    // helper for material properties
+                    auto setPropertyToShader = [&](StringId nameId, const Variant &value) {
+                        if (auto it = p_compiledShader->uniformSpecs.find(nameId);
+                            it != p_compiledShader->uniformSpecs.end()) {
+                            rend.getTypeConversion(it->second.srcSpec.typeInfo)
+                                .setUniform(it->second.glNameId, value);
+                        } else if (auto it = p_compiledShader->bindingSpecs.find(nameId);
+                                   it != p_compiledShader->bindingSpecs.end()) {
+                            rend.getTypeConversion(it->second.srcSpec.typeInfo)
+                                .setBinding(freeBindingIndex, value);
+                            glUniform1i(it->second.glNameId, freeBindingIndex);
+                            freeBindingIndex++;
+                        }
+                    };
+
+                    if (!needsRebuild) {
+
+                        // iterate over materials
+                        for (auto [material, props] : materials2props) {
+
+                            // get the textures and properties
+                            for (auto [nameId, p_texture] : material->getTextures()) {
+                                setPropertyToShader(nameId, p_texture);
+                            }
+                            for (auto [nameId, value] : material->getProperties()) {
+                                setPropertyToShader(nameId, value);
+                            }
+
+                            // iterate over meshes
+                            for (auto p_meshProp : props) {
+                                OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
+                                mesh.loadToGPU(rend);
+
+                                glBindVertexArray(mesh.VAO);
+                                glUniformMatrix4fv(glModelMatrixUniformId, 1, GL_FALSE,
+                                                   &(p_meshProp->transform.getModelMatrix()[0][0]));
+                                glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(),
+                                               GL_UNSIGNED_INT, 0);
+                            }
+                        }
+                    }
+
+                    glUseProgram(0);
+                }
+            };
+
+        // render filled polygons
+        switch (m_rasterizingMode) {
+        case RasterizingMode::DerivationalFillCenters:
+        case RasterizingMode::DerivationalFillEdges:
+        case RasterizingMode::DerivationalFillVertices:
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            runDerivationalPass();
+            break;
         }
 
-        // helper for material properties
-        auto setPropertyToShader = [&](StringId nameId, const Variant &value) {
-            if (auto it = p_compiledShader->uniformSpecs.find(nameId);
-                it != p_compiledShader->uniformSpecs.end()) {
-                rend.getTypeConversion(it->second.srcSpec.typeInfo)
-                    .setUniform(it->second.glNameId, value);
-            } else if (auto it = p_compiledShader->bindingSpecs.find(nameId);
-                       it != p_compiledShader->bindingSpecs.end()) {
-                rend.getTypeConversion(it->second.srcSpec.typeInfo)
-                    .setBinding(freeBindingIndex, value);
-                glUniform1i(it->second.glNameId, freeBindingIndex);
-                freeBindingIndex++;
+        // render edges
+        switch (m_rasterizingMode) {
+        case RasterizingMode::DerivationalFillEdges:
+        case RasterizingMode::DerivationalTraceEdges:
+        case RasterizingMode::DerivationalTraceVertices:
+            if (m_smoothTracing) {
+                glDepthMask(GL_FALSE);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glEnable(GL_BLEND);
+                glLineWidth(1.5);
+            } else {
+                glDepthMask(GL_TRUE);
+                glDisable(GL_BLEND);
+                glLineWidth(1.0);
             }
-        };
-
-        if (!needsRebuild) {
-
-            // iterate over materials
-            for (auto [material, props] : materials2props) {
-
-                // get the textures and properties
-                for (auto [nameId, p_texture] : material->getTextures()) {
-                    setPropertyToShader(nameId, p_texture);
-                }
-                for (auto [nameId, value] : material->getProperties()) {
-                    setPropertyToShader(nameId, value);
-                }
-
-                // iterate over meshes
-                for (auto p_meshProp : props) {
-                    OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
-                    mesh.loadToGPU(rend);
-
-                    glBindVertexArray(mesh.VAO);
-                    glUniformMatrix4fv(glModelMatrixUniformId, 1, GL_FALSE,
-                                       &(p_meshProp->transform.getModelMatrix()[0][0]));
-                    glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(), GL_UNSIGNED_INT,
-                                   0);
-                }
-            }
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            runDerivationalPass();
+            break;
         }
 
-        glUseProgram(0);
+        // render vertices
+        switch (m_rasterizingMode) {
+        case RasterizingMode::DerivationalFillVertices:
+        case RasterizingMode::DerivationalTraceVertices:
+        case RasterizingMode::DerivationalDotVertices:
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
+            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+            runDerivationalPass();
+            break;
+        }
+
+        glDepthMask(GL_TRUE);
+
+        frame.exitRender();
+        break;
     }
-
-    frame.exitRender();
+    }
 
     args.properties.set(m_displayOutputNameId, p_frame);
 
