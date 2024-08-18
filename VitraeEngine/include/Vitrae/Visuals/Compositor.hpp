@@ -39,6 +39,7 @@ class Compositor : public dynasma::PolymorphicBase
     Pipeline<ComposeTask> m_pipeline;
     MethodCombinator<ShaderTask> m_shadingMethodCombinator;
     std::map<StringId, dynasma::FirmPtr<FrameStore>> m_preparedFrameStores;
+    std::set<dynasma::FirmPtr<FrameStore>> m_uniqueFrameStores;
     std::map<StringId, dynasma::FirmPtr<Texture>> m_preparedTextures;
     dynasma::FirmPtr<Method<ComposeTask>> mp_composeMethod;
     dynasma::FirmPtr<Method<ShaderTask>> m_defaultVertexMethod, m_defaultFragmentMethod;

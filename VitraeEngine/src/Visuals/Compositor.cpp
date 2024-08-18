@@ -87,11 +87,7 @@ void Compositor::compose()
             }
 
             // sync the framebuffers
-            std::set<dynasma::FirmPtr<FrameStore>> uniqueFrameStores;
-            for (auto [nameId, p_store] : m_preparedFrameStores) {
-                uniqueFrameStores.insert(p_store);
-            }
-            for (auto p_store : uniqueFrameStores) {
+            for (auto p_store : m_uniqueFrameStores) {
                 p_store->sync();
             }
         }
@@ -128,12 +124,18 @@ void Compositor::regenerateFrameStores()
     // clear the buffers (except for the final output)
     auto p_finalFrame = m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT];
     m_preparedFrameStores.clear();
+    m_uniqueFrameStores.clear();
     m_preparedTextures.clear();
     m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_finalFrame;
 
     // fill the buffers
     for (auto &pipeitem : std::ranges::reverse_view{m_pipeline.items}) {
         pipeitem.p_task->prepareRequiredLocalAssets(m_preparedFrameStores, m_preparedTextures);
+    }
+
+    // build list of unique framestore
+    for (auto [nameId, p_store] : m_preparedFrameStores) {
+        m_uniqueFrameStores.insert(p_store);
     }
 }
 
