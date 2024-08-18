@@ -1,6 +1,8 @@
 #include "Vitrae/Visuals/Compositor.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 
+#include "MMeter.h"
+
 #include <ranges>
 
 namespace Vitrae
@@ -51,6 +53,8 @@ void Compositor::setOutput(dynasma::FirmPtr<FrameStore> p_store)
 
 void Compositor::compose()
 {
+    MMETER_SCOPE_PROFILER("Compositor::compose");
+
     ScopedDict localVars(&parameters);
 
     // set the output frame property
@@ -70,6 +74,8 @@ void Compositor::compose()
     bool tryExecute = true;
 
     while (tryExecute) {
+        MMETER_SCOPE_PROFILER("Execution attempt");
+
         tryExecute = false;
 
         // rebuild the pipeline if needed
@@ -82,13 +88,21 @@ void Compositor::compose()
 
         try {
             // execute the pipeline
-            for (auto &pipeitem : m_pipeline.items) {
-                pipeitem.p_task->run(context);
+            {
+                MMETER_SCOPE_PROFILER("Pipeline execution");
+
+                for (auto &pipeitem : m_pipeline.items) {
+                    pipeitem.p_task->run(context);
+                }
             }
 
             // sync the framebuffers
-            for (auto p_store : m_uniqueFrameStores) {
-                p_store->sync();
+            {
+                MMETER_SCOPE_PROFILER("FrameStore sync");
+
+                for (auto p_store : m_uniqueFrameStores) {
+                    p_store->sync();
+                }
             }
         }
         catch (ComposeTaskRequirementsChangedException) {
@@ -100,6 +114,8 @@ void Compositor::compose()
 
 void Compositor::rebuildPipeline()
 {
+    MMETER_SCOPE_PROFILER("Compositor::rebuildPipeline");
+
     m_needsRebuild = false;
 
     RenderSetupContext context{
@@ -119,6 +135,8 @@ void Compositor::rebuildPipeline()
 
 void Compositor::regenerateFrameStores()
 {
+    MMETER_SCOPE_PROFILER("Compositor::regenerateFrameStores");
+
     m_needsFrameStoreRegeneration = false;
 
     // clear the buffers (except for the final output)

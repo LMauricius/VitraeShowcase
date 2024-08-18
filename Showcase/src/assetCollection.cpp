@@ -24,6 +24,8 @@
 #include "dynasma/keepers/naive.hpp"
 #include "dynasma/standalone.hpp"
 
+#include "MMeter.h"
+
 #include "glm/gtx/vector_angle.hpp"
 
 AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
@@ -140,6 +142,8 @@ AssetCollection::~AssetCollection() {}
 
 void AssetCollection::reapplyChoosenMethods()
 {
+    MMETER_SCOPE_PROFILER("AssetCollection::reapplyChoosenMethods");
+
     std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenVertexMethods;
     std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenFragMethods;
     std::vector<dynasma::FirmPtr<Method<ComposeTask>>> choosenComposeMethods;

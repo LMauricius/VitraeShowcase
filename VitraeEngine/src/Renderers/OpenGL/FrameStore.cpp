@@ -3,6 +3,8 @@
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
 
+#include "MMeter.h"
+
 #include "dynasma/standalone.hpp"
 
 namespace Vitrae
@@ -126,6 +128,8 @@ dynasma::FirmPtr<const PropertyList> OpenGLFrameStore::getRenderComponents() con
 
 void OpenGLFrameStore::sync()
 {
+    MMETER_SCOPE_PROFILER("OpenGLFrameStore::sync");
+
     std::visit([](auto &contextSwitcher) { contextSwitcher.sync(); }, m_contextSwitcher);
 }
 

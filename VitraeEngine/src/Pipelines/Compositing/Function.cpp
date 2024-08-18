@@ -1,5 +1,7 @@
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 
+#include "MMeter.h"
+
 namespace Vitrae
 {
 
@@ -9,6 +11,8 @@ ComposeFunction::ComposeFunction(const SetupParams &params)
 
 void ComposeFunction::run(RenderRunContext args) const
 {
+    MMETER_SCOPE_PROFILER("ComposeFunction::run");
+
     mp_function(args);
 }
 

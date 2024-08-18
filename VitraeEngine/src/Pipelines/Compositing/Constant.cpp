@@ -1,5 +1,7 @@
 #include "Vitrae/Pipelines/Compositing/Constant.hpp"
 
+#include "MMeter.h"
+
 namespace Vitrae
 {
 ComposeConstant::ComposeConstant(const SetupParams &params)
@@ -9,6 +11,8 @@ ComposeConstant::ComposeConstant(const SetupParams &params)
 
 void ComposeConstant::run(RenderRunContext args) const
 {
+    MMETER_SCOPE_PROFILER("ComposeConstant::run");
+
     args.properties.set(m_outputNameId, m_value);
 }
 

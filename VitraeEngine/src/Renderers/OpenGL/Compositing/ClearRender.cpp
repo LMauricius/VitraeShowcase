@@ -8,6 +8,8 @@
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
 #include "Vitrae/Util/Variant.hpp"
 
+#include "MMeter.h"
+
 namespace Vitrae
 {
 
@@ -29,6 +31,8 @@ OpenGLComposeClearRender::OpenGLComposeClearRender(const SetupParams &params)
 
 void OpenGLComposeClearRender::run(RenderRunContext args) const
 {
+    MMETER_SCOPE_PROFILER("OpenGLComposeClearRender::run");
+
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_root.getComponent<Renderer>());
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
 

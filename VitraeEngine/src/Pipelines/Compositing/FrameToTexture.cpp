@@ -1,6 +1,8 @@
 #include "Vitrae/Pipelines/Compositing/FrameToTexture.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 
+#include "MMeter.h"
+
 #include <span>
 
 namespace Vitrae
@@ -37,6 +39,8 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
 
 void ComposeFrameToTexture::run(RenderRunContext args) const
 {
+    MMETER_SCOPE_PROFILER("ComposeFrameToTexture::run");
+
     if (m_colorTextureOutputNameId != "") {
         args.properties.set(m_colorTextureOutputNameId,
                             args.preparedCompositorTextures.at(m_colorTextureOutputNameId));
