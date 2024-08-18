@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>510</width>
+    <width>502</width>
     <height>719</height>
    </rect>
   </property>
@@ -46,7 +46,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>510</width>
+         <width>502</width>
          <height>719</height>
         </rect>
        </property>
@@ -132,20 +132,6 @@
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
-             <property name="text">
-              <string>TextLabel</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_14">
-             <property name="text">
-              <string>Profiler metrics:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="1">
-            <widget class="QLabel" name="profilerMetrics">
              <property name="text">
               <string>TextLabel</string>
              </property>

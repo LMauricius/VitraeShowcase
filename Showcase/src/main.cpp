@@ -2,6 +2,7 @@
 #include <iostream>
 #include <thread>
 
+#include "ProfilerWindow.h"
 #include "SettingsWindow.h"
 #include "Status.hpp"
 #include "assetCollection.hpp"
@@ -43,6 +44,8 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     SettingsWindow settingsWindow(collection, status);
     settingsWindow.show();
+    ProfilerWindow profilerWindow(collection, status);
+    profilerWindow.show();
 
     /*
     Render loop!
@@ -76,6 +79,7 @@ int main(int argc, char **argv)
         app.processEvents();
         p_rend->mainThreadUpdate();
         settingsWindow.updateValues();
+        profilerWindow.updateValues();
     }
 
     renderThread.join();
