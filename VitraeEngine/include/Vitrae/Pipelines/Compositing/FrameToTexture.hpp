@@ -3,6 +3,7 @@
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
+#include "Vitrae/Util/PropertyGetter.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 
@@ -29,7 +30,7 @@ class ComposeFrameToTexture : public ComposeTask
         String colorTextureOutputPropertyName;
         String depthTextureOutputPropertyName;
         std::vector<OutputTexturePropertySpec> outputTexturePropertySpecs;
-        glm::vec2 size;
+        PropertyGetter<glm::vec2> size;
         Texture::ChannelType channelType = Texture::ChannelType::RGB;
         Texture::WrappingType horWrap = Texture::WrappingType::REPEAT;
         Texture::WrappingType verWrap = Texture::WrappingType::REPEAT;
@@ -43,16 +44,16 @@ class ComposeFrameToTexture : public ComposeTask
     ~ComposeFrameToTexture() = default;
 
     void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(
-        std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        std::map<StringId, dynasma::FirmPtr<Texture>> &textures) const override;
+    void prepareRequiredLocalAssets(std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+                                    std::map<StringId, dynasma::FirmPtr<Texture>> &textures,
+                                    const ScopedDict &properties) const override;
 
   protected:
     ComponentRoot &m_root;
     String m_frameInputName, m_colorTextureOutputName, m_depthTextureOutputName;
     StringId m_frameInputNameId, m_colorTextureOutputNameId, m_depthTextureOutputNameId;
     std::vector<OutputTexturePropertySpec> m_outputTexturePropertySpecs;
-    glm::vec2 m_size;
+    PropertyGetter<glm::vec2> m_size;
     Texture::ChannelType m_channelType;
     Texture::WrappingType m_horWrap;
     Texture::WrappingType m_verWrap;

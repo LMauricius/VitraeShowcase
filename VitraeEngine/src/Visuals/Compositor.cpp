@@ -148,7 +148,8 @@ void Compositor::regenerateFrameStores()
 
     // fill the buffers
     for (auto &pipeitem : std::ranges::reverse_view{m_pipeline.items}) {
-        pipeitem.p_task->prepareRequiredLocalAssets(m_preparedFrameStores, m_preparedTextures);
+        pipeitem.p_task->prepareRequiredLocalAssets(m_preparedFrameStores, m_preparedTextures,
+                                                    parameters);
     }
 
     // build list of unique framestore

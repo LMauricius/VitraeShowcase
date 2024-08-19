@@ -60,7 +60,8 @@ class ComposeTask : public Task
     virtual void run(RenderRunContext args) const = 0;
     virtual void prepareRequiredLocalAssets(
         std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        std::map<StringId, dynasma::FirmPtr<Texture>> &textures) const = 0;
+        std::map<StringId, dynasma::FirmPtr<Texture>> &textures,
+        const ScopedDict &properties) const = 0;
 
     /// TODO: implement this and move to sources
 

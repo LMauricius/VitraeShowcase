@@ -38,17 +38,18 @@ struct MethodsShadowMapResolution : MethodCollection
         /*
         COMPOSING
         */
-        auto p_shadowTexture = dynasma::makeStandalone<ComposeFrameToTexture>(
-            ComposeFrameToTexture::SetupParams{.root = root,
-                                               .frameInputPropertyName = "rendered_shadow",
-                                               .colorTextureOutputPropertyName = "",
-                                               .depthTextureOutputPropertyName = "tex_shadow",
-                                               .size = {shadowMapResolution, shadowMapResolution},
-                                               .horWrap = Texture::WrappingType::BORDER_COLOR,
-                                               .verWrap = Texture::WrappingType::BORDER_COLOR,
-                                               .minFilter = Texture::FilterType::NEAREST,
-                                               .magFilter = Texture::FilterType::NEAREST,
-                                               .useMipMaps = false});
+        auto p_shadowTexture =
+            dynasma::makeStandalone<ComposeFrameToTexture>(ComposeFrameToTexture::SetupParams{
+                .root = root,
+                .frameInputPropertyName = "rendered_shadow",
+                .colorTextureOutputPropertyName = "",
+                .depthTextureOutputPropertyName = "tex_shadow",
+                .size = glm::vec2{shadowMapResolution, shadowMapResolution},
+                .horWrap = Texture::WrappingType::BORDER_COLOR,
+                .verWrap = Texture::WrappingType::BORDER_COLOR,
+                .minFilter = Texture::FilterType::NEAREST,
+                .magFilter = Texture::FilterType::NEAREST,
+                .useMipMaps = false});
 
         p_composeMethod = dynasma::makeStandalone<Method<ComposeTask>>(
             Method<ComposeTask>::MethodParams{.tasks = {p_shadowTexture}, .friendlyName = name});

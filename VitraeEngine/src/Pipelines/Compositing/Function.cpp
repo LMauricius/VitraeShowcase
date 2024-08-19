@@ -18,7 +18,7 @@ void ComposeFunction::run(RenderRunContext args) const
 
 void ComposeFunction::prepareRequiredLocalAssets(
     std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    std::map<StringId, dynasma::FirmPtr<Texture>> &textures) const
+    std::map<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
 {}
 
 } // namespace Vitrae

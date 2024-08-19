@@ -54,7 +54,7 @@ void OpenGLComposeClearRender::run(RenderRunContext args) const
 
 void OpenGLComposeClearRender::prepareRequiredLocalAssets(
     std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    std::map<StringId, dynasma::FirmPtr<Texture>> &textures) const
+    std::map<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
 {
     // We just need to check whether the frame store is already prepared and make it input also
     if (auto it = frameStores.find(m_displayOutputNameId); it != frameStores.end()) {

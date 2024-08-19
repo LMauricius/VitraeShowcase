@@ -15,9 +15,9 @@ class OpenGLComposeClearRender : public ComposeClearRender
     OpenGLComposeClearRender(const SetupParams &params);
 
     void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(
-        std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        std::map<StringId, dynasma::FirmPtr<Texture>> &textures) const override;
+    void prepareRequiredLocalAssets(std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+                                    std::map<StringId, dynasma::FirmPtr<Texture>> &textures,
+                                    const ScopedDict &properties) const override;
 
   protected:
     ComponentRoot &m_root;

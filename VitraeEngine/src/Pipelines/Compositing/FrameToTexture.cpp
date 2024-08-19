@@ -67,7 +67,7 @@ void ComposeFrameToTexture::run(RenderRunContext args) const
 
 void ComposeFrameToTexture::prepareRequiredLocalAssets(
     std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    std::map<StringId, dynasma::FirmPtr<Texture>> &textures) const
+    std::map<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
 {
     FrameStoreManager &frameManager = m_root.getComponent<FrameStoreManager>();
     TextureManager &textureManager = m_root.getComponent<TextureManager>();
@@ -81,7 +81,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
     if (m_colorTextureOutputNameId != "") {
         auto p_texture = textureManager.register_asset(
             {Texture::EmptyParams{.root = m_root,
-                                  .size = m_size,
+                                  .size = m_size.get(properties),
                                   .channelType = m_channelType,
                                   .horWrap = m_horWrap,
                                   .verWrap = m_verWrap,
@@ -96,7 +96,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
     if (m_depthTextureOutputNameId != "") {
         auto p_texture = textureManager.register_asset(
             {Texture::EmptyParams{.root = m_root,
-                                  .size = m_size,
+                                  .size = m_size.get(properties),
                                   .channelType = Texture::ChannelType::DEPTH,
                                   .horWrap = m_horWrap,
                                   .verWrap = m_verWrap,
@@ -111,7 +111,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
     for (auto &spec : m_outputTexturePropertySpecs) {
         auto p_texture = textureManager.register_asset(
             {Texture::EmptyParams{.root = m_root,
-                                  .size = m_size,
+                                  .size = m_size.get(properties),
                                   .channelType = m_channelType,
                                   .horWrap = m_horWrap,
                                   .verWrap = m_verWrap,
