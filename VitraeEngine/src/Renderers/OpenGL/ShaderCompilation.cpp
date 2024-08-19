@@ -376,8 +376,21 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                     // NORMAL OUTPUTS
 
-                    ss << "out " << specToMutableGlName(spec.typeInfo) << " "
-                       << p_helper->p_compSpec->outVarPrefix << spec.name << ";\n";
+                    if (p_helper->p_compSpec->shaderType == GL_FRAGMENT_SHADER) {
+                        std::size_t index =
+                            std::find(desiredOutputs.getSpecNameIds().begin(),
+                                      desiredOutputs.getSpecNameIds().end(), nameId) -
+                            desiredOutputs.getSpecNameIds().begin();
+
+                        assert(index < desiredOutputs.getSpecNameIds().size());
+
+                        ss << "layout(location = " << index << ") out "
+                           << specToMutableGlName(spec.typeInfo) << " "
+                           << p_helper->p_compSpec->outVarPrefix << spec.name << ";\n";
+                    } else {
+                        ss << "out " << specToMutableGlName(spec.typeInfo) << " "
+                           << p_helper->p_compSpec->outVarPrefix << spec.name << ";\n";
+                    }
                     inputParametersToGlobalVars.emplace(nameId, p_helper->p_compSpec->outVarPrefix +
                                                                     spec.name);
                     outputParametersToGlobalVars.emplace(

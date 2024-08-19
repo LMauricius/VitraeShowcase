@@ -22,11 +22,18 @@ class ComponentRoot;
 class FrameStore : public dynasma::PolymorphicBase
 {
   public:
+    struct FrameOutputSpec
+    {
+        PropertySpec propertySpec;
+        dynasma::FirmPtr<Texture> p_texture;
+    };
+
     struct TextureBindParams
     {
         ComponentRoot &root;
         std::optional<dynasma::FirmPtr<Texture>> p_colorTexture;
         std::optional<dynasma::FirmPtr<Texture>> p_depthTexture;
+        std::vector<FrameOutputSpec> outputSpecs;
         String friendlyName = "";
     };
     struct WindowDisplayParams

@@ -18,6 +18,7 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
 
     int width, height;
     std::vector<PropertySpec> renderComponents;
+    std::size_t colorAttachmentUnusedIndex = 0;
 
     if (params.p_depthTexture.has_value()) {
         auto p_texture =
@@ -31,14 +32,28 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
     if (params.p_colorTexture.has_value()) {
         auto p_texture =
             dynasma::dynamic_pointer_cast<OpenGLTexture>(params.p_colorTexture.value());
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-                               p_texture->glTextureId, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentUnusedIndex,
+                               GL_TEXTURE_2D, p_texture->glTextureId, 0);
         width = p_texture->getSize().x;
         height = p_texture->getSize().y;
 
         renderComponents.emplace_back(
             PropertySpec{.name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
                          .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT});
+
+        colorAttachmentUnusedIndex++;
+    }
+
+    for (const auto &spec : params.outputSpecs) {
+        auto p_texture = dynasma::dynamic_pointer_cast<OpenGLTexture>(spec.p_texture);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentUnusedIndex,
+                               GL_TEXTURE_2D, p_texture->glTextureId, 0);
+        width = p_texture->getSize().x;
+        height = p_texture->getSize().y;
+
+        renderComponents.emplace_back(spec.propertySpec);
+
+        colorAttachmentUnusedIndex++;
     }
 
     glDrawBuffer(GL_NONE);
