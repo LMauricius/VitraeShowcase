@@ -44,14 +44,14 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
         colorAttachmentUnusedIndex++;
     }
 
-    for (const auto &spec : params.outputSpecs) {
+    for (const auto &spec : params.outputTextureSpecs) {
         auto p_texture = dynasma::dynamic_pointer_cast<OpenGLTexture>(spec.p_texture);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + colorAttachmentUnusedIndex,
                                GL_TEXTURE_2D, p_texture->glTextureId, 0);
         width = p_texture->getSize().x;
         height = p_texture->getSize().y;
 
-        renderComponents.emplace_back(spec.propertySpec);
+        renderComponents.emplace_back(spec.fragmentPropertySpec);
 
         colorAttachmentUnusedIndex++;
     }

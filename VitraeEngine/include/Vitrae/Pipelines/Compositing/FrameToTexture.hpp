@@ -16,12 +16,19 @@ namespace Vitrae
 class ComposeFrameToTexture : public ComposeTask
 {
   public:
+    struct OutputTexturePropertySpec
+    {
+        String texturePropertyName;
+        PropertySpec fragmentPropertySpec;
+    };
+
     struct SetupParams
     {
         ComponentRoot &root;
         String frameInputPropertyName;
         String colorTextureOutputPropertyName;
         String depthTextureOutputPropertyName;
+        std::vector<OutputTexturePropertySpec> outputTexturePropertySpecs;
         glm::vec2 size;
         Texture::ChannelType channelType = Texture::ChannelType::RGB;
         Texture::WrappingType horWrap = Texture::WrappingType::REPEAT;
@@ -44,6 +51,7 @@ class ComposeFrameToTexture : public ComposeTask
     ComponentRoot &m_root;
     String m_frameInputName, m_colorTextureOutputName, m_depthTextureOutputName;
     StringId m_frameInputNameId, m_colorTextureOutputNameId, m_depthTextureOutputNameId;
+    std::vector<OutputTexturePropertySpec> m_outputTexturePropertySpecs;
     glm::vec2 m_size;
     Texture::ChannelType m_channelType;
     Texture::WrappingType m_horWrap;
