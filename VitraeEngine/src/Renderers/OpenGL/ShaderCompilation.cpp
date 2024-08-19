@@ -456,12 +456,15 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
             // debug
             std::ofstream file;
-            file.open(std::string("shaderdebug/") +
-                      String(p_helper->p_compSpec->p_method->getFriendlyName()) + +"_" +
-                      p_helper->p_compSpec->outVarPrefix +
-                      std::to_string(desiredOutputs.getHash()) + ".glsl");
+            String filename = std::string("shaderdebug/") +
+                              String(p_helper->p_compSpec->p_method->getFriendlyName()) + +"_" +
+                              p_helper->p_compSpec->outVarPrefix +
+                              std::to_string(desiredOutputs.getHash()) + ".glsl";
+            file.open(filename);
             file << srcCode;
             file.close();
+
+            root.getInfoStream() << "Shader stored to: '" << filename << "'" << std::endl;
 
             prevVarPrefix = p_helper->p_compSpec->outVarPrefix;
         }
@@ -479,9 +482,9 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             glGetShaderInfoLog(p_helper->shaderId, sizeof(cmplLog), nullptr, cmplLog);
             glGetShaderiv(p_helper->shaderId, GL_COMPILE_STATUS, &success);
             if (!success) {
-                root.getErrStream() << "Shader compilation error: " << cmplLog;
+                root.getErrStream() << "Shader compilation error: " << cmplLog << std::endl;
             } else {
-                root.getInfoStream() << "Shader compiled: " << cmplLog;
+                root.getInfoStream() << "Shader compiled: " << cmplLog << std::endl;
             }
 
             glAttachShader(programGLName, p_helper->shaderId);
@@ -491,9 +494,9 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         glGetProgramInfoLog(programGLName, sizeof(cmplLog), nullptr, cmplLog);
         glGetProgramiv(programGLName, GL_LINK_STATUS, &success);
         if (!success) {
-            root.getErrStream() << "Shader linking error: " << cmplLog;
+            root.getErrStream() << "Shader linking error: " << cmplLog << std::endl;
         } else {
-            root.getInfoStream() << "Shader linked: " << cmplLog;
+            root.getInfoStream() << "Shader linked: " << cmplLog << std::endl;
         }
 
         for (auto p_helper : helperOrder) {
