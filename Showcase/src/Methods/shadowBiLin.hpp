@@ -105,9 +105,22 @@ struct MethodsShadowBiLin : MethodCollection
                 .displayOutputPropertyName = "rendered_shadow",
                 .cullingMode = ComposeSceneRender::CullingMode::Frontface}});
 
+        auto p_shadowTexture = dynasma::makeStandalone<ComposeFrameToTexture>(
+            ComposeFrameToTexture::SetupParams{.root = root,
+                                               .frameInputPropertyName = "rendered_shadow",
+                                               .colorTextureOutputPropertyName = "",
+                                               .depthTextureOutputPropertyName = "tex_shadow",
+                                               .size = StringId("ShadowMapSize"),
+                                               .horWrap = Texture::WrappingType::BORDER_COLOR,
+                                               .verWrap = Texture::WrappingType::BORDER_COLOR,
+                                               .minFilter = Texture::FilterType::NEAREST,
+                                               .magFilter = Texture::FilterType::NEAREST,
+                                               .useMipMaps = false});
+
         // compose method
         p_composeMethod =
             dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
-                .tasks = {p_shadowClear, p_shadowRender}, .friendlyName = "ShadowBiLin"});
+                .tasks = {p_shadowClear, p_shadowRender, p_shadowTexture},
+                .friendlyName = "ShadowBiLin"});
     }
 };

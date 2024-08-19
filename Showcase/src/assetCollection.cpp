@@ -7,7 +7,6 @@
 #include "Methods/shadowEBR.hpp"
 #include "Methods/shadowPCF.hpp"
 #include "Methods/shadowRough.hpp"
-#include "Methods/smResolution.hpp"
 
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/ComponentRoot.hpp"
@@ -55,17 +54,7 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
              std::make_shared<MethodsShadowEBR>(root),
          },
          2},
-        {"Shadow map resolution",
-         {
-             std::make_shared<MethodsShadowMapResolution>(root, 256),
-             std::make_shared<MethodsShadowMapResolution>(root, 512),
-             std::make_shared<MethodsShadowMapResolution>(root, 1024),
-             std::make_shared<MethodsShadowMapResolution>(root, 2048),
-             std::make_shared<MethodsShadowMapResolution>(root, 4096),
-             std::make_shared<MethodsShadowMapResolution>(root, 8192),
-             std::make_shared<MethodsShadowMapResolution>(root, 16384),
-         },
-         3},
+
     };
     reapplyChoosenMethods();
 

@@ -42,6 +42,14 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
         QColor c = QColorDialog::getColor(lightColor, this);
         m_assetCollection.p_scene->light.color_ambient = {c.redF(), c.greenF(), c.blueF()};
     });
+    connect(ui.shadowMapSize, &QComboBox::currentTextChanged, [this](const QString &str) {
+        this->m_assetCollection.comp.parameters.set("ShadowMapSize",
+                                                    glm::vec2{str.toInt(), str.toInt()});
+        this->m_assetCollection.shouldReloadPipelines = true;
+    });
+    m_assetCollection.comp.parameters.set("ShadowMapSize",
+                                          glm::vec2{ui.shadowMapSize->currentText().toInt(),
+                                                    ui.shadowMapSize->currentText().toInt()});
 
     // list methods
     for (auto &category : assetCollection.methodCategories) {

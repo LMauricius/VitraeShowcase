@@ -77,11 +77,12 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
                                                  .p_depthTexture = {},
                                                  .outputTextureSpecs = {},
                                                  .friendlyName = m_frameInputName};
+    glm::vec2 retrSize = m_size.get(properties);
 
     if (m_colorTextureOutputNameId != "") {
         auto p_texture = textureManager.register_asset(
             {Texture::EmptyParams{.root = m_root,
-                                  .size = m_size.get(properties),
+                                  .size = retrSize,
                                   .channelType = m_channelType,
                                   .horWrap = m_horWrap,
                                   .verWrap = m_verWrap,
@@ -96,7 +97,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
     if (m_depthTextureOutputNameId != "") {
         auto p_texture = textureManager.register_asset(
             {Texture::EmptyParams{.root = m_root,
-                                  .size = m_size.get(properties),
+                                  .size = retrSize,
                                   .channelType = Texture::ChannelType::DEPTH,
                                   .horWrap = m_horWrap,
                                   .verWrap = m_verWrap,
@@ -111,7 +112,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
     for (auto &spec : m_outputTexturePropertySpecs) {
         auto p_texture = textureManager.register_asset(
             {Texture::EmptyParams{.root = m_root,
-                                  .size = m_size.get(properties),
+                                  .size = retrSize,
                                   .channelType = m_channelType,
                                   .horWrap = m_horWrap,
                                   .verWrap = m_verWrap,
