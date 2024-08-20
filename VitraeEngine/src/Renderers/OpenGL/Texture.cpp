@@ -84,6 +84,7 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
     mUseSwizzle = false;
     switch (stbChannelFormat) {
     case STBI_grey:
+        mGLInternalFormat = GL_RED;
         mGLChannelFormat = GL_RED;
         mSwizzle = {GL_RED, GL_RED, GL_RED, GL_ONE};
         mUseSwizzle = true;
@@ -91,14 +92,17 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
     case STBI_grey_alpha:
         params.root.getWarningStream()
             << "Texture load cannot convert from gray_alpha format; red_green used!" << std::endl;
+        mGLInternalFormat = GL_RG;
         mGLChannelFormat = GL_RG;
         mSwizzle = {GL_RED, GL_RED, GL_RED, GL_GREEN};
         mUseSwizzle = true;
         break;
     case STBI_rgb:
+        mGLInternalFormat = GL_RGB;
         mGLChannelFormat = GL_RGB;
         break;
     case STBI_rgb_alpha:
+        mGLInternalFormat = GL_RGBA;
         mGLChannelFormat = GL_RGBA;
         break;
     }
@@ -122,27 +126,112 @@ OpenGLTexture::OpenGLTexture(const EmptyParams &params)
     mUseSwizzle = false;
     switch (params.channelType) {
     case ChannelType::GRAYSCALE:
+        mGLInternalFormat = GL_RED;
         mGLChannelFormat = GL_RED;
         mSwizzle = {GL_RED, GL_RED, GL_RED, GL_ONE};
         mUseSwizzle = true;
         mGLChannelType = GL_UNSIGNED_BYTE;
         break;
     case ChannelType::GRAYSCALE_ALPHA:
+        mGLInternalFormat = GL_RG;
         mGLChannelFormat = GL_RG;
         mSwizzle = {GL_RED, GL_RED, GL_RED, GL_GREEN};
         mUseSwizzle = true;
         mGLChannelType = GL_UNSIGNED_BYTE;
         break;
     case ChannelType::RGB:
+        mGLInternalFormat = GL_RGB;
         mGLChannelFormat = GL_RGB;
         mGLChannelType = GL_UNSIGNED_BYTE;
         break;
     case ChannelType::RGBA:
+        mGLInternalFormat = GL_RGBA;
         mGLChannelFormat = GL_RGBA;
         mGLChannelType = GL_UNSIGNED_BYTE;
         break;
     case ChannelType::DEPTH:
+        mGLInternalFormat = GL_DEPTH_COMPONENT;
         mGLChannelFormat = GL_DEPTH_COMPONENT;
+        mGLChannelType = GL_FLOAT;
+        break;
+    case ChannelType::SCALAR_NORM8:
+        mGLInternalFormat = GL_R8;
+        mGLChannelFormat = GL_RED;
+        mGLChannelType = GL_BYTE;
+        break;
+    case ChannelType::VEC2_NORM8:
+        mGLInternalFormat = GL_RG8;
+        mGLChannelFormat = GL_RG;
+        mGLChannelType = GL_BYTE;
+        break;
+    case ChannelType::VEC3_NORM8:
+        mGLInternalFormat = GL_RGB8;
+        mGLChannelFormat = GL_RGB;
+        mGLChannelType = GL_BYTE;
+        break;
+    case ChannelType::VEC4_NORM8:
+        mGLInternalFormat = GL_RGBA8;
+        mGLChannelFormat = GL_RGBA;
+        mGLChannelType = GL_BYTE;
+        break;
+    case ChannelType::SCALAR_UNORM8:
+        mGLInternalFormat = GL_R8;
+        mGLChannelFormat = GL_RED;
+        mGLChannelType = GL_UNSIGNED_BYTE;
+        break;
+    case ChannelType::VEC2_UNORM8:
+        mGLInternalFormat = GL_RG8;
+        mGLChannelFormat = GL_RG;
+        mGLChannelType = GL_UNSIGNED_BYTE;
+        break;
+    case ChannelType::VEC3_UNORM8:
+        mGLInternalFormat = GL_RGB8;
+        mGLChannelFormat = GL_RGB;
+        mGLChannelType = GL_UNSIGNED_BYTE;
+        break;
+    case ChannelType::VEC4_UNORM8:
+        mGLInternalFormat = GL_RGBA8;
+        mGLChannelFormat = GL_RGBA;
+        mGLChannelType = GL_UNSIGNED_BYTE;
+        break;
+    case ChannelType::SCALAR_FLOAT16:
+        mGLInternalFormat = GL_R16F;
+        mGLChannelFormat = GL_RED;
+        mGLChannelType = GL_HALF_FLOAT;
+        break;
+    case ChannelType::VEC2_FLOAT16:
+        mGLInternalFormat = GL_RG16F;
+        mGLChannelFormat = GL_RG;
+        mGLChannelType = GL_HALF_FLOAT;
+        break;
+    case ChannelType::VEC3_FLOAT16:
+        mGLInternalFormat = GL_RGB16F;
+        mGLChannelFormat = GL_RGB;
+        mGLChannelType = GL_HALF_FLOAT;
+        break;
+    case ChannelType::VEC4_FLOAT16:
+        mGLInternalFormat = GL_RGBA16F;
+        mGLChannelFormat = GL_RGBA;
+        mGLChannelType = GL_HALF_FLOAT;
+        break;
+    case ChannelType::SCALAR_FLOAT32:
+        mGLInternalFormat = GL_R32F;
+        mGLChannelFormat = GL_RED;
+        mGLChannelType = GL_FLOAT;
+        break;
+    case ChannelType::VEC2_FLOAT32:
+        mGLInternalFormat = GL_RG32F;
+        mGLChannelFormat = GL_RG;
+        mGLChannelType = GL_FLOAT;
+        break;
+    case ChannelType::VEC3_FLOAT32:
+        mGLInternalFormat = GL_RGB32F;
+        mGLChannelFormat = GL_RGB;
+        mGLChannelType = GL_FLOAT;
+        break;
+    case ChannelType::VEC4_FLOAT32:
+        mGLInternalFormat = GL_RGBA32F;
+        mGLChannelFormat = GL_RGBA;
         mGLChannelType = GL_FLOAT;
         break;
     }
@@ -158,6 +247,7 @@ OpenGLTexture::OpenGLTexture(const PureColorParams &params)
                     FilterType::NEAREST, false, params.color)
 {
     mUseSwizzle = false;
+    mGLInternalFormat = GL_RGBA;
     mGLChannelFormat = GL_RGBA;
     mGLChannelType = GL_UNSIGNED_BYTE;
 
@@ -190,7 +280,7 @@ void OpenGLTexture::loadToGPU(const unsigned char *data, StringView friendlyName
         glGenTextures(1, &glTextureId);
         glBindTexture(GL_TEXTURE_2D, glTextureId);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, mGLChannelFormat, mWidth, mHeight, 0, mGLChannelFormat,
+        glTexImage2D(GL_TEXTURE_2D, 0, mGLInternalFormat, mWidth, mHeight, 0, mGLChannelFormat,
                      mGLChannelType, data);
 
         if (mUseSwizzle) {
