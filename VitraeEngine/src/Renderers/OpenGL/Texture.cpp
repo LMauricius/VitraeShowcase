@@ -154,23 +154,23 @@ OpenGLTexture::OpenGLTexture(const EmptyParams &params)
         mGLChannelFormat = GL_DEPTH_COMPONENT;
         mGLChannelType = GL_FLOAT;
         break;
-    case ChannelType::SCALAR_NORM8:
-        mGLInternalFormat = GL_R8;
+    case ChannelType::SCALAR_SNORM8:
+        mGLInternalFormat = GL_R8_SNORM;
         mGLChannelFormat = GL_RED;
         mGLChannelType = GL_BYTE;
         break;
-    case ChannelType::VEC2_NORM8:
-        mGLInternalFormat = GL_RG8;
+    case ChannelType::VEC2_SNORM8:
+        mGLInternalFormat = GL_RG8_SNORM;
         mGLChannelFormat = GL_RG;
         mGLChannelType = GL_BYTE;
         break;
-    case ChannelType::VEC3_NORM8:
-        mGLInternalFormat = GL_RGB8;
+    case ChannelType::VEC3_SNORM8:
+        mGLInternalFormat = GL_RGB8_SNORM;
         mGLChannelFormat = GL_RGB;
         mGLChannelType = GL_BYTE;
         break;
-    case ChannelType::VEC4_NORM8:
-        mGLInternalFormat = GL_RGBA8;
+    case ChannelType::VEC4_SNORM8:
+        mGLInternalFormat = GL_RGBA8_SNORM;
         mGLChannelFormat = GL_RGBA;
         mGLChannelType = GL_BYTE;
         break;
