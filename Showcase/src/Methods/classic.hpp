@@ -66,9 +66,38 @@ struct MethodsClassic : MethodCollection
                 )",
                 .functionName = "vertexViewPosition"}});
 
+        auto p_viewNormal =
+            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
+                .inputSpecs =
+                    {
+                        PropertySpec{.name = StandardShaderPropertyNames::INPUT_MODEL,
+                                     .typeInfo = StandardShaderPropertyTypes::INPUT_MODEL},
+                        PropertySpec{.name = StandardShaderPropertyNames::INPUT_VIEW,
+                                     .typeInfo = StandardShaderPropertyTypes::INPUT_VIEW},
+                        PropertySpec{.name = StandardShaderPropertyNames::INPUT_PROJECTION,
+                                     .typeInfo = StandardShaderPropertyTypes::INPUT_PROJECTION},
+                        PropertySpec{.name = StandardVertexBufferNames::NORMAL,
+                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                    },
+                .outputSpecs = {PropertySpec{.name = "normal_view",
+                                             .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
+                .snippet = R"(
+                    void vertexViewNormal(
+                        in mat4 mat_model, in mat4 mat_view, in mat4 mat_proj, in vec3 normal,
+                        out vec3 normal_view
+                    ) {
+                        mat4 mat_viewproj = mat_proj * mat_view * mat_model;
+                        vec4 origin_h = mat_viewproj * vec4(0.0, 0.0, 0.0, 1.0);
+                        vec4 normal_h = mat_viewproj * vec4(normal, 1.0);
+                        normal_view = normalize(mat3(mat_viewproj) * normal);
+                    }
+                )",
+                .functionName = "vertexViewNormal"}});
+
         p_vertexMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-                .tasks = {p_worldPosition, p_viewPosition}, .friendlyName = "Classic"});
+                .tasks = {p_worldPosition, p_viewPosition, p_viewNormal},
+                .friendlyName = "Classic"});
 
         /*
         FRAGMENT SHADING
