@@ -254,8 +254,12 @@ OpenGLTexture::OpenGLTexture(const PureColorParams &params)
     mWidth = 1;
     mHeight = 1;
 
-    unsigned char data[4] = {255.0 * params.color.r, 255.0 * params.color.g, 255.0 * params.color.b,
-                             255.0 * params.color.a};
+    unsigned char data[4] = {
+        (unsigned char)(255.0 * params.color.r),
+        (unsigned char)(255.0 * params.color.g),
+        (unsigned char)(255.0 * params.color.b),
+        (unsigned char)(255.0 * params.color.a),
+    };
 
     loadToGPU(data, String("rgba(") + std::to_string((int)(255 * params.color.r)) + " " +
                         std::to_string((int)(255 * params.color.g)) + " " +
