@@ -11,6 +11,13 @@ namespace Vitrae
 {
 OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
 {
+    static const GLenum drawBufferConstantsOrdered[] = {
+        GL_COLOR_ATTACHMENT0,  GL_COLOR_ATTACHMENT1,  GL_COLOR_ATTACHMENT2,  GL_COLOR_ATTACHMENT3,
+        GL_COLOR_ATTACHMENT4,  GL_COLOR_ATTACHMENT5,  GL_COLOR_ATTACHMENT6,  GL_COLOR_ATTACHMENT7,
+        GL_COLOR_ATTACHMENT8,  GL_COLOR_ATTACHMENT9,  GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11,
+        GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15,
+    };
+
     GLuint glFramebufferId;
 
     glGenFramebuffers(1, &glFramebufferId);
@@ -56,7 +63,7 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
         colorAttachmentUnusedIndex++;
     }
 
-    glDrawBuffer(GL_NONE);
+    glDrawBuffers(colorAttachmentUnusedIndex, drawBufferConstantsOrdered);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
