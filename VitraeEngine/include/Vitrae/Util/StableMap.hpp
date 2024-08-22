@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <map>
 #include <span>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -268,6 +269,24 @@ template <class KeyT, class MappedT> class StableMap
     CStableMapIterator cend() const
     {
         return CStableMapIterator(getKeyList() + m_size, m_valueList + m_size);
+    }
+
+    StableMapIterator find(const KeyT &key)
+    {
+        std::size_t ind = findClosestIndex(key);
+        if (ind < m_size && !(key < getKeyList()[ind])) {
+            return StableMapIterator(getKeyList() + ind, m_valueList + ind);
+        }
+        return end();
+    }
+
+    CStableMapIterator find(const KeyT &key) const
+    {
+        std::size_t ind = findClosestIndex(key);
+        if (ind < m_size && !(key < getKeyList()[ind])) {
+            return CStableMapIterator(getKeyList() + ind, m_valueList + ind);
+        }
+        return cend();
     }
 
     MappedT &operator[](const KeyT &key)
