@@ -1,8 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <map>
+#include <span>
 #include <utility>
+#include <vector>
 
 namespace Vitrae
 {
@@ -17,27 +20,128 @@ namespace Vitrae
  */
 template <class KeyT, class MappedT> class StableMap
 {
-    class StableMapIterator;
-    class CStableMapIterator;
+    template <class KeyRefT, class MappedRefT> class AbstractStableMapIterator
+    {
+        friend class StableMap;
+
+        KeyRefT *mp_key;
+        MappedRefT *mp_value;
+
+        AbstractStableMapIterator(KeyRefT *key, MappedRefT *value) : mp_key(key), mp_value(value) {}
+
+      public:
+        using iterator_category = std::random_access_iterator_tag;
+
+        using value_type = std::pair<KeyRefT &, MappedRefT &>;
+
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using allocator_type = std::allocator<std::byte>;
+
+        using pointer = std::pair<KeyRefT *, MappedRefT *>;
+        using reference = std::pair<KeyRefT &, MappedRefT &>;
+
+        AbstractStableMapIterator() : mp_key(nullptr), mp_value(nullptr) {}
+        AbstractStableMapIterator(const AbstractStableMapIterator &) = default;
+        AbstractStableMapIterator(AbstractStableMapIterator &&) = default;
+
+        AbstractStableMapIterator &operator=(const AbstractStableMapIterator &other) = default;
+        AbstractStableMapIterator &operator=(AbstractStableMapIterator &&other) = default;
+
+        auto operator++()
+        {
+            mp_key++;
+            mp_value++;
+            return *this;
+        }
+        auto operator--()
+        {
+            mp_key--;
+            mp_value--;
+            return *this;
+        }
+
+        auto operator++(int)
+        {
+            auto tmp = *this;
+            mp_key++;
+            mp_value++;
+            return tmp;
+        }
+        auto operator--(int)
+        {
+            auto tmp = *this;
+            mp_key--;
+            mp_value--;
+            return tmp;
+        }
+
+        auto operator+=(difference_type n)
+        {
+            mp_key += n;
+            mp_value += n;
+            return *this;
+        }
+        auto operator-=(difference_type n)
+        {
+            mp_key -= n;
+            mp_value -= n;
+            return *this;
+        }
+
+        auto operator+(difference_type n)
+        {
+            return AbstractStableMapIterator(mp_key + n, mp_value + n);
+        }
+        auto operator-(difference_type n)
+        {
+            return AbstractStableMapIterator(mp_key - n, mp_value - n);
+        }
+        friend auto operator+(difference_type n, const AbstractStableMapIterator &it)
+        {
+            return it + n;
+        }
+        friend auto operator-(difference_type n, const AbstractStableMapIterator &it)
+        {
+            return it - n;
+        }
+
+        auto operator-(const AbstractStableMapIterator &other) { return mp_key - other.mp_key; }
+
+        auto operator==(const AbstractStableMapIterator &other) const
+        {
+            return mp_key == other.mp_key;
+        }
+        auto operator<=>(const AbstractStableMapIterator &other) const
+        {
+            return mp_key <=> other.mp_key;
+        }
+
+        auto operator*() const { return value_type(*mp_key, *mp_value); }
+        auto operator->() const { return value_type(*mp_key, *mp_value); }
+    };
 
   public:
+    using StableMapIterator = AbstractStableMapIterator<const KeyT, MappedT>;
+    using CStableMapIterator = AbstractStableMapIterator<const KeyT, const MappedT>;
+
     using key_type = KeyT;
     using mapped_type = MappedT;
-    using value_type = std::pair<const key_type &, mapped_type &>;
-    using const_value_type = std::pair<const key_type &, const mapped_type &>;
+    using value_type = StableMapIterator::value_type;
+    using const_value_type = CStableMapIterator::value_type;
 
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using allocator_type = std::allocator<std::byte>;
 
-    using pointer = std::pair<const key_type *, mapped_type *>;
-    using const_pointer = std::pair<const key_type *, const mapped_type *>;
-    using reference = std::pair<const key_type &, mapped_type &>;
-    using const_reference = std::pair<const key_type &, const mapped_type &>;
+    using pointer = StableMapIterator::pointer;
+    using const_pointer = CStableMapIterator::pointer;
+    using reference = StableMapIterator::reference;
+    using const_reference = CStableMapIterator::reference;
     using iterator = StableMapIterator;
     using const_iterator = CStableMapIterator;
 
-    StableMap() : m_data(nullptr), m_size(0){};
+    StableMap() : m_data(nullptr), m_size(0) {};
 
     StableMap(const StableMap &o)
     {
@@ -65,30 +169,45 @@ template <class KeyT, class MappedT> class StableMap
             { (*it).second } -> std::convertible_to<MappedT>;
         }
     {
+        std::size_t i;
         m_size = std::distance(first, last);
         m_data = new std::byte[getBufferSize(m_size)];
         KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
         m_valueList = reinterpret_cast<MappedT *>(m_data + getValueBufferOffset(m_size));
 
-        int i = 0;
-        for (const auto &keyVal : container) {
-            new (keyList + i) KeyT(keyVal.first);
-            new (m_valueList + i) MappedT(keyVal.second);
+        std::vector<InputItT> sortedIterators;
+        sortedIterators.reserve(m_size);
+        i = 0;
+        for (auto it = first; it != last; ++it) {
+            sortedIterators.emplace_back(it);
+            ++i;
+        }
+        std::sort(sortedIterators.begin(), sortedIterators.end(),
+                  [&](auto a, auto b) { return (*a).first < (*b).first; });
+
+        i = 0;
+        for (auto it : sortedIterators) {
+            new (keyList + i) KeyT(it->first);
+            new (m_valueList + i) MappedT(it->second);
             ++i;
         }
     }
+
+    StableMap(std::initializer_list<std::pair<KeyT, MappedT>> initList)
+        : StableMap(initList.begin(), initList.end())
+    {}
 
     template <class OKeyT, class OMappedT>
     StableMap(std::map<OKeyT, OMappedT> orderedList)
         requires std::convertible_to<OKeyT, KeyT> && std::convertible_to<OMappedT, MappedT>
     {
-        m_size = list.size();
+        m_size = orderedList.size();
         m_data = new std::byte[getBufferSize(m_size)];
         KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
         m_valueList = reinterpret_cast<MappedT *>(m_data + getValueBufferOffset(m_size));
 
         int i = 0;
-        for (const auto &keyVal : list) {
+        for (const auto &keyVal : orderedList) {
             new (keyList + i) KeyT(keyVal.first);
             new (m_valueList + i) MappedT(keyVal.second);
             ++i;
@@ -153,61 +272,78 @@ template <class KeyT, class MappedT> class StableMap
 
     MappedT &operator[](const KeyT &key)
     {
-        std::size_t ind = findClosestIndex(key);
-        if (getKeyList()[ind] == key) {
-            return m_valueList[ind];
+        std::size_t ind;
+        if (m_size > 0) {
+            ind = findClosestIndex(key);
+            auto &found = getKeyList()[ind];
+            if (found == key) {
+                return m_valueList[ind];
+            }
         } else {
-            realloc_w_uninit(ind);
-            new (getKeyList() + ind) KeyT(key);
-            new (m_valueList + ind) MappedT();
-            return m_valueList[ind];
+            ind = 0;
         }
+
+        realloc_w_uninit(ind);
+        new (getKeyList() + ind) KeyT(key);
+        new (m_valueList + ind) MappedT();
+        return m_valueList[ind];
     }
     const MappedT &operator[](const KeyT &key) const { return at(key); }
 
     MappedT &at(const KeyT &key)
     {
-        std::size_t ind = findClosestIndex(key);
-        if (getKeyList()[ind] == key) {
-            return m_valueList[ind];
+        if (m_size > 0) {
+            std::size_t ind = findClosestIndex(key);
+            if (getKeyList()[ind] == key) {
+                return m_valueList[ind];
+            }
         }
         throw std::out_of_range("Key not found");
     }
 
     const MappedT &at(const KeyT &key) const
     {
-        std::size_t ind = findClosestIndex(key);
-        if (getKeyList()[ind] == key) {
-            return m_valueList[ind];
+        if (m_size > 0) {
+            std::size_t ind = findClosestIndex(key);
+            if (getKeyList()[ind] == key) {
+                return m_valueList[ind];
+            }
         }
         throw std::out_of_range("Key not found");
     }
 
     std::pair<iterator, bool> emplace(const KeyT &key, const MappedT &value)
     {
-        std::size_t ind = findClosestIndex(key);
-        if (getKeyList()[ind] == key) {
-            return std::make_pair(iterator(keyList + ind, m_valueList + ind), false);
+        std::size_t ind;
+        if (m_size > 0) {
+            ind = findClosestIndex(key);
+            if (getKeyList()[ind] == key) {
+                return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), false);
+            }
         } else {
-            realloc_w_uninit(ind);
-
-            // insert
-            new (getKeyList() + ind) KeyT(key);
-            new (m_valueList + ind) MappedT(value);
-
-            return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), true);
+            ind = 0;
         }
+
+        realloc_w_uninit(ind);
+
+        // insert
+        new (getKeyList() + ind) KeyT(key);
+        new (m_valueList + ind) MappedT(value);
+
+        return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), true);
     }
 
     std::size_t erase(const KeyT &key)
     {
-        std::size_t ind = findClosestIndex(key);
-        if (getKeyList()[ind] == key) {
-            realloc_w_erased(ind);
-            return 1;
-        } else {
-            return 0;
+        if (m_size > 0) {
+            std::size_t ind = findClosestIndex(key);
+            if (getKeyList()[ind] == key) {
+                realloc_w_erased(ind);
+                return 1;
+            }
         }
+
+        return 0;
     }
 
   protected:
@@ -217,7 +353,7 @@ template <class KeyT, class MappedT> class StableMap
 
     static constexpr std::size_t getValueBufferOffset(std::size_t numElements)
     {
-        return (alignof(MappedT) < alignof(KeyT))
+        return (alignof(MappedT) <= alignof(KeyT))
                    ? numElements * sizeof(KeyT)
                    : (numElements * sizeof(KeyT) + alignof(MappedT) - 1) / alignof(MappedT) *
                          alignof(MappedT);
@@ -236,15 +372,16 @@ template <class KeyT, class MappedT> class StableMap
         std::size_t rightIndex = m_size;
         while (leftIndex < rightIndex) {
             std::size_t midIndex = (leftIndex + rightIndex) / 2;
-            if (key < keyList[midIndex]) {
-                rightIndex = midIndex;
-            } else {
+            if (keyList[midIndex] < key) {
                 leftIndex = midIndex + 1;
+            } else {
+                rightIndex = midIndex;
             }
         }
         return leftIndex;
     }
 
+    KeyT *getKeyList() { return reinterpret_cast<KeyT *>(m_data); }
     const KeyT *getKeyList() const { return reinterpret_cast<const KeyT *>(m_data); }
 
     void realloc_buf(std::size_t newSize)
@@ -325,7 +462,8 @@ template <class KeyT, class MappedT> class StableMap
     {
         KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
 
-        std::byte *newData = new std::byte[getBufferSize(m_size + 1)];
+        std::size_t newBufferSize = getBufferSize(m_size + 1);
+        std::byte *newData = new std::byte[newBufferSize];
         KeyT *newKeyList = reinterpret_cast<KeyT *>(newData);
         MappedT *newValueList =
             reinterpret_cast<MappedT *>(newData + getValueBufferOffset(m_size + 1));
@@ -351,90 +489,6 @@ template <class KeyT, class MappedT> class StableMap
         m_valueList = newValueList;
         ++m_size;
     }
-
-    class StableMapIterator
-    {
-        const key_type *mp_key;
-        mapped_type *mp_value;
-
-      public:
-        using iterator_category = std::bidirectional_iterator_tag;
-
-        using StableMap::difference_type;
-        using StableMap::pointer;
-        using StableMap::reference;
-        using StableMap::value_type;
-
-        StableMapIterator() : mp_key(nullptr), mp_value(nullptr) {}
-        StableMapIterator(const key_type *key, mapped_type *value) : mp_key(key), mp_value(value) {}
-        StableMapIterator(const StableMapIterator &) = default;
-        StableMapIterator(StableMapIterator &&) = default;
-
-        auto operator=(const StableMapIterator &other) = default;
-        auto operator=(StableMapIterator &&other) = default;
-
-        auto operator++()
-        {
-            mp_key++;
-            mp_value++;
-            return *this;
-        }
-        auto operator--()
-        {
-            mp_key--;
-            mp_value--;
-            return *this;
-        }
-
-        auto operator==(const StableMapIterator &other) const { return mp_key == other.mp_key; }
-        auto operator<=>(const StableMapIterator &other) const { return mp_key <=> other.mp_key; }
-
-        auto operator*() const { return value_type(*mp_key, *mp_value); }
-        auto operator->() const { return value_type(*mp_key, *mp_value); }
-    };
-
-    class CStableMapIterator
-    {
-        const key_type *mp_key;
-        const mapped_type *mp_value;
-
-      public:
-        using iterator_category = std::bidirectional_iterator_tag;
-
-        using StableMap::difference_type;
-        using pointer = StableMap::const_pointer;
-        using reference = StableMap::const_reference;
-        using value_type = StableMap::const_value_type;
-
-        CStableMapIterator() : mp_key(nullptr), mp_value(nullptr) {}
-        CStableMapIterator(const key_type *key, const mapped_type *value)
-            : mp_key(key), mp_value(value)
-        {}
-        CStableMapIterator(const CStableMapIterator &) = default;
-        CStableMapIterator(CStableMapIterator &&) = default;
-
-        auto operator=(const CStableMapIterator &other) = default;
-        auto operator=(CStableMapIterator &&other) = default;
-
-        auto operator++()
-        {
-            mp_key++;
-            mp_value++;
-            return *this;
-        }
-        auto operator--()
-        {
-            mp_key--;
-            mp_value--;
-            return *this;
-        }
-
-        auto operator==(const CStableMapIterator &other) const { return mp_key == other.mp_key; }
-        auto operator<=>(const CStableMapIterator &other) const { return mp_key <=> other.mp_key; }
-
-        auto operator*() const { return value_type(*mp_key, *mp_value); }
-        auto operator->() const { return value_type(*mp_key, *mp_value); }
-    };
 };
 
 } // namespace Vitrae
