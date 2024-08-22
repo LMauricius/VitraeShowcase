@@ -75,6 +75,9 @@ class UniqueAnyPtr
 
     inline operator bool() const { return mPtr != nullptr; }
 
+    /**
+     * @returns the raw pointer to the object or nullptr if not set
+     */
     template <class T> T *get() const { return static_cast<T *>(mPtr); }
 };
 } // namespace Vitrae
