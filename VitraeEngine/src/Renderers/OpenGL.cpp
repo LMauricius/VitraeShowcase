@@ -207,6 +207,7 @@ void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
 
 void OpenGLRenderer::mainThreadFree()
 {
+    glfwDestroyWindow(mp_mainWindow);
     glfwTerminate();
 }
 

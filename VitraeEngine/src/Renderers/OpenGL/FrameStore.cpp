@@ -201,10 +201,7 @@ void OpenGLFrameStore::FramebufferContextSwitcher::sync() {}
 Window drawing
 */
 
-void OpenGLFrameStore::WindowContextSwitcher::destroyContext()
-{
-    glfwDestroyWindow(window);
-}
+void OpenGLFrameStore::WindowContextSwitcher::destroyContext() {}
 glm::vec2 OpenGLFrameStore::WindowContextSwitcher::getSize() const
 {
     int width, height;
