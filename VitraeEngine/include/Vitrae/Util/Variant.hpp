@@ -246,18 +246,22 @@ class Variant
     /// @brief copy constructor
     inline Variant(const Variant &other) : m_table(other.m_table)
     {
-        allocateNBuffer(m_table->size);
+        allocateTBuffer(m_table);
         m_table->copyConstructor(*this, other);
     }
     /// @brief move constructor
     inline Variant(Variant &&other) : m_table(other.m_table)
     {
-        allocateNBuffer(m_table->size);
+        allocateTBuffer(m_table);
         m_table->moveConstructor(*this, other);
     }
 
     /// @brief destructor
-    ~Variant() { m_table->destructor(*this); }
+    ~Variant()
+    {
+        m_table->destructor(*this);
+        freeBuffer(m_table);
+    }
 
     // assignment operators
 
@@ -266,7 +270,7 @@ class Variant
     {
         m_table->destructor(*this);
 
-        reallocateBuffer<T>();
+        reallocateBuffer<T>(m_table);
 
         m_table = &V_TABLE<std::decay_t<T>>;
         new (&get<T>()) T(val);
@@ -278,7 +282,7 @@ class Variant
     {
         m_table->destructor(*this);
 
-        allocateNBuffer(other.m_table->size);
+        reallocateTBuffer(m_table, other.m_table);
 
         m_table = other.m_table;
         m_table->copyConstructor(*this, other);
@@ -290,8 +294,9 @@ class Variant
     {
         m_table->destructor(*this);
 
+        reallocateTBuffer(m_table, other.m_table);
+
         m_table = other.m_table;
-        allocateNBuffer(m_table->size);
         m_table->moveConstructor(*this, other);
 
         return *this;
@@ -369,52 +374,43 @@ class Variant
 
     // buffer management
 
-    void freeBuffer()
+    inline void freeBuffer(const VariantVTable *oldt)
     {
-        if (!m_table->hasShortObjectOptimization) {
+        if (!oldt->hasShortObjectOptimization) {
             std::free(m_val.mp_longVal);
         }
     }
 
-    constexpr void reallocateNBuffer(std::size_t size)
+    inline constexpr void reallocateTBuffer(const VariantVTable *oldt, const VariantVTable *newt)
     {
-        if (!m_table->hasShortObjectOptimization) {
-            if (size > sizeof(m_val.m_shortBufferVal)) {
-                std::realloc(m_val.mp_longVal, size);
+        if (!oldt->hasShortObjectOptimization) {
+            if (!newt->hasShortObjectOptimization) {
+                if (newt->size != oldt->size) {
+                    m_val.mp_longVal = std::realloc(m_val.mp_longVal, newt->size);
+                }
             } else {
                 std::free(m_val.mp_longVal);
             }
         } else {
-            if (size > sizeof(m_val.m_shortBufferVal)) {
-                m_val.mp_longVal = std::malloc(size);
+            if (!newt->hasShortObjectOptimization) {
+                m_val.mp_longVal = std::malloc(newt->size);
             }
         }
     }
 
-    constexpr void allocateNBuffer(std::size_t size)
+    inline constexpr void allocateTBuffer(const VariantVTable *newt)
     {
-        if (size > sizeof(m_val.m_shortBufferVal)) {
-            m_val.mp_longVal = std::malloc(size);
+        if (!newt->hasShortObjectOptimization) {
+            m_val.mp_longVal = std::malloc(newt->size);
         }
     }
 
-    template <class T> void reallocateBuffer()
+    template <class T> void reallocateBuffer(const VariantVTable *oldt)
     {
-        if constexpr (requires { sizeof(T); }) {
-            reallocateNBuffer(sizeof(T));
-        } else {
-            reallocateNBuffer(0);
-        }
+        reallocateTBuffer(oldt, &V_TABLE<std::decay_t<T>>);
     }
 
-    template <class T> void allocateBuffer()
-    {
-        if constexpr (requires { sizeof(T); }) {
-            allocateNBuffer(sizeof(T));
-        } else {
-            allocateNBuffer(0);
-        }
-    }
+    template <class T> void allocateBuffer() { allocateTBuffer(&V_TABLE<std::decay_t<T>>); }
 };
 
 } // namespace Vitrae
