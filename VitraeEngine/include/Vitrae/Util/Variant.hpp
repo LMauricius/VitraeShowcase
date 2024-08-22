@@ -250,10 +250,14 @@ class Variant
         m_table->copyConstructor(*this, other);
     }
     /// @brief move constructor
-    inline Variant(Variant &&other) : m_val(std::move(other.m_val)), m_table(other.m_table)
+    inline Variant(Variant &&other) : m_table(other.m_table)
     {
-        other.m_table = &V_TABLE<void>;
+        allocateNBuffer(m_table->size);
+        m_table->moveConstructor(*this, other);
     }
+
+    /// @brief destructor
+    ~Variant() { m_table->destructor(*this); }
 
     // assignment operators
 
@@ -284,9 +288,11 @@ class Variant
     /// @brief move assignment
     inline Variant &operator=(Variant &&other)
     {
-        m_val = std::move(other.m_val);
+        m_table->destructor(*this);
+
         m_table = other.m_table;
-        other.m_table = &V_TABLE<void>;
+        allocateNBuffer(m_table->size);
+        m_table->moveConstructor(*this, other);
 
         return *this;
     }
