@@ -504,6 +504,11 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         }
     }
 
+    // delete shaders (they will continue to exist while attached to program)
+    for (auto p_helper : helperOrder) {
+        glDeleteShader(p_helper->shaderId);
+    }
+
     // store uniform indices
     for (auto [uniNameId, uniSpec] : uniformVarSpecs) {
         std::string uniFullName = uniVarPrefix + uniSpec.name;
