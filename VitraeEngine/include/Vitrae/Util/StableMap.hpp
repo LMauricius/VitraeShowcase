@@ -275,8 +275,7 @@ template <class KeyT, class MappedT> class StableMap
         std::size_t ind;
         if (m_size > 0) {
             ind = findClosestIndex(key);
-            auto &found = getKeyList()[ind];
-            if (found == key) {
+            if (ind < m_size && getKeyList()[ind] == key) {
                 return m_valueList[ind];
             }
         } else {
@@ -294,7 +293,7 @@ template <class KeyT, class MappedT> class StableMap
     {
         if (m_size > 0) {
             std::size_t ind = findClosestIndex(key);
-            if (getKeyList()[ind] == key) {
+            if (ind < m_size && !(key < getKeyList()[ind])) {
                 return m_valueList[ind];
             }
         }
@@ -305,19 +304,19 @@ template <class KeyT, class MappedT> class StableMap
     {
         if (m_size > 0) {
             std::size_t ind = findClosestIndex(key);
-            if (getKeyList()[ind] == key) {
+            if (ind < m_size && !(key < getKeyList()[ind])) {
                 return m_valueList[ind];
             }
         }
         throw std::out_of_range("Key not found");
     }
 
-    std::pair<iterator, bool> emplace(const KeyT &key, const MappedT &value)
+    template <class... Args> std::pair<iterator, bool> emplace(const KeyT &key, Args &&...args)
     {
         std::size_t ind;
         if (m_size > 0) {
             ind = findClosestIndex(key);
-            if (getKeyList()[ind] == key) {
+            if (ind < m_size && !(key < getKeyList()[ind])) {
                 return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), false);
             }
         } else {
@@ -328,7 +327,7 @@ template <class KeyT, class MappedT> class StableMap
 
         // insert
         new (getKeyList() + ind) KeyT(key);
-        new (m_valueList + ind) MappedT(value);
+        new (m_valueList + ind) MappedT(std::forward<Args>(args)...);
 
         return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), true);
     }
@@ -337,7 +336,7 @@ template <class KeyT, class MappedT> class StableMap
     {
         if (m_size > 0) {
             std::size_t ind = findClosestIndex(key);
-            if (getKeyList()[ind] == key) {
+            if (ind < m_size && !(key < getKeyList()[ind])) {
                 realloc_w_erased(ind);
                 return 1;
             }
