@@ -119,7 +119,6 @@ template <class KeyT, class MappedT> class StableMap
         }
 
         auto operator*() const { return value_type(*mp_key, *mp_value); }
-        auto operator->() const { return value_type(*mp_key, *mp_value); }
     };
 
   public:
@@ -349,6 +348,11 @@ template <class KeyT, class MappedT> class StableMap
         new (m_valueList + ind) MappedT(std::forward<Args>(args)...);
 
         return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), true);
+    }
+
+    std::pair<iterator, bool> insert(value_type value)
+    {
+        return emplace(value.first, value.second);
     }
 
     std::size_t erase(const KeyT &key)
