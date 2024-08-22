@@ -206,6 +206,7 @@ void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
 
 void OpenGLRenderer::mainThreadFree()
 {
+    glfwMakeContextCurrent(0);
     glfwDestroyWindow(mp_mainWindow);
     glfwTerminate();
 }
