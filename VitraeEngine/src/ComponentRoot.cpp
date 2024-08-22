@@ -89,7 +89,40 @@ ComponentRoot::ComponentRoot()
                                }});
 }
 
-ComponentRoot::~ComponentRoot() {}
+ComponentRoot::~ComponentRoot()
+{
+    /*
+    Clean memory before calling destructors.
+    This is important because order of pool destructions isn't specified,
+    and dangling cached seeds with references to other pool'd types can (and will)
+    cause serious memory errors
+    */
+
+    cleanMemoryPools(std::numeric_limits<std::size_t>::max());
+}
+
+std::size_t ComponentRoot::cleanMemoryPools(std::size_t bytenum)
+{
+    /*
+    We free in the loop because freeing resources from one pool can
+    remove strong pointers to another kind of resource
+    */
+
+    std::size_t totalFreed = 0;
+    std::size_t currentFreed;
+
+    do {
+        currentFreed = 0;
+        std::size_t bytenumPerPool = (bytenum - totalFreed) / m_memoryPools.size();
+        for (auto &p_pool : m_memoryPools) {
+            currentFreed += p_pool->clean(bytenumPerPool);
+        }
+
+        totalFreed += currentFreed;
+    } while (currentFreed > 0 && totalFreed < bytenum);
+
+    return totalFreed;
+}
 
 void ComponentRoot::addAiMaterialShadingInfo(aiShadingMode aiMode, AiMaterialShadingInfo newInfo)
 {

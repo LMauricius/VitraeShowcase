@@ -50,11 +50,27 @@ class ComponentRoot
     template <class T> void setComponent(Unique<T> comp)
     {
         UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
+        if constexpr (std::derived_from<T, dynasma::AbstractPool>) {
+            auto it = std::find(m_memoryPools.begin(), m_memoryPools.end(), myvar.get<T>());
+            if (it != m_memoryPools.end()) {
+                *it = comp.get();
+            } else {
+                m_memoryPools.push_back(comp.get());
+            }
+        }
         myvar = std::move(comp);
     }
     template <class T> void setComponent(T *p_comp)
     {
         UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
+        if constexpr (std::derived_from<T, dynasma::AbstractPool>) {
+            auto it = std::find(m_memoryPools.begin(), m_memoryPools.end(), myvar.get<T>());
+            if (it != m_memoryPools.end()) {
+                *it = p_comp;
+            } else {
+                m_memoryPools.push_back(p_comp);
+            }
+        }
         myvar = std::move(Unique<T>(p_comp));
     }
 
@@ -66,6 +82,14 @@ class ComponentRoot
         const UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
         return *(myvar.get<T>());
     }
+
+    /**
+     * @brief Attempts to unload not-firmly-referenced assets to free memory
+     * @param bytenum the number of bytes to attempt to free from memory
+     * @returns the number of bytes freed
+     * @note Which types of assets are freed in which order/amount is not specified
+     */
+    std::size_t cleanMemoryPools(std::size_t bytenum);
 
     /*
     === AssImp mesh buffers ===
@@ -207,6 +231,7 @@ class ComponentRoot
     }
 
     std::map<size_t, UniqueAnyPtr> mCustomComponents;
+    std::vector<dynasma::AbstractPool *> m_memoryPools;
     mutable std::map<size_t, UniqueAnyPtr> m_aiMeshInfoLists;
     std::map<aiShadingMode, AiMaterialShadingInfo> mAiMaterialShadingInfo;
     std::vector<AiMaterialTextureInfo> mAiMaterialTextureInfos;
