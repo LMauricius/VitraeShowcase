@@ -350,7 +350,12 @@ template <class KeyT, class MappedT> class StableMap
         return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), true);
     }
 
-    std::pair<iterator, bool> insert(value_type value)
+    std::pair<iterator, bool> insert(const std::pair<const KeyT, MappedT> &value)
+    {
+        return emplace(value.first, value.second);
+    }
+
+    std::pair<iterator, bool> insert(std::pair<const KeyT &, MappedT &> value)
     {
         return emplace(value.first, value.second);
     }
@@ -366,6 +371,16 @@ template <class KeyT, class MappedT> class StableMap
         }
 
         return 0;
+    }
+
+    void clear()
+    {
+        for (std::size_t i = 0; i < m_size; ++i) {
+            getKeyList()[i].~KeyT();
+            m_valueList[i].~MappedT();
+        }
+        delete[] m_data;
+        m_size = 0;
     }
 
   protected:
