@@ -155,7 +155,6 @@ void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
     // clang-format on
 
     glfwInit();
-    gladLoadGL();
 
     glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 
