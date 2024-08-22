@@ -184,6 +184,7 @@ void AssetCollection::render()
     if (shouldReloadPipelines) {
         shouldReloadPipelines = false;
         reapplyChoosenMethods();
+        root.cleanMemoryPools(std::numeric_limits<std::size_t>::max()); // free all possible memory
     }
     comp.compose();
 }
