@@ -55,15 +55,15 @@ void Compositor::compose()
 {
     MMETER_SCOPE_PROFILER("Compositor::compose");
 
-    ScopedDict localVars(&parameters);
+    // ScopedDict localVars(&parameters);
 
     // set the output frame property
-    localVars.set(StandardCompositorOutputNames::OUTPUT,
-                  m_preparedFrameStores.at(StandardCompositorOutputNames::OUTPUT));
+    parameters.set(StandardCompositorOutputNames::OUTPUT,
+                   m_preparedFrameStores.at(StandardCompositorOutputNames::OUTPUT));
 
     // setup the rendering context
     Renderer &rend = m_root.getComponent<Renderer>();
-    RenderRunContext context{.properties = localVars,
+    RenderRunContext context{.properties = parameters,
                              .renderer = rend,
                              .methodCombinator = m_shadingMethodCombinator,
                              .p_defaultVertexMethod = m_defaultVertexMethod,
