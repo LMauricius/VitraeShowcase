@@ -35,17 +35,17 @@ class ShaderTask : public Task
 
     using Task::Task;
 
-    inline const std::map<StringId, PropertySpec> &getInputSpecs(InputSpecsDeducingContext) const
+    inline const StableMap<StringId, PropertySpec> &getInputSpecs(InputSpecsDeducingContext) const
     {
         return m_inputSpecs;
     }
-    inline const std::map<StringId, PropertySpec> &getOutputSpecs() const { return m_outputSpecs; }
+    inline const StableMap<StringId, PropertySpec> &getOutputSpecs() const { return m_outputSpecs; }
 
     virtual void outputDeclarationCode(BuildContext args) const = 0;
     virtual void outputDefinitionCode(BuildContext args) const = 0;
     virtual void outputUsageCode(
-        BuildContext args, const std::map<StringId, String> &inputParamsToSharedVariables,
-        const std::map<StringId, String> &outputParamsToSharedVariables) const = 0;
+        BuildContext args, const StableMap<StringId, String> &inputParamsToSharedVariables,
+        const StableMap<StringId, String> &outputParamsToSharedVariables) const = 0;
 };
 
 namespace StandardShaderPropertyNames

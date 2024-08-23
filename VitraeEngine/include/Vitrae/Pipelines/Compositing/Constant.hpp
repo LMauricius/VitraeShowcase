@@ -22,8 +22,8 @@ class ComposeConstant : public ComposeTask
     ~ComposeConstant() = default;
 
     void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-                                    std::map<StringId, dynasma::FirmPtr<Texture>> &textures,
+    void prepareRequiredLocalAssets(StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+                                    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
                                     const ScopedDict &properties) const override;
 
   protected:

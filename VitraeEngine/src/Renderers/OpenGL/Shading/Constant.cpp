@@ -31,8 +31,8 @@ void OpenGLShaderConstant::outputDeclarationCode(BuildContext args) const
 void OpenGLShaderConstant::outputDefinitionCode(BuildContext args) const {}
 
 void OpenGLShaderConstant::outputUsageCode(
-    BuildContext args, const std::map<StringId, String> &inputParamsToSharedVariables,
-    const std::map<StringId, String> &outputParamsToSharedVariables) const
+    BuildContext args, const StableMap<StringId, String> &inputParamsToSharedVariables,
+    const StableMap<StringId, String> &outputParamsToSharedVariables) const
 {
     args.output << outputParamsToSharedVariables.at(m_outputNameId) << " = C_" << m_outputSpec.name
                 << ";\n";

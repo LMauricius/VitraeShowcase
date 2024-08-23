@@ -84,7 +84,7 @@ template <TaskChild BasicTask> class Method : public dynasma::PolymorphicBase
     {
         auto it = m_tasksPerOutput.find(outputNameId);
         if (it != m_tasksPerOutput.end()) {
-            return it->second;
+            return (*it).second;
         }
         for (auto method : m_fallbackMethods) {
             auto task = method->getTask(outputNameId);
@@ -99,7 +99,7 @@ template <TaskChild BasicTask> class Method : public dynasma::PolymorphicBase
     StringView getFriendlyName() const { return m_friendlyName; }
 
   protected:
-    std::map<StringId, dynasma::FirmPtr<BasicTask>> m_tasksPerOutput;
+    StableMap<StringId, dynasma::FirmPtr<BasicTask>> m_tasksPerOutput;
     std::vector<dynasma::FirmPtr<Method>> m_fallbackMethods;
     std::size_t m_hash;
     String m_friendlyName;
@@ -107,7 +107,7 @@ template <TaskChild BasicTask> class Method : public dynasma::PolymorphicBase
 
 template <TaskChild BasicTask> class MethodCombinator
 {
-    std::map<std::size_t, dynasma::FirmPtr<Method<BasicTask>>> m_hash2combinedMethods;
+    StableMap<std::size_t, dynasma::FirmPtr<Method<BasicTask>>> m_hash2combinedMethods;
 
   public:
     template <std::same_as<dynasma::FirmPtr<Method<BasicTask>>>... MethodPtrs>
@@ -118,7 +118,7 @@ template <TaskChild BasicTask> class MethodCombinator
 
         if (auto it = m_hash2combinedMethods.find(combinedMethodHash);
             it != m_hash2combinedMethods.end()) {
-            return it->second;
+            return (*it).second;
         } else {
             auto combinedMethod =
                 dynasma::makeStandalone<Method<BasicTask>>(typename Method<BasicTask>::MethodParams{

@@ -4,6 +4,7 @@
 #include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
+#include "Vitrae/Util/StableMap.hpp"
 
 #include "assimp/material.h"
 #include "dynasma/keepers/abstract.hpp"
@@ -39,14 +40,14 @@ class Material : public dynasma::PolymorphicBase
 
     dynasma::FirmPtr<Method<ShaderTask>> getVertexMethod() const;
     dynasma::FirmPtr<Method<ShaderTask>> getFragmentMethod() const;
-    const std::map<StringId, dynasma::FirmPtr<Texture>> &getTextures() const;
-    const std::map<StringId, Variant> &getProperties() const;
+    const StableMap<StringId, dynasma::FirmPtr<Texture>> &getTextures() const;
+    const StableMap<StringId, Variant> &getProperties() const;
 
   protected:
     dynasma::FirmPtr<Method<ShaderTask>> m_vertexMethod;
     dynasma::FirmPtr<Method<ShaderTask>> m_fragmentMethod;
-    std::map<StringId, dynasma::FirmPtr<Texture>> m_textures;
-    std::map<StringId, Variant> m_properties;
+    StableMap<StringId, dynasma::FirmPtr<Texture>> m_textures;
+    StableMap<StringId, Variant> m_properties;
 };
 
 struct MaterialKeeperSeed

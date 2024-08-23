@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
 #include "Vitrae/Util/Variant.hpp"
 
@@ -19,7 +20,7 @@ namespace Vitrae
 class ScopedDict
 {
     const ScopedDict *m_parent;
-    std::map<StringId, Variant> m_dict;
+    StableMap<StringId, Variant> m_dict;
 
   public:
     /**

@@ -23,8 +23,8 @@ class OpenGLShaderConstant : public ShaderConstant
     void outputDeclarationCode(BuildContext args) const override;
     void outputDefinitionCode(BuildContext args) const override;
     void outputUsageCode(
-        BuildContext args, const std::map<StringId, String> &inputParamsToSharedVariables,
-        const std::map<StringId, String> &outputParamsToSharedVariables) const override;
+        BuildContext args, const StableMap<StringId, String> &inputParamsToSharedVariables,
+        const StableMap<StringId, String> &outputParamsToSharedVariables) const override;
 };
 
 } // namespace Vitrae

@@ -97,8 +97,8 @@ void OpenGLShaderFunction::outputDefinitionCode(BuildContext args) const
 }
 
 void OpenGLShaderFunction::outputUsageCode(
-    BuildContext args, const std::map<StringId, String> &inputParamsToSharedVariables,
-    const std::map<StringId, String> &outputParamsToSharedVariables) const
+    BuildContext args, const StableMap<StringId, String> &inputParamsToSharedVariables,
+    const StableMap<StringId, String> &outputParamsToSharedVariables) const
 {
     OpenGLRenderer &renderer = static_cast<OpenGLRenderer &>(args.renderer);
 

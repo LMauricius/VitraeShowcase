@@ -4,6 +4,7 @@
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Types/Typedefs.hpp"
 #include "Vitrae/Types/UniqueAnyPtr.hpp"
+#include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
 #include "Vitrae/Util/UniqueId.hpp"
 
@@ -230,10 +231,10 @@ class ComponentRoot
         return *(listPtr.template get<MeshBufferInfoList<aiType>>());
     }
 
-    std::map<size_t, UniqueAnyPtr> mCustomComponents;
+    StableMap<size_t, UniqueAnyPtr> mCustomComponents;
     std::vector<dynasma::AbstractPool *> m_memoryPools;
-    mutable std::map<size_t, UniqueAnyPtr> m_aiMeshInfoLists;
-    std::map<aiShadingMode, AiMaterialShadingInfo> mAiMaterialShadingInfo;
+    mutable StableMap<size_t, UniqueAnyPtr> m_aiMeshInfoLists;
+    StableMap<aiShadingMode, AiMaterialShadingInfo> mAiMaterialShadingInfo;
     std::vector<AiMaterialTextureInfo> mAiMaterialTextureInfos;
     std::vector<AiMaterialPropertyInfo> mMaterialPropertyInfos;
 

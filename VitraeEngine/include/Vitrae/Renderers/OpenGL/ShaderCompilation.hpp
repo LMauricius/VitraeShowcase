@@ -105,10 +105,10 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
     inline std::size_t memory_cost() const { return 1; }
 
     GLuint programGLName;
-    std::map<StringId, VariableSpec> uniformSpecs;
-    std::map<StringId, VariableSpec> bindingSpecs;
-    std::map<StringId, VariableSpec> uboSpecs;
-    std::map<StringId, VariableSpec> ssboSpecs;
+    StableMap<StringId, VariableSpec> uniformSpecs;
+    StableMap<StringId, VariableSpec> bindingSpecs;
+    StableMap<StringId, VariableSpec> uboSpecs;
+    StableMap<StringId, VariableSpec> ssboSpecs;
 };
 
 struct CompiledGLSLShaderCacherSeed

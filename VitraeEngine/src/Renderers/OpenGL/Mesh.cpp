@@ -33,7 +33,7 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
     auto extractVertexData =
         [&]<class aiType, class glmType = typename aiTypeCvt<aiType>::glmType>(
             std::span<const ComponentRoot::AiMeshBufferInfo<aiType>> aiBufferInfos,
-            std::map<StringId, std::valarray<glmType>> &namedBuffers) {
+            StableMap<StringId, std::valarray<glmType>> &namedBuffers) {
             for (auto &info : aiBufferInfos) {
                 // get buffers
                 std::size_t layoutInd = rend.getVertexBufferLayoutIndex(info.name);
@@ -78,7 +78,7 @@ void OpenGLMesh::loadToGPU(OpenGLRenderer &rend)
         glBindVertexArray(VAO);
 
         auto sendVertexData =
-            [&]<class glmType>(const std::map<StringId, std::valarray<glmType>> &namedBuffers) {
+            [&]<class glmType>(const StableMap<StringId, std::valarray<glmType>> &namedBuffers) {
                 for (auto [name, buffer] : namedBuffers) {
                     std::size_t layoutInd = rend.getVertexBufferLayoutIndex(name);
                     GLuint &vbo = VBOs[layoutInd];

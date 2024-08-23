@@ -2,6 +2,7 @@
 
 #include "Vitrae/Types/Typedefs.hpp"
 #include "Vitrae/Util/PropertyList.hpp"
+#include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
 #include "Vitrae/Util/Variant.hpp"
 
@@ -18,8 +19,8 @@ namespace Vitrae
 class Task : public dynasma::PolymorphicBase
 {
   protected:
-    std::map<StringId, PropertySpec> m_inputSpecs;
-    std::map<StringId, PropertySpec> m_outputSpecs;
+    StableMap<StringId, PropertySpec> m_inputSpecs;
+    StableMap<StringId, PropertySpec> m_outputSpecs;
 
   public:
     Task() = delete;
@@ -38,12 +39,12 @@ class Task : public dynasma::PolymorphicBase
             m_outputSpecs.emplace(spec.name, spec);
         }
     }
-    inline Task(const std::map<StringId, PropertySpec> &inputSpecs,
-                const std::map<StringId, PropertySpec> &outputSpecs)
+    inline Task(const StableMap<StringId, PropertySpec> &inputSpecs,
+                const StableMap<StringId, PropertySpec> &outputSpecs)
         : m_inputSpecs(inputSpecs), m_outputSpecs(outputSpecs)
     {}
-    inline Task(std::map<StringId, PropertySpec> &&inputSpecs,
-                std::map<StringId, PropertySpec> &&outputSpecs)
+    inline Task(StableMap<StringId, PropertySpec> &&inputSpecs,
+                StableMap<StringId, PropertySpec> &&outputSpecs)
         : m_inputSpecs(std::move(inputSpecs)), m_outputSpecs(std::move(outputSpecs))
     {}
     virtual ~Task() = default;
@@ -61,8 +62,8 @@ template <class T>
 concept TaskChild = std::is_base_of_v<Task, T> && requires {
     typename T::InputSpecsDeducingContext;
 } && requires(const T task, typename T::InputSpecsDeducingContext ctx) {
-    { task.getInputSpecs(ctx) } -> std::convertible_to<std::map<StringId, PropertySpec>>;
-    { task.getOutputSpecs() } -> std::convertible_to<std::map<StringId, PropertySpec>>;
+    { task.getInputSpecs(ctx) } -> std::convertible_to<StableMap<StringId, PropertySpec>>;
+    { task.getOutputSpecs() } -> std::convertible_to<StableMap<StringId, PropertySpec>>;
 };
 
 } // namespace Vitrae

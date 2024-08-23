@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vitrae/Util/Hashing.hpp"
+#include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
 #include "Vitrae/Util/Variant.hpp"
 
@@ -23,7 +24,7 @@ class PropertyList : public dynasma::PolymorphicBase
 {
     friend struct std::hash<PropertyList>;
 
-    std::map<StringId, PropertySpec> m_mappedSpecs;
+    StableMap<StringId, PropertySpec> m_mappedSpecs;
     std::vector<StringId> m_specNameIds;
     std::vector<PropertySpec> m_specList;
 
@@ -69,7 +70,7 @@ class PropertyList : public dynasma::PolymorphicBase
         }
     }
 
-    inline PropertyList(const std::map<StringId, PropertySpec> &mappedSpecs)
+    inline PropertyList(const StableMap<StringId, PropertySpec> &mappedSpecs)
         : m_mappedSpecs(mappedSpecs)
     {
         m_hash = 0;
@@ -82,7 +83,7 @@ class PropertyList : public dynasma::PolymorphicBase
         }
     }
 
-    inline PropertyList(std::map<StringId, PropertySpec> &&mappedSpecs)
+    inline PropertyList(StableMap<StringId, PropertySpec> &&mappedSpecs)
         : m_mappedSpecs(std::move(mappedSpecs))
     {
         m_hash = 0;
@@ -104,7 +105,7 @@ class PropertyList : public dynasma::PolymorphicBase
     Getters
     */
 
-    inline const std::map<StringId, PropertySpec> &getMappedSpecs() const { return m_mappedSpecs; }
+    inline const StableMap<StringId, PropertySpec> &getMappedSpecs() const { return m_mappedSpecs; }
 
     inline std::span<const StringId> getSpecNameIds() const { return m_specNameIds; }
 

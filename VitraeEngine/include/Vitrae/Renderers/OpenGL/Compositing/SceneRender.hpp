@@ -18,13 +18,13 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
 
     OpenGLComposeSceneRender(const SetupParams &params);
 
-    const std::map<StringId, PropertySpec> &getInputSpecs(
+    const StableMap<StringId, PropertySpec> &getInputSpecs(
         const RenderSetupContext &args) const override;
-    const std::map<StringId, PropertySpec> &getOutputSpecs() const override;
+    const StableMap<StringId, PropertySpec> &getOutputSpecs() const override;
 
     void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-                                    std::map<StringId, dynasma::FirmPtr<Texture>> &textures,
+    void prepareRequiredLocalAssets(StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+                                    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
                                     const ScopedDict &properties) const override;
 
   protected:

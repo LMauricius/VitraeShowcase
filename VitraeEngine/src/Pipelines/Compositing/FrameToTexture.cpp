@@ -66,8 +66,8 @@ void ComposeFrameToTexture::run(RenderRunContext args) const
 }
 
 void ComposeFrameToTexture::prepareRequiredLocalAssets(
-    std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    std::map<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
+    StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
 {
     FrameStoreManager &frameManager = m_root.getComponent<FrameStoreManager>();
     TextureManager &textureManager = m_root.getComponent<TextureManager>();

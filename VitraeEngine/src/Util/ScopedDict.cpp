@@ -22,7 +22,7 @@ const Variant &ScopedDict::get(StringId key) const
 {
     auto it = m_dict.find(key);
     if (it != m_dict.end())
-        return it->second;
+        return (*it).second;
 
     if (m_parent)
         return m_parent->get(key);
@@ -34,7 +34,7 @@ const Variant *ScopedDict::getPtr(StringId key) const
 {
     auto it = m_dict.find(key);
     if (it != m_dict.end())
-        return &(it->second);
+        return &((*it).second);
 
     if (m_parent)
         return m_parent->getPtr(key);

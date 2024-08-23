@@ -253,7 +253,7 @@ const GLConversionSpec &OpenGLRenderer::getTypeConversion(const TypeInfo &type) 
     return m_glConversions.at(std::type_index(*type.p_id));
 }
 
-const std::map<StringId, GLTypeSpec> &OpenGLRenderer::getAllGlTypeSpecs() const
+const StableMap<StringId, GLTypeSpec> &OpenGLRenderer::getAllGlTypeSpecs() const
 {
     return m_glTypes;
 }
@@ -264,7 +264,7 @@ void OpenGLRenderer::specifyVertexBuffer(const PropertySpec &newElSpec)
 
     m_vertexBufferIndices.emplace(StringId(newElSpec.name), m_vertexBufferFreeIndex);
     m_vertexBufferFreeIndex += glTypeSpec.layoutIndexSize;
-    m_vertexBufferSpecs.emplace(StringId(newElSpec.name), glTypeSpec);
+    m_vertexBufferSpecs.emplace(StringId(newElSpec.name), &glTypeSpec);
 }
 
 std::size_t OpenGLRenderer::getNumVertexBuffers() const
@@ -277,7 +277,7 @@ std::size_t OpenGLRenderer::getVertexBufferLayoutIndex(StringId name) const
     return m_vertexBufferIndices.at(name);
 }
 
-const std::map<StringId, const GLTypeSpec &> &OpenGLRenderer::getAllVertexBufferSpecs() const
+const StableMap<StringId, const GLTypeSpec *> &OpenGLRenderer::getAllVertexBufferSpecs() const
 {
     return m_vertexBufferSpecs;
 }
@@ -325,7 +325,7 @@ bool OpenGLRenderer::specifySceneRenderInputDependencies(
     return ret;
 }
 
-const std::map<StringId, PropertySpec> &OpenGLRenderer::getSceneRenderInputDependencies(
+const StableMap<StringId, PropertySpec> &OpenGLRenderer::getSceneRenderInputDependencies(
     const ComposeTask *p_composeTask, dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
     dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod) const
 {

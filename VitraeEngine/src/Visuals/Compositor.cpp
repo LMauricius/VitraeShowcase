@@ -141,9 +141,9 @@ void Compositor::regenerateFrameStores()
 
     // clear the buffers (except for the final output)
     auto p_finalFrame = m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT];
-    m_preparedFrameStores.clear();
+    // m_preparedFrameStores.clear();
     m_uniqueFrameStores.clear();
-    m_preparedTextures.clear();
+    // m_preparedTextures.clear();
     m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_finalFrame;
 
     // fill the buffers

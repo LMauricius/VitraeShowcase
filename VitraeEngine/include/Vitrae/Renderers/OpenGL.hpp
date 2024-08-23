@@ -88,7 +88,7 @@ class OpenGLRenderer : public Renderer
     const GLTypeSpec &getGlTypeSpec(StringId glslName) const;
     void specifyTypeConversion(const GLConversionSpec &newSpec);
     const GLConversionSpec &getTypeConversion(const TypeInfo &hostType) const;
-    const std::map<StringId, GLTypeSpec> &getAllGlTypeSpecs() const;
+    const StableMap<StringId, GLTypeSpec> &getAllGlTypeSpecs() const;
 
     void specifyVertexBuffer(const PropertySpec &newElSpec);
     template <class T> void specifyVertexBufferAuto()
@@ -97,7 +97,7 @@ class OpenGLRenderer : public Renderer
     }
     std::size_t getNumVertexBuffers() const;
     std::size_t getVertexBufferLayoutIndex(StringId name) const;
-    const std::map<StringId, const GLTypeSpec &> &getAllVertexBufferSpecs() const;
+    const StableMap<StringId, const GLTypeSpec *> &getAllVertexBufferSpecs() const;
 
     enum class GpuValueStorageMethod {
         Uniform,
@@ -115,7 +115,7 @@ class OpenGLRenderer : public Renderer
         const ComposeTask *p_composeTask,
         dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
         dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod, PropertyList newSpecs);
-    const std::map<StringId, PropertySpec> &getSceneRenderInputDependencies(
+    const StableMap<StringId, PropertySpec> &getSceneRenderInputDependencies(
         const ComposeTask *p_composeTask,
         dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
         dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod) const;
@@ -125,14 +125,15 @@ class OpenGLRenderer : public Renderer
     std::mutex m_contextMutex;
     GLFWwindow *mp_mainWindow;
 
-    std::map<StringId, GLTypeSpec> m_glTypes;
-    std::map<std::type_index, GLConversionSpec> m_glConversions;
+    StableMap<StringId, GLTypeSpec> m_glTypes;
+    StableMap<std::type_index, GLConversionSpec> m_glConversions;
 
-    std::map<StringId, std::size_t> m_vertexBufferIndices;
+    StableMap<StringId, std::size_t> m_vertexBufferIndices;
     std::size_t m_vertexBufferFreeIndex;
-    std::map<StringId, const GLTypeSpec &> m_vertexBufferSpecs;
+    StableMap<StringId, const GLTypeSpec *> m_vertexBufferSpecs;
 
-    mutable std::map<std::size_t, std::map<StringId, PropertySpec>> m_sceneRenderInputDependencies;
+    mutable StableMap<std::size_t, StableMap<StringId, PropertySpec>>
+        m_sceneRenderInputDependencies;
 };
 
 } // namespace Vitrae

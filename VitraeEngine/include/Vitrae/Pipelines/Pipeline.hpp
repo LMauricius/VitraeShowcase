@@ -13,8 +13,8 @@ template <TaskChild BasicTask> class Pipeline
     struct PipeItem
     {
         dynasma::FirmPtr<BasicTask> p_task;
-        std::map<StringId, StringId> inputToLocalVariables;
-        std::map<StringId, StringId> outputToLocalVariables;
+        StableMap<StringId, StringId> inputToLocalVariables;
+        StableMap<StringId, StringId> outputToLocalVariables;
     };
 
     Pipeline() = default;
@@ -42,7 +42,7 @@ template <TaskChild BasicTask> class Pipeline
     }
 
     // pipethrough variables are those that are just passed from inputs to outputs, unprocessed
-    std::map<StringId, PropertySpec> localSpecs, inputSpecs, outputSpecs;
+    StableMap<StringId, PropertySpec> localSpecs, inputSpecs, outputSpecs;
     std::set<StringId> pipethroughInputNames;
     std::vector<PipeItem> items;
 

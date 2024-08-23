@@ -47,7 +47,7 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
     }
 }
 
-const std::map<StringId, PropertySpec> &OpenGLComposeSceneRender::getInputSpecs(
+const StableMap<StringId, PropertySpec> &OpenGLComposeSceneRender::getInputSpecs(
     const RenderSetupContext &args) const
 {
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(args.renderer);
@@ -55,7 +55,7 @@ const std::map<StringId, PropertySpec> &OpenGLComposeSceneRender::getInputSpecs(
                                                 args.p_defaultFragmentMethod);
 }
 
-const std::map<StringId, PropertySpec> &OpenGLComposeSceneRender::getOutputSpecs() const
+const StableMap<StringId, PropertySpec> &OpenGLComposeSceneRender::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
@@ -227,13 +227,13 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                     auto setPropertyToShader = [&](StringId nameId, const Variant &value) {
                         if (auto it = p_compiledShader->uniformSpecs.find(nameId);
                             it != p_compiledShader->uniformSpecs.end()) {
-                            rend.getTypeConversion(it->second.srcSpec.typeInfo)
-                                .setUniform(it->second.glNameId, value);
+                            rend.getTypeConversion((*it).second.srcSpec.typeInfo)
+                                .setUniform((*it).second.glNameId, value);
                         } else if (auto it = p_compiledShader->bindingSpecs.find(nameId);
                                    it != p_compiledShader->bindingSpecs.end()) {
-                            rend.getTypeConversion(it->second.srcSpec.typeInfo)
+                            rend.getTypeConversion((*it).second.srcSpec.typeInfo)
                                 .setBinding(freeBindingIndex, value);
-                            glUniform1i(it->second.glNameId, freeBindingIndex);
+                            glUniform1i((*it).second.glNameId, freeBindingIndex);
                             freeBindingIndex++;
                         }
                     };
@@ -340,13 +340,14 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
 }
 
 void OpenGLComposeSceneRender::prepareRequiredLocalAssets(
-    std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    std::map<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
+    StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
 {
     // We just need to check whether the frame store is already prepared and make it input also
     if (auto it = frameStores.find(m_displayOutputNameId); it != frameStores.end()) {
         if (m_displayInputNameId.has_value()) {
-            frameStores.emplace(m_displayInputNameId.value(), it->second);
+            auto frame = (*it).second;
+            frameStores.emplace(m_displayInputNameId.value(), std::move(frame));
         }
     } else {
         throw std::runtime_error("Frame store not found");

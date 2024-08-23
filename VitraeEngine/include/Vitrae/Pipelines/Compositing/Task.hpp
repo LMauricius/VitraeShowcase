@@ -24,8 +24,8 @@ struct RenderRunContext
     Renderer &renderer;
     MethodCombinator<ShaderTask> &methodCombinator;
     dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod, p_defaultFragmentMethod;
-    const std::map<StringId, dynasma::FirmPtr<FrameStore>> &preparedCompositorFrameStores;
-    const std::map<StringId, dynasma::FirmPtr<Texture>> &preparedCompositorTextures;
+    const StableMap<StringId, dynasma::FirmPtr<FrameStore>> &preparedCompositorFrameStores;
+    const StableMap<StringId, dynasma::FirmPtr<Texture>> &preparedCompositorTextures;
 };
 
 /*
@@ -59,20 +59,20 @@ class ComposeTask : public Task
      */
     virtual void run(RenderRunContext args) const = 0;
     virtual void prepareRequiredLocalAssets(
-        std::map<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        std::map<StringId, dynasma::FirmPtr<Texture>> &textures,
+        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
         const ScopedDict &properties) const = 0;
 
     /// TODO: implement this and move to sources
 
     inline std::size_t memory_cost() const override { return 1; }
 
-    inline virtual const std::map<StringId, PropertySpec> &getInputSpecs(
+    inline virtual const StableMap<StringId, PropertySpec> &getInputSpecs(
         const RenderSetupContext &args) const
     {
         return m_inputSpecs;
     }
-    inline virtual const std::map<StringId, PropertySpec> &getOutputSpecs() const
+    inline virtual const StableMap<StringId, PropertySpec> &getOutputSpecs() const
     {
         return m_outputSpecs;
     }

@@ -42,10 +42,10 @@ class OpenGLMesh : public Mesh
     String m_friendlyname;
     std::optional<dynasma::LazyPtr<Material>> mMaterial;
     std::vector<Triangle> mTriangles;
-    std::map<StringId, std::valarray<glm::vec1>> namedVec1Buffers;
-    std::map<StringId, std::valarray<glm::vec2>> namedVec2Buffers;
-    std::map<StringId, std::valarray<glm::vec3>> namedVec3Buffers;
-    std::map<StringId, std::valarray<glm::vec4>> namedVec4Buffers;
+    StableMap<StringId, std::valarray<glm::vec1>> namedVec1Buffers;
+    StableMap<StringId, std::valarray<glm::vec2>> namedVec2Buffers;
+    StableMap<StringId, std::valarray<glm::vec3>> namedVec3Buffers;
+    StableMap<StringId, std::valarray<glm::vec4>> namedVec4Buffers;
 
     bool m_sentToGPU;
 };
