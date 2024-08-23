@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <map>
 #include <span>
@@ -149,14 +150,13 @@ template <class KeyT, class MappedT> class StableMap
         m_data = new std::byte[getBufferSize(m_size)];
         KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
         const KeyT *oKeyList = reinterpret_cast<const KeyT *>(o.m_data);
-        m_valueList = reinterpret_cast<MappedT *>(m_data + getValueBufferOffset(m_size));
         for (std::size_t i = 0; i < m_size; ++i) {
             new (keyList + i) KeyT(oKeyList[i]);
-            new (m_valueList + i) MappedT(o.m_valueList[i]);
+            new (getValueList() + i) MappedT(o.getValueList()[i]);
         }
     }
 
-    StableMap(StableMap &&o) : m_data(o.m_data), m_size(o.m_size), m_valueList(o.m_valueList)
+    StableMap(StableMap &&o) : m_data(o.m_data), m_size(o.m_size)
     {
         o.m_size = 0;
         o.m_data = nullptr;
@@ -173,7 +173,6 @@ template <class KeyT, class MappedT> class StableMap
         m_size = std::distance(first, last);
         m_data = new std::byte[getBufferSize(m_size)];
         KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
-        m_valueList = reinterpret_cast<MappedT *>(m_data + getValueBufferOffset(m_size));
 
         std::vector<InputItT> sortedIterators;
         sortedIterators.reserve(m_size);
@@ -188,7 +187,7 @@ template <class KeyT, class MappedT> class StableMap
         i = 0;
         for (auto it : sortedIterators) {
             new (keyList + i) KeyT(it->first);
-            new (m_valueList + i) MappedT(it->second);
+            new (getValueList() + i) MappedT(it->second);
             ++i;
         }
     }
@@ -204,12 +203,11 @@ template <class KeyT, class MappedT> class StableMap
         m_size = orderedList.size();
         m_data = new std::byte[getBufferSize(m_size)];
         KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
-        m_valueList = reinterpret_cast<MappedT *>(m_data + getValueBufferOffset(m_size));
 
         int i = 0;
         for (const auto &keyVal : orderedList) {
             new (keyList + i) KeyT(keyVal.first);
-            new (m_valueList + i) MappedT(keyVal.second);
+            new (getValueList() + i) MappedT(keyVal.second);
             ++i;
         }
     }
@@ -219,7 +217,7 @@ template <class KeyT, class MappedT> class StableMap
         KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
         for (std::size_t i = 0; i < m_size; ++i) {
             keyList[i].~KeyT();
-            m_valueList[i].~MappedT();
+            getValueList()[i].~MappedT();
         }
         delete[] m_data;
     }
@@ -230,17 +228,16 @@ template <class KeyT, class MappedT> class StableMap
         m_data = new std::byte[getBufferSize(m_size)];
         KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
         const KeyT *oKeyList = reinterpret_cast<const KeyT *>(o.m_data);
-        m_valueList = reinterpret_cast<MappedT *>(m_data + getValueBufferOffset(m_size));
+        getValueList() = reinterpret_cast<MappedT *>(m_data + getValueBufferOffset(m_size));
         for (std::size_t i = 0; i < m_size; ++i) {
             new (keyList + i) KeyT(oKeyList[i]);
-            new (m_valueList + i) MappedT(o.m_valueList[i]);
+            new (getValueList() + i) MappedT(o.getValueList()[i]);
         }
     }
     StableMap &operator=(StableMap &&o)
     {
         m_size = o.m_size;
         m_data = o.m_data;
-        m_valueList = o.m_valueList;
         o.m_size = 0;
         o.m_data = nullptr;
         return *this;
@@ -248,33 +245,33 @@ template <class KeyT, class MappedT> class StableMap
 
     std::size_t size() const { return m_size; }
     std::span<const KeyT> keys() const { return std::span<const KeyT>(getKeyList(), m_size); }
-    std::span<MappedT> values() { return std::span<MappedT>(m_valueList, m_size); }
+    std::span<MappedT> values() { return std::span<MappedT>(getValueList(), m_size); }
     std::span<const MappedT> values() const
     {
-        return std::span<const MappedT>(m_valueList, m_size);
+        return std::span<const MappedT>(getValueList(), m_size);
     }
 
-    StableMapIterator begin() { return StableMapIterator(getKeyList(), m_valueList); }
+    StableMapIterator begin() { return StableMapIterator(getKeyList(), getValueList()); }
     StableMapIterator end()
     {
-        return StableMapIterator(getKeyList() + m_size, m_valueList + m_size);
+        return StableMapIterator(getKeyList() + m_size, getValueList() + m_size);
     }
-    CStableMapIterator begin() const { return CStableMapIterator(getKeyList(), m_valueList); }
+    CStableMapIterator begin() const { return CStableMapIterator(getKeyList(), getValueList()); }
     CStableMapIterator end() const
     {
-        return CStableMapIterator(getKeyList() + m_size, m_valueList + m_size);
+        return CStableMapIterator(getKeyList() + m_size, getValueList() + m_size);
     }
-    CStableMapIterator cbegin() const { return CStableMapIterator(getKeyList(), m_valueList); }
+    CStableMapIterator cbegin() const { return CStableMapIterator(getKeyList(), getValueList()); }
     CStableMapIterator cend() const
     {
-        return CStableMapIterator(getKeyList() + m_size, m_valueList + m_size);
+        return CStableMapIterator(getKeyList() + m_size, getValueList() + m_size);
     }
 
     StableMapIterator find(const KeyT &key)
     {
         std::size_t ind = findClosestIndex(key);
         if (ind < m_size && !(key < getKeyList()[ind])) {
-            return StableMapIterator(getKeyList() + ind, m_valueList + ind);
+            return StableMapIterator(getKeyList() + ind, getValueList() + ind);
         }
         return end();
     }
@@ -283,7 +280,7 @@ template <class KeyT, class MappedT> class StableMap
     {
         std::size_t ind = findClosestIndex(key);
         if (ind < m_size && !(key < getKeyList()[ind])) {
-            return CStableMapIterator(getKeyList() + ind, m_valueList + ind);
+            return CStableMapIterator(getKeyList() + ind, getValueList() + ind);
         }
         return cend();
     }
@@ -293,8 +290,8 @@ template <class KeyT, class MappedT> class StableMap
         std::size_t ind;
         if (m_size > 0) {
             ind = findClosestIndex(key);
-            if (ind < m_size && getKeyList()[ind] == key) {
-                return m_valueList[ind];
+            if (ind < m_size && !(key < getKeyList()[ind])) {
+                return getValueList()[ind];
             }
         } else {
             ind = 0;
@@ -302,8 +299,8 @@ template <class KeyT, class MappedT> class StableMap
 
         realloc_w_uninit(ind);
         new (getKeyList() + ind) KeyT(key);
-        new (m_valueList + ind) MappedT();
-        return m_valueList[ind];
+        new (getValueList() + ind) MappedT();
+        return getValueList()[ind];
     }
     const MappedT &operator[](const KeyT &key) const { return at(key); }
 
@@ -312,7 +309,7 @@ template <class KeyT, class MappedT> class StableMap
         if (m_size > 0) {
             std::size_t ind = findClosestIndex(key);
             if (ind < m_size && !(key < getKeyList()[ind])) {
-                return m_valueList[ind];
+                return getValueList()[ind];
             }
         }
         throw std::out_of_range("Key not found");
@@ -323,7 +320,7 @@ template <class KeyT, class MappedT> class StableMap
         if (m_size > 0) {
             std::size_t ind = findClosestIndex(key);
             if (ind < m_size && !(key < getKeyList()[ind])) {
-                return m_valueList[ind];
+                return getValueList()[ind];
             }
         }
         throw std::out_of_range("Key not found");
@@ -335,19 +332,16 @@ template <class KeyT, class MappedT> class StableMap
         if (m_size > 0) {
             ind = findClosestIndex(key);
             if (ind < m_size && !(key < getKeyList()[ind])) {
-                return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), false);
+                return std::make_pair(iterator(getKeyList() + ind, getValueList() + ind), false);
             }
         } else {
             ind = 0;
         }
 
         realloc_w_uninit(ind);
-
-        // insert
         new (getKeyList() + ind) KeyT(key);
-        new (m_valueList + ind) MappedT(std::forward<Args>(args)...);
-
-        return std::make_pair(iterator(getKeyList() + ind, m_valueList + ind), true);
+        new (getValueList() + ind) MappedT(std::forward<Args>(args)...);
+        return std::make_pair(iterator(getKeyList() + ind, getValueList() + ind), true);
     }
 
     std::pair<iterator, bool> insert(const std::pair<const KeyT, MappedT> &value)
@@ -377,16 +371,16 @@ template <class KeyT, class MappedT> class StableMap
     {
         for (std::size_t i = 0; i < m_size; ++i) {
             getKeyList()[i].~KeyT();
-            m_valueList[i].~MappedT();
+            getValueList()[i].~MappedT();
         }
         delete[] m_data;
+        m_data = nullptr;
         m_size = 0;
     }
 
   protected:
     std::size_t m_size;
-    std::byte *m_data;    // starts with keys, also contains values. Owned by the map
-    MappedT *m_valueList; // pointer to a portion of m_data buffer
+    std::byte *m_data; // starts with keys, also contains values. Owned by the map
 
     static constexpr std::size_t getValueBufferOffset(std::size_t numElements)
     {
@@ -420,44 +414,13 @@ template <class KeyT, class MappedT> class StableMap
 
     KeyT *getKeyList() { return reinterpret_cast<KeyT *>(m_data); }
     const KeyT *getKeyList() const { return reinterpret_cast<const KeyT *>(m_data); }
-
-    void realloc_buf(std::size_t newSize)
+    MappedT *getValueList()
     {
-        KeyT *keyList = reinterpret_cast<KeyT *>(m_data);
-
-        std::byte *newData = new std::byte[getBufferSize(newSize)];
-        KeyT *newKeyList = reinterpret_cast<KeyT *>(newData);
-        MappedT *newValueList =
-            reinterpret_cast<MappedT *>(newData + getValueBufferOffset(newSize));
-
-        if (newSize > m_size) {
-            for (std::size_t i = 0; i < m_size; ++i) {
-                new (newKeyList + i) KeyT(keyList[i]);
-                new (newValueList + i) MappedT(m_valueList[i]);
-                keyList[i].~KeyT();
-                m_valueList[i].~MappedT();
-            }
-            for (std::size_t i = m_size; i < newSize; ++i) {
-                new (newKeyList + i) KeyT();
-                new (newValueList + i) MappedT();
-            }
-        } else {
-            for (std::size_t i = 0; i < newSize; ++i) {
-                new (newKeyList + i) KeyT(keyList[i]);
-                new (newValueList + i) MappedT(m_valueList[i]);
-                keyList[i].~KeyT();
-                m_valueList[i].~MappedT();
-            }
-            for (std::size_t i = newSize; i < m_size; ++i) {
-                keyList[i].~KeyT();
-                m_valueList[i].~MappedT();
-            }
-        }
-
-        delete[] m_data;
-        m_data = newData;
-        m_valueList = newValueList;
-        m_size = newSize;
+        return reinterpret_cast<MappedT *>(m_data + getValueBufferOffset(m_size));
+    }
+    const MappedT *getValueList() const
+    {
+        return reinterpret_cast<const MappedT *>(m_data + getValueBufferOffset(m_size));
     }
 
     void realloc_w_erased(difference_type erasingIndex)
@@ -472,26 +435,26 @@ template <class KeyT, class MappedT> class StableMap
         // move data before
         for (std::size_t i = 0; i < erasingIndex; ++i) {
             new (newKeyList + i) KeyT(std::move(keyList[i]));
-            new (newValueList + i) MappedT(std::move(m_valueList[i]));
+            new (newValueList + i) MappedT(std::move(getValueList()[i]));
             keyList[i].~KeyT();
-            m_valueList[i].~MappedT();
+            getValueList()[i].~MappedT();
         }
 
         // erase
         keyList[erasingIndex].~KeyT();
-        m_valueList[erasingIndex].~MappedT();
+        getValueList()[erasingIndex].~MappedT();
 
         // move data after
         for (std::size_t i = erasingIndex + 1; i < m_size; ++i) {
             new (newKeyList + i - 1) KeyT(std::move(keyList[i]));
-            new (newValueList + i - 1) MappedT(std::move(m_valueList[i]));
+            new (newValueList + i - 1) MappedT(std::move(getValueList()[i]));
             keyList[i].~KeyT();
-            m_valueList[i].~MappedT();
+            getValueList()[i].~MappedT();
         }
 
         delete[] m_data;
         m_data = newData;
-        m_valueList = newValueList;
+        getValueList() = newValueList;
         --m_size;
     }
 
@@ -508,22 +471,21 @@ template <class KeyT, class MappedT> class StableMap
         // move data before
         for (std::size_t i = 0; i < uninitIndex; ++i) {
             new (newKeyList + i) KeyT(std::move(keyList[i]));
-            new (newValueList + i) MappedT(std::move(m_valueList[i]));
+            new (newValueList + i) MappedT(std::move(getValueList()[i]));
             keyList[i].~KeyT();
-            m_valueList[i].~MappedT();
+            getValueList()[i].~MappedT();
         }
 
         // move data after
         for (std::size_t i = uninitIndex; i < m_size; ++i) {
             new (newKeyList + i + 1) KeyT(std::move(keyList[i]));
-            new (newValueList + i + 1) MappedT(std::move(m_valueList[i]));
+            new (newValueList + i + 1) MappedT(std::move(getValueList()[i]));
             keyList[i].~KeyT();
-            m_valueList[i].~MappedT();
+            getValueList()[i].~MappedT();
         }
 
         delete[] m_data;
         m_data = newData;
-        m_valueList = newValueList;
         ++m_size;
     }
 };
