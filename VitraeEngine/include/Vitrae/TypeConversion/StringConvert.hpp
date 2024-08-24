@@ -48,12 +48,12 @@ String toString(const T &val)
     return std::to_string(val);
 }
 
-String toString(const std::wstring &str)
+inline String toString(const std::wstring &str)
 {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
     return converter.to_bytes(str);
 }
-String toString(const aiString &str)
+inline String toString(const aiString &str)
 {
     return String(str.data, str.length);
 }
