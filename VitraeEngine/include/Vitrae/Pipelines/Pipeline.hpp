@@ -2,8 +2,6 @@
 
 #include "Vitrae/Pipelines/Method.hpp"
 
-#include <span>
-
 namespace Vitrae
 {
 
