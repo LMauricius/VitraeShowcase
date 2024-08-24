@@ -39,6 +39,18 @@ class ScopedDict
      */
     ScopedDict(const ScopedDict *parent);
 
+    /// @brief Copy constructor.
+    ScopedDict(const ScopedDict &) = default;
+
+    /// @brief Move constructor.
+    ScopedDict(ScopedDict &&) = default;
+
+    /// @brief copy assignment
+    ScopedDict &operator=(const ScopedDict &) = default;
+
+    /// @brief move assignment
+    ScopedDict &operator=(ScopedDict &&) = default;
+
     /**
      * @brief Set a key-value pair in the dictionary.
      *
@@ -93,5 +105,10 @@ class ScopedDict
      * @return True if the key exists, false otherwise.
      */
     bool has(StringId key) const;
+
+    /**
+     * @brief Erases all keys and values from the dictionary.
+     */
+    void clear();
 };
 } // namespace Vitrae

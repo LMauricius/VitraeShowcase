@@ -47,4 +47,9 @@ bool ScopedDict::has(StringId key) const
     return m_dict.find(key) != m_dict.end() || (m_parent && m_parent->has(key));
 }
 
+void ScopedDict::clear()
+{
+    m_dict.clear();
+}
+
 } // namespace Vitrae
