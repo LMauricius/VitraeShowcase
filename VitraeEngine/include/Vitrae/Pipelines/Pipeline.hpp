@@ -18,6 +18,11 @@ template <TaskChild BasicTask> class Pipeline
     };
 
     Pipeline() = default;
+    Pipeline(Pipeline &&) = default;
+    Pipeline(const Pipeline &) = default;
+
+    Pipeline &operator=(Pipeline &&) = default;
+    Pipeline &operator=(const Pipeline &) = default;
 
     /**
      * Constructs a pipeline using the preffered method to get desired results
