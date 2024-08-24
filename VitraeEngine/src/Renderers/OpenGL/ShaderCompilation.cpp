@@ -1,5 +1,6 @@
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Debugging/PipelineExport.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 
 #include "MMeter.h"
@@ -455,16 +456,30 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             glShaderSource(p_helper->shaderId, 1, &c_code, NULL);
 
             // debug
-            std::ofstream file;
-            String filename = std::string("shaderdebug/") +
-                              String(p_helper->p_compSpec->p_method->getFriendlyName()) + +"_" +
-                              p_helper->p_compSpec->outVarPrefix +
-                              std::to_string(desiredOutputs.getHash()) + ".glsl";
-            file.open(filename);
-            file << srcCode;
-            file.close();
+            String filePrefix = std::string("shaderdebug/") +
+                                String(p_helper->p_compSpec->p_method->getFriendlyName()) + "_" +
+                                std::to_string(desiredOutputs.getHash()) +
+                                p_helper->p_compSpec->outVarPrefix;
+            {
+                std::ofstream file;
+                String filename = filePrefix + ".dot";
+                file.open(filename);
+                exportPipeline(p_helper->pipeline, file);
+                file.close();
 
-            root.getInfoStream() << "Shader stored to: '" << filename << "'" << std::endl;
+                root.getInfoStream() << "Graph stored to: '" << std::filesystem::current_path()
+                                     << "/" << filename << "'" << std::endl;
+            }
+            {
+                std::ofstream file;
+                String filename = filePrefix + ".glsl";
+                file.open(filename);
+                file << srcCode;
+                file.close();
+
+                root.getInfoStream() << "Shader stored to: '" << std::filesystem::current_path()
+                                     << "/" << filename << "'" << std::endl;
+            }
 
             prevVarPrefix = p_helper->p_compSpec->outVarPrefix;
         }

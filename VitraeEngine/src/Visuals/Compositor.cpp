@@ -1,8 +1,10 @@
 #include "Vitrae/Visuals/Compositor.hpp"
 #include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Debugging/PipelineExport.hpp"
 
 #include "MMeter.h"
 
+#include <fstream>
 #include <ranges>
 
 namespace Vitrae
@@ -129,6 +131,19 @@ void Compositor::rebuildPipeline()
         {{PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
                        .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}}},
         context);
+
+    String filePrefix =
+        std::string("shaderdebug/") + String(mp_composeMethod->getFriendlyName()) + "_compositor";
+    {
+        std::ofstream file;
+        String filename = filePrefix + ".dot";
+        file.open(filename);
+        exportPipeline(m_pipeline, file);
+        file.close();
+
+        m_root.getInfoStream() << "Compositor graph stored to: '" << std::filesystem::current_path()
+                               << "/" << filename << "'" << std::endl;
+    }
 
     m_needsFrameStoreRegeneration = true;
 }
