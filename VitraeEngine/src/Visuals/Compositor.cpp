@@ -10,7 +10,9 @@
 namespace Vitrae
 {
 class Renderer;
-Compositor::Compositor(ComponentRoot &root) : m_root(root), m_pipeline() {}
+Compositor::Compositor(ComponentRoot &root)
+    : m_root(root), m_pipeline(), m_localProperties(&parameters)
+{}
 
 Compositor::Compositor(ComponentRoot &root, dynasma::FirmPtr<Method<ComposeTask>> p_method,
                        dynasma::FirmPtr<FrameStore> p_output)
@@ -20,7 +22,8 @@ Compositor::Compositor(ComponentRoot &root, dynasma::FirmPtr<Method<ComposeTask>
                      .renderer = m_root.getComponent<Renderer>(),
                      .p_defaultVertexMethod = m_defaultVertexMethod,
                      .p_defaultFragmentMethod = m_defaultFragmentMethod,
-                 })
+                 }),
+      m_localProperties(&parameters)
 {
     m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_output;
 
@@ -65,7 +68,7 @@ void Compositor::compose()
 
     // setup the rendering context
     Renderer &rend = m_root.getComponent<Renderer>();
-    RenderRunContext context{.properties = parameters,
+    RenderRunContext context{.properties = m_localProperties,
                              .renderer = rend,
                              .methodCombinator = m_shadingMethodCombinator,
                              .p_defaultVertexMethod = m_defaultVertexMethod,
@@ -131,6 +134,8 @@ void Compositor::rebuildPipeline()
         {{PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
                        .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}}},
         context);
+
+    m_localProperties.clear();
 
     String filePrefix =
         std::string("shaderdebug/") + String(mp_composeMethod->getFriendlyName()) + "_compositor";
