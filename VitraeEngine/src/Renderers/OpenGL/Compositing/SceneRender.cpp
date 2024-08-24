@@ -46,35 +46,35 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
                          .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()});
     }
 
-    m_friendlyName = "Render scene ";
+    m_friendlyName = "Render scene\n";
     m_friendlyName += params.vertexPositionOutputPropertyName;
     switch (params.cullingMode) {
     case CullingMode::None:
-        m_friendlyName += " all faces,";
+        m_friendlyName += "\nall faces;";
         break;
     case CullingMode::Backface:
-        m_friendlyName += " front faces,";
+        m_friendlyName += "\nfront faces;";
         break;
     case CullingMode::Frontface:
-        m_friendlyName += " back faces,";
+        m_friendlyName += "\nback faces;";
         break;
     }
     switch (params.rasterizingMode) {
     case RasterizingMode::DerivationalFillCenters:
     case RasterizingMode::DerivationalFillEdges:
     case RasterizingMode::DerivationalFillVertices:
-        m_friendlyName += " filled,";
+        m_friendlyName += "\nfilled polygons;";
         break;
     case RasterizingMode::DerivationalTraceEdges:
     case RasterizingMode::DerivationalTraceVertices:
-        m_friendlyName += " wireframe,";
+        m_friendlyName += "\nwireframe;";
         break;
     case RasterizingMode::DerivationalDotVertices:
-        m_friendlyName += " dots,";
+        m_friendlyName += "\ndots;";
         break;
     }
     if (params.smoothFilling || params.smoothTracing || params.smoothDotting) {
-        m_friendlyName += " smooth";
+        m_friendlyName += "\nsmooth";
         if (params.smoothFilling) {
             m_friendlyName += " filling";
         }

@@ -28,7 +28,9 @@ OpenGLComposeClearRender::OpenGLComposeClearRender(const SetupParams &params)
                                                     ? std::optional<StringId>()
                                                     : params.displayInputPropertyName),
       m_displayOutputNameId(params.displayOutputPropertyName), m_color(params.backgroundColor),
-      m_friendlyName(String("Clear to ") + glm::to_string(params.backgroundColor))
+      m_friendlyName(String("Clear to\n") + toHexString(255 * m_color.r, 2) +
+                     toHexString(255 * m_color.g, 2) + toHexString(255 * m_color.b, 2) + "*" +
+                     std::to_string(m_color.a))
 {}
 
 void OpenGLComposeClearRender::run(RenderRunContext args) const
