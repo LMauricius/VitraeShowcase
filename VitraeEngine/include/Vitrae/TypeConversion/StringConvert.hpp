@@ -58,6 +58,23 @@ inline String toString(const aiString &str)
     return String(str.data, str.length);
 }
 
+inline String toHexString(std::size_t num, std::size_t minlen = 0)
+{
+    String ret;
+    ret.reserve(minlen);
+
+    while (num > 0) {
+        ret += "0123456789ABCDEF"[num % 16];
+        num /= 16;
+    }
+    while (ret.size() < minlen) {
+        ret += '0';
+    }
+
+    std::reverse(ret.begin(), ret.end());
+    return ret;
+}
+
 template <class T>
     requires(!requires(T t) { toString(t); })
 String toStringOrErr(const T &val)
