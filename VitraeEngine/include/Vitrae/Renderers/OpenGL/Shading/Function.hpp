@@ -31,6 +31,8 @@ class OpenGLShaderFunction : public ShaderFunction
     void outputUsageCode(
         BuildContext args, const StableMap<StringId, String> &inputParamsToSharedVariables,
         const StableMap<StringId, String> &outputParamsToSharedVariables) const override;
+
+    virtual StringView getFriendlyName() const override;
 };
 
 } // namespace Vitrae

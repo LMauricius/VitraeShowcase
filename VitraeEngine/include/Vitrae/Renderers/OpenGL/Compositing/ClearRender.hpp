@@ -19,11 +19,14 @@ class OpenGLComposeClearRender : public ComposeClearRender
                                     StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
                                     const ScopedDict &properties) const override;
 
+    StringView getFriendlyName() const override;
+
   protected:
     ComponentRoot &m_root;
     glm::vec4 m_color;
     StringId m_displayOutputNameId;
     std::optional<StringId> m_displayInputNameId;
+    String m_friendlyName;
 };
 
 } // namespace Vitrae

@@ -6,6 +6,7 @@
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
+#include "Vitrae/TypeConversion/StringConvert.hpp"
 #include "Vitrae/Util/Variant.hpp"
 
 #include "MMeter.h"
@@ -26,7 +27,8 @@ OpenGLComposeClearRender::OpenGLComposeClearRender(const SetupParams &params)
       m_root(params.root), m_displayInputNameId(params.displayInputPropertyName.empty()
                                                     ? std::optional<StringId>()
                                                     : params.displayInputPropertyName),
-      m_displayOutputNameId(params.displayOutputPropertyName), m_color(params.backgroundColor)
+      m_displayOutputNameId(params.displayOutputPropertyName), m_color(params.backgroundColor),
+      m_friendlyName(String("Clear to ") + glm::to_string(params.backgroundColor))
 {}
 
 void OpenGLComposeClearRender::run(RenderRunContext args) const
@@ -64,6 +66,11 @@ void OpenGLComposeClearRender::prepareRequiredLocalAssets(
     } else {
         throw std::runtime_error("Frame store not found");
     }
+}
+
+StringView OpenGLComposeClearRender::getFriendlyName() const
+{
+    return m_friendlyName;
 }
 
 } // namespace Vitrae

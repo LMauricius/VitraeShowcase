@@ -45,6 +45,46 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
             PropertySpec{.name = params.displayInputPropertyName,
                          .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()});
     }
+
+    m_friendlyName = "Render scene ";
+    m_friendlyName += params.vertexPositionOutputPropertyName;
+    switch (params.cullingMode) {
+    case CullingMode::None:
+        m_friendlyName += " all faces,";
+        break;
+    case CullingMode::Backface:
+        m_friendlyName += " front faces,";
+        break;
+    case CullingMode::Frontface:
+        m_friendlyName += " back faces,";
+        break;
+    }
+    switch (params.rasterizingMode) {
+    case RasterizingMode::DerivationalFillCenters:
+    case RasterizingMode::DerivationalFillEdges:
+    case RasterizingMode::DerivationalFillVertices:
+        m_friendlyName += " filled,";
+        break;
+    case RasterizingMode::DerivationalTraceEdges:
+    case RasterizingMode::DerivationalTraceVertices:
+        m_friendlyName += " wireframe,";
+        break;
+    case RasterizingMode::DerivationalDotVertices:
+        m_friendlyName += " dots,";
+        break;
+    }
+    if (params.smoothFilling || params.smoothTracing || params.smoothDotting) {
+        m_friendlyName += " smooth";
+        if (params.smoothFilling) {
+            m_friendlyName += " filling";
+        }
+        if (params.smoothTracing) {
+            m_friendlyName += " tracing";
+        }
+        if (params.smoothDotting) {
+            m_friendlyName += " dotting";
+        }
+    }
 }
 
 const StableMap<StringId, PropertySpec> &OpenGLComposeSceneRender::getInputSpecs(
@@ -352,6 +392,11 @@ void OpenGLComposeSceneRender::prepareRequiredLocalAssets(
     } else {
         throw std::runtime_error("Frame store not found");
     }
+}
+
+StringView OpenGLComposeSceneRender::getFriendlyName() const
+{
+    return m_friendlyName;
 }
 
 } // namespace Vitrae

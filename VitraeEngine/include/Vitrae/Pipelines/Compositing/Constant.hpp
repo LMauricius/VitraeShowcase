@@ -26,10 +26,13 @@ class ComposeConstant : public ComposeTask
                                     StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
                                     const ScopedDict &properties) const override;
 
+    StringView getFriendlyName() const override;
+
   protected:
     StringId m_outputNameId;
     PropertySpec m_outputSpec;
     Variant m_value;
+    String m_friendlyName;
 };
 
 struct ComposeConstantKeeperSeed

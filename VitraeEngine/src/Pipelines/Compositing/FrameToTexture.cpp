@@ -30,6 +30,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
                                   params.colorTextureOutputPropertyName,
                                   Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
                               });
+        m_friendlyName += String("shade");
     }
     if (params.depthTextureOutputPropertyName != "") {
         m_outputSpecs.emplace(m_depthTextureOutputNameId,
@@ -37,6 +38,10 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
                                   params.depthTextureOutputPropertyName,
                                   Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
                               });
+        if (m_friendlyName.size()) {
+            m_friendlyName += String("\n+ ");
+        }
+        m_friendlyName += String("shade");
     }
     for (auto &spec : m_outputTexturePropertySpecs) {
         m_outputSpecs.emplace(spec.texturePropertyName,
@@ -44,6 +49,10 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
                                   spec.texturePropertyName,
                                   Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
                               });
+        if (m_friendlyName.size()) {
+            m_friendlyName += String("\n+ ");
+        }
+        m_friendlyName += spec.fragmentPropertySpec.name;
     }
 }
 
@@ -130,6 +139,11 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(
 
     auto frame = frameManager.register_asset({frameParams});
     frameStores.emplace(m_frameInputNameId, frame);
+}
+
+StringView ComposeFrameToTexture::getFriendlyName() const
+{
+    return m_friendlyName;
 }
 
 } // namespace Vitrae

@@ -27,6 +27,8 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
                                     StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
                                     const ScopedDict &properties) const override;
 
+    StringView getFriendlyName() const override;
+
   protected:
     ComponentRoot &m_root;
     String m_viewPositionOutputPropertyName;
@@ -36,6 +38,7 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
     CullingMode m_cullingMode;
     RasterizingMode m_rasterizingMode;
     bool m_smoothFilling, m_smoothTracing, m_smoothDotting;
+    String m_friendlyName;
 };
 
 } // namespace Vitrae

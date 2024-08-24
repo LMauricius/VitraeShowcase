@@ -13,6 +13,7 @@ namespace Vitrae
 class ComposeFunction : public ComposeTask
 {
     std::function<void(const RenderRunContext &)> mp_function;
+    String m_friendlyName;
 
   public:
     struct SetupParams
@@ -29,6 +30,8 @@ class ComposeFunction : public ComposeTask
     void prepareRequiredLocalAssets(StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
                                     StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
                                     const ScopedDict &properties) const override;
+
+    StringView getFriendlyName() const override;
 };
 
 struct ComposeFunctionKeeperSeed

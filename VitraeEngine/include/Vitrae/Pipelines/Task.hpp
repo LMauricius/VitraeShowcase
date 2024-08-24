@@ -56,6 +56,8 @@ class Task : public dynasma::PolymorphicBase
 
     virtual void extractUsedTypes(std::set<const TypeInfo *> &typeSet) const = 0;
     virtual void extractSubTasks(std::set<const Task *> &taskSet) const = 0;
+
+    virtual StringView getFriendlyName() const = 0;
 };
 
 template <class T>

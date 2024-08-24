@@ -48,6 +48,8 @@ class ComposeFrameToTexture : public ComposeTask
                                     StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
                                     const ScopedDict &properties) const override;
 
+    StringView getFriendlyName() const override;
+
   protected:
     ComponentRoot &m_root;
     String m_frameInputName, m_colorTextureOutputName, m_depthTextureOutputName;
@@ -61,6 +63,7 @@ class ComposeFrameToTexture : public ComposeTask
     Texture::FilterType m_magFilter;
     bool m_useMipMaps;
     glm::vec4 m_borderColor;
+    String m_friendlyName;
 };
 
 struct ComposeFrameToTextureKeeperSeed

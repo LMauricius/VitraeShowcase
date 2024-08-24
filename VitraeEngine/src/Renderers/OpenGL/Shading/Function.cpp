@@ -121,4 +121,9 @@ void OpenGLShaderFunction::outputUsageCode(
     args.output << ");";
 }
 
+StringView OpenGLShaderFunction::getFriendlyName() const
+{
+    return m_functionName;
+}
+
 } // namespace Vitrae
