@@ -35,7 +35,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
         return String("Prop_") + spec.name;
     };
     auto getTaskId = [&](const BasicTask &task) -> String {
-        return String("Task_") + std::to_string(std::hash<StringView>{}(task.getFriendlyName()));
+        return String("Task_") + std::to_string((std::size_t)&task);
     };
     auto outputTaskNode = [&](StringView id, std::size_t ord, const BasicTask &task) {
         out << id << " [";
