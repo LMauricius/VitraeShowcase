@@ -13,16 +13,22 @@ namespace Vitrae
  */
 template <class T> class PropertyGetter
 {
-    std::variant<StringId, T> m_nameOrValue;
+    struct DynamicSpec
+    {
+        StringId nameId;
+        String name;
+    };
+
+    std::variant<DynamicSpec, T> m_nameOrValue;
 
   public:
-    PropertyGetter(StringId nameId) : m_nameOrValue(std::in_place_index<0>, nameId) {}
+    PropertyGetter(String name) : m_nameOrValue(std::in_place_index<0>, DynamicSpec{name, name}) {}
     PropertyGetter(const T &value) : m_nameOrValue(std::in_place_index<1>, value) {}
     PropertyGetter(T &&value) : m_nameOrValue(std::in_place_index<1>, std::move(value)) {}
 
-    PropertyGetter &operator=(StringId nameId)
+    PropertyGetter &operator=(String name)
     {
-        m_nameOrValue.template emplace<0>(nameId);
+        m_nameOrValue.template emplace<0>(DynamicSpec{name, name});
         return *this;
     }
     PropertyGetter &operator=(const T &value)
@@ -35,7 +41,7 @@ template <class T> class PropertyGetter
     {
         switch (m_nameOrValue.index()) {
         case 0:
-            return scope.get(std::get<0>(m_nameOrValue)).template get<T>();
+            return scope.get(std::get<0>(m_nameOrValue).nameId).template get<T>();
         case 1:
         default:
             return std::get<1>(m_nameOrValue);
@@ -46,7 +52,7 @@ template <class T> class PropertyGetter
     {
         switch (m_nameOrValue.index()) {
         case 0:
-            const Variant *p = scope.getPtr(std::get<0>(m_nameOrValue));
+            const Variant *p = scope.getPtr(std::get<0>(m_nameOrValue).nameId);
             if (p)
                 return &(p->get<T>());
             else
@@ -55,6 +61,21 @@ template <class T> class PropertyGetter
         default:
             return &(std::get<1>(m_nameOrValue));
         }
+    }
+
+    /**
+     * @returns true if the property has a fixed value
+     */
+    bool isFixed() const { return m_nameOrValue.index() == 1; }
+
+    /**
+     * @returns PropertySpec for a dynamic property
+     * @note throws std::bad_variant_access if isFixed()
+     */
+    PropertySpec getSpec() const
+    {
+        return PropertySpec{.name = std::get<0>(m_nameOrValue).name,
+                            .typeInfo = Variant::getTypeInfo<T>()};
     }
 };
 

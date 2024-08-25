@@ -50,6 +50,10 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
         m_friendlyName += String("\n- ");
         m_friendlyName += spec.fragmentPropertySpec.name;
     }
+
+    if (!m_size.isFixed()) {
+        m_inputSpecs.emplace(m_size.getSpec().name, m_size.getSpec());
+    }
 }
 
 void ComposeFrameToTexture::run(RenderRunContext args) const

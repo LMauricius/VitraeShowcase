@@ -202,7 +202,7 @@ struct MethodsShadowEBR : MethodCollection
                             "tex_shadow_normal",
                             PropertySpec{"normal_view2d", Variant::getTypeInfo<glm::vec2>()}},
                     },
-                .size = StringId("ShadowMapSize"),
+                .size = String("ShadowMapSize"),
                 .channelType = Texture::ChannelType::VEC2_SNORM8,
                 .horWrap = Texture::WrappingType::BORDER_COLOR,
                 .verWrap = Texture::WrappingType::BORDER_COLOR,

@@ -101,7 +101,7 @@ struct MethodsShadowPCF : MethodCollection
                                                .frameInputPropertyName = "rendered_shadow",
                                                .colorTextureOutputPropertyName = "",
                                                .depthTextureOutputPropertyName = "tex_shadow",
-                                               .size = StringId("ShadowMapSize"),
+                                               .size = String("ShadowMapSize"),
                                                .horWrap = Texture::WrappingType::BORDER_COLOR,
                                                .verWrap = Texture::WrappingType::BORDER_COLOR,
                                                .minFilter = Texture::FilterType::NEAREST,
