@@ -6,15 +6,9 @@ namespace Vitrae
 {
 
 ComposeFunction::ComposeFunction(const SetupParams &params)
-    : ComposeTask(params.inputSpecs, params.outputSpecs), mp_function(params.p_function)
-{
-    for (auto &spec : params.outputSpecs) {
-        if (m_friendlyName.size()) {
-            m_friendlyName += String("\n+ ");
-        }
-        m_friendlyName += spec.name;
-    }
-}
+    : ComposeTask(params.inputSpecs, params.outputSpecs), mp_function(params.p_function),
+      m_friendlyName(params.friendlyName)
+{}
 
 void ComposeFunction::run(RenderRunContext args) const
 {

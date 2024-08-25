@@ -21,6 +21,7 @@ class ComposeFunction : public ComposeTask
         std::vector<PropertySpec> inputSpecs;
         std::vector<PropertySpec> outputSpecs;
         std::function<void(const RenderRunContext &)> p_function;
+        String friendlyName;
     };
 
     ComposeFunction(const SetupParams &params);

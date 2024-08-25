@@ -24,13 +24,14 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
       m_borderColor(params.borderColor)
 
 {
+    m_friendlyName = "To texture:";
     if (params.colorTextureOutputPropertyName != "") {
         m_outputSpecs.emplace(m_colorTextureOutputNameId,
                               PropertySpec{
                                   params.colorTextureOutputPropertyName,
                                   Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
                               });
-        m_friendlyName += String("shade");
+        m_friendlyName += String("\n- shade");
     }
     if (params.depthTextureOutputPropertyName != "") {
         m_outputSpecs.emplace(m_depthTextureOutputNameId,
@@ -38,10 +39,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
                                   params.depthTextureOutputPropertyName,
                                   Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
                               });
-        if (m_friendlyName.size()) {
-            m_friendlyName += String("\n+ ");
-        }
-        m_friendlyName += String("shade");
+        m_friendlyName += String("\n- depth");
     }
     for (auto &spec : m_outputTexturePropertySpecs) {
         m_outputSpecs.emplace(spec.texturePropertyName,
@@ -49,9 +47,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
                                   spec.texturePropertyName,
                                   Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
                               });
-        if (m_friendlyName.size()) {
-            m_friendlyName += String("\n+ ");
-        }
+        m_friendlyName += String("\n- ");
         m_friendlyName += spec.fragmentPropertySpec.name;
     }
 }
