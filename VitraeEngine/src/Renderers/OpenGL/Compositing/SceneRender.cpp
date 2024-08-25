@@ -91,8 +91,8 @@ const StableMap<StringId, PropertySpec> &OpenGLComposeSceneRender::getInputSpecs
     const RenderSetupContext &args) const
 {
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(args.renderer);
-    return rend.getSceneRenderInputDependencies(this, args.p_defaultVertexMethod,
-                                                args.p_defaultFragmentMethod);
+    return rend.getSceneRenderInputDependencies(rend.getSceneRenderInputDependencyHash(
+        this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
 }
 
 const StableMap<StringId, PropertySpec> &OpenGLComposeSceneRender::getOutputSpecs() const
@@ -106,13 +106,18 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
 
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_root.getComponent<Renderer>());
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
+    auto &inputDependencies =
+        rend.getEditableSceneRenderInputDependencies(rend.getSceneRenderInputDependencyHash(
+            this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
+
+    bool needsRebuild = false;
+    auto specifyInputDependency = [&](const PropertySpec &spec) {
+        needsRebuild = needsRebuild || inputDependencies.emplace(spec.name, spec).second;
+    };
 
     // add common inputs to renderer's cached input specs for this task
-    bool needsRebuild = false;
     for (auto [nameId, spec] : m_inputSpecs) {
-        needsRebuild = needsRebuild ||
-                       rend.specifySceneRenderInputDependency(this, args.p_defaultVertexMethod,
-                                                              args.p_defaultFragmentMethod, spec);
+        specifyInputDependency(spec);
     }
 
     // fail early if we already need to rebuild
@@ -223,8 +228,13 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                     glUseProgram(p_compiledShader->programGLName);
 
                     // set the 'environmental' uniforms
+                    // skip those that will be set by the material
+                    auto p_firstMat = materials2props.begin()->first;
+                    auto &firstMatProperties = p_firstMat->getProperties();
+                    auto &firstMatTextures = p_firstMat->getTextures();
                     int freeBindingIndex = 0;
                     GLint glModelMatrixUniformId;
+
                     {
                         MMETER_SCOPE_PROFILER("Uniform setup");
 
@@ -234,31 +244,32 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                                 glModelMatrixUniformId = uniSpec.glNameId;
 
                             } else {
-                                auto p = args.properties.getPtr(propertyNameId);
-                                if (p) {
-                                    rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-                                        .setUniform(uniSpec.glNameId, *p);
-                                } else {
-                                    needsRebuild =
-                                        needsRebuild ||
-                                        rend.specifySceneRenderInputDependency(
-                                            this, args.p_defaultVertexMethod,
-                                            args.p_defaultFragmentMethod, uniSpec.srcSpec);
+                                if (firstMatProperties.find(propertyNameId) ==
+                                    firstMatProperties.end()) {
+                                    auto p = args.properties.getPtr(propertyNameId);
+                                    if (p) {
+                                        rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                                            .setUniform(uniSpec.glNameId, *p);
+                                    }
+
+                                    specifyInputDependency(uniSpec.srcSpec);
                                 }
                             }
                         }
+
                         for (auto [propertyNameId, uniSpec] : p_compiledShader->bindingSpecs) {
-                            auto p = args.properties.getPtr(propertyNameId);
-                            if (p) {
-                                rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-                                    .setBinding(freeBindingIndex, *p);
-                                glUniform1i(uniSpec.glNameId, freeBindingIndex);
-                                freeBindingIndex++;
-                            } else {
-                                needsRebuild = needsRebuild ||
-                                               rend.specifySceneRenderInputDependency(
-                                                   this, args.p_defaultVertexMethod,
-                                                   args.p_defaultFragmentMethod, uniSpec.srcSpec);
+                            if (firstMatProperties.find(propertyNameId) ==
+                                    firstMatProperties.end() &&
+                                firstMatTextures.find(propertyNameId) == firstMatTextures.end()) {
+                                auto p = args.properties.getPtr(propertyNameId);
+                                if (p) {
+                                    rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                                        .setBinding(freeBindingIndex, *p);
+                                    glUniform1i(uniSpec.glNameId, freeBindingIndex);
+                                    freeBindingIndex++;
+                                }
+
+                                specifyInputDependency(uniSpec.srcSpec);
                             }
                         }
                     }

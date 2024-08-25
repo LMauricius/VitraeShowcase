@@ -107,15 +107,10 @@ class OpenGLRenderer : public Renderer
     };
     GpuValueStorageMethod getGpuStorageMethod(const GLTypeSpec &spec) const;
 
-    bool specifySceneRenderInputDependency(
-        const ComposeTask *p_composeTask,
-        dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
-        dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod, const PropertySpec &newSpec);
-    bool specifySceneRenderInputDependencies(
-        const ComposeTask *p_composeTask,
-        dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
-        dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod, PropertyList newSpecs);
     const StableMap<StringId, PropertySpec> &getSceneRenderInputDependencies(
+        std::size_t hash) const;
+    StableMap<StringId, PropertySpec> &getEditableSceneRenderInputDependencies(std::size_t hash);
+    std::size_t getSceneRenderInputDependencyHash(
         const ComposeTask *p_composeTask,
         dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
         dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod) const;

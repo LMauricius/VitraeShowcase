@@ -295,46 +295,27 @@ OpenGLRenderer::GpuValueStorageMethod OpenGLRenderer::getGpuStorageMethod(
         return GpuValueStorageMethod::UBO;
     }
 }
-bool OpenGLRenderer::specifySceneRenderInputDependency(
-    const ComposeTask *p_composeTask, dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
-    dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod, const PropertySpec &newSpec)
-{
-    std::size_t h = combinedHashes({{
-        (std::size_t)p_composeTask,
-        std::hash<dynasma::LazyPtr<Method<ShaderTask>>>{}(p_defaultVertexMethod),
-        std::hash<dynasma::LazyPtr<Method<ShaderTask>>>{}(p_defaultFragmentMethod),
-    }});
-
-    return m_sceneRenderInputDependencies[h].insert({newSpec.name, newSpec}).second;
-}
-
-bool OpenGLRenderer::specifySceneRenderInputDependencies(
-    const ComposeTask *p_composeTask, dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
-    dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod, PropertyList newSpecs)
-{
-    std::size_t h = combinedHashes({{
-        (std::size_t)p_composeTask,
-        std::hash<dynasma::LazyPtr<Method<ShaderTask>>>{}(p_defaultVertexMethod),
-        std::hash<dynasma::LazyPtr<Method<ShaderTask>>>{}(p_defaultFragmentMethod),
-    }});
-
-    bool ret = false;
-    for (const auto &newSpec : newSpecs.getSpecList()) {
-        ret |= m_sceneRenderInputDependencies[h].insert({newSpec.name, newSpec}).second;
-    }
-    return ret;
-}
-
 const StableMap<StringId, PropertySpec> &OpenGLRenderer::getSceneRenderInputDependencies(
+    std::size_t hash) const
+{
+    return m_sceneRenderInputDependencies[hash];
+}
+
+StableMap<StringId, PropertySpec> &OpenGLRenderer::getEditableSceneRenderInputDependencies(
+    std::size_t hash)
+{
+    return m_sceneRenderInputDependencies[hash];
+}
+
+std::size_t OpenGLRenderer::getSceneRenderInputDependencyHash(
     const ComposeTask *p_composeTask, dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
     dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod) const
 {
-    std::size_t h = combinedHashes({{
+    return combinedHashes({{
         (std::size_t)p_composeTask,
         std::hash<dynasma::LazyPtr<Method<ShaderTask>>>{}(p_defaultVertexMethod),
         std::hash<dynasma::LazyPtr<Method<ShaderTask>>>{}(p_defaultFragmentMethod),
     }});
-
-    return m_sceneRenderInputDependencies[h];
 }
+
 } // namespace Vitrae
