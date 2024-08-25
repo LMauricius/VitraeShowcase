@@ -94,7 +94,7 @@ struct MethodsShadowEBR : MethodCollection
                     {
                         PropertySpec{.name = "tex_shadow",
                                      .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
-                        PropertySpec{.name = "tex_shadow_alias",
+                        PropertySpec{.name = "tex_shadow_normal",
                                      .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
                         PropertySpec{.name = "position_shadow",
                                      .typeInfo = Variant::getTypeInfo<glm::vec3>()},
