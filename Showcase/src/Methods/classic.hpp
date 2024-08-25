@@ -259,35 +259,39 @@ struct MethodsClassic : MethodCollection
         */
 
         // camera matrices extractor
-        auto p_extractCameraProperties = dynasma::makeStandalone<
-            ComposeFunction>(ComposeFunction::SetupParams{
-            .inputSpecs = {{PropertySpec{
-                .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()}}},
-            .outputSpecs = {{
-                PropertySpec{.name = StandardShaderPropertyNames::INPUT_VIEW,
-                             .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                PropertySpec{.name = StandardShaderPropertyNames::INPUT_PROJECTION,
-                             .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                PropertySpec{.name = "camera_position",
-                             .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-            }},
-            .p_function = [](const RenderRunContext &context) {
-                try {
-                    auto p_scene = context.properties.get("scene").get<dynasma::FirmPtr<Scene>>();
-                    auto p_windowFrame =
-                        context.properties.get(StandardCompositorOutputNames::OUTPUT)
-                            .get<dynasma::FirmPtr<FrameStore>>();
-                    context.properties.set(StandardShaderPropertyNames::INPUT_VIEW,
-                                           p_scene->camera.getViewMatrix());
-                    context.properties.set(
-                        StandardShaderPropertyNames::INPUT_PROJECTION,
-                        p_scene->camera.getPerspectiveMatrix(p_windowFrame->getSize().x,
-                                                             p_windowFrame->getSize().y));
-                    context.properties.set("camera_position", p_scene->camera.position);
-                }
-                catch (const std::out_of_range &e) {
-                }
-            }});
+        auto p_extractCameraProperties =
+            dynasma::makeStandalone<ComposeFunction>(ComposeFunction::SetupParams{
+                .inputSpecs = {{PropertySpec{
+                    .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()}}},
+                .outputSpecs = {{
+                    PropertySpec{.name = StandardShaderPropertyNames::INPUT_VIEW,
+                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
+                    PropertySpec{.name = StandardShaderPropertyNames::INPUT_PROJECTION,
+                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
+                    PropertySpec{.name = "camera_position",
+                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                }},
+                .p_function =
+                    [](const RenderRunContext &context) {
+                        try {
+                            auto p_scene =
+                                context.properties.get("scene").get<dynasma::FirmPtr<Scene>>();
+                            auto p_windowFrame =
+                                context.properties.get(StandardCompositorOutputNames::OUTPUT)
+                                    .get<dynasma::FirmPtr<FrameStore>>();
+                            context.properties.set(StandardShaderPropertyNames::INPUT_VIEW,
+                                                   p_scene->camera.getViewMatrix());
+                            context.properties.set(
+                                StandardShaderPropertyNames::INPUT_PROJECTION,
+                                p_scene->camera.getPerspectiveMatrix(p_windowFrame->getSize().x,
+                                                                     p_windowFrame->getSize().y));
+                            context.properties.set("camera_position", p_scene->camera.position);
+                        }
+                        catch (const std::out_of_range &e) {
+                        }
+                    },
+                .friendlyName = "Camera properties",
+            });
 
         p_composeMethod =
             dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
