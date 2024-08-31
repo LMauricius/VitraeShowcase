@@ -463,7 +463,6 @@ template <class KeyT, class MappedT> class StableMap
 
         delete[] m_data;
         m_data = newData;
-        getValueList() = newValueList;
         --m_size;
     }
 
