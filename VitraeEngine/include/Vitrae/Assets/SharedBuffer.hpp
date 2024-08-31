@@ -96,23 +96,25 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
     static constexpr bool HAS_FAM_ELEMENTS = !std::is_same_v<ElementT, void>;
 
     // Location of the FAM adjusted for alignment
+    template <typename ElementT2 = ElementT>
     static constexpr std::ptrdiff_t getFirstElementOffset()
         requires HAS_FAM_ELEMENTS
     {
         if constexpr (HAS_HEADER)
-            return ((sizeof(HeaderT) - 1) / alignof(ElementT) + 1) * alignof(ElementT);
+            return ((sizeof(HeaderT) - 1) / alignof(ElementT2) + 1) * alignof(ElementT2);
         else
             return 0;
     }
 
   public:
+    template <typename ElementT2 = ElementT>
     static constexpr std::size_t calcMinimumBufferSize(std::size_t numElements)
         requires HAS_FAM_ELEMENTS
     {
         if constexpr (HAS_HEADER)
-            return getFirstElementOffset() + sizeof(ElementT) * numElements;
+            return getFirstElementOffset() + sizeof(ElementT2) * numElements;
         else
-            return sizeof(ElementT) * numElements;
+            return sizeof(ElementT2) * numElements;
     }
     static constexpr std::size_t calcMinimumBufferSize()
     {
@@ -155,6 +157,7 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
     /**
      * Resizes the underlying RawSharedBuffer to contain the given number of FAM elements
      */
+    template <typename ElementT2 = ElementT>
     void resizeElements(std::size_t numElements)
         requires HAS_FAM_ELEMENTS
     {
@@ -169,41 +172,46 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
     /**
      * @returns the number of FAM elements in the underlying RawSharedBuffer
      */
+    template <typename ElementT2 = ElementT>
     std::size_t numElements() const
         requires HAS_FAM_ELEMENTS
     {
-        return (m_buffer->size() - getFirstElementOffset()) / sizeof(ElementT);
+        return (m_buffer->size() - getFirstElementOffset()) / sizeof(ElementT2);
     }
 
     /**
      * @returns The header of the buffer
      */
-    const HeaderT &getHeader() const
+    template <typename HeaderT2 = HeaderT>
+    const HeaderT2 &getHeader() const
         requires HAS_HEADER
     {
-        return *reinterpret_cast<const HeaderT *>(m_buffer->data());
+        return *reinterpret_cast<const HeaderT2 *>(m_buffer->data());
     }
-    HeaderT &getHeader()
+    template <typename HeaderT2 = HeaderT>
+    HeaderT2 &getHeader()
         requires HAS_HEADER
     {
-        return *reinterpret_cast<HeaderT *>((*m_buffer)[{0, sizeof(HeaderT)}].data());
+        return *reinterpret_cast<HeaderT2 *>((*m_buffer)[{0, sizeof(HeaderT2)}].data());
     }
 
     /**
      * @returns The FAM element at the given index
      */
-    const ElementT &getElement(std::size_t index) const
+    template <typename ElementT2 = ElementT>
+    const ElementT2 &getElement(std::size_t index) const
         requires HAS_FAM_ELEMENTS
     {
-        return *reinterpret_cast<const ElementT *>(m_buffer->data() + getFirstElementOffset() +
-                                                   sizeof(ElementT) * index);
+        return *reinterpret_cast<const ElementT2 *>(m_buffer->data() + getFirstElementOffset() +
+                                                    sizeof(ElementT2) * index);
     }
-    ElementT &getElement(std::size_t index)
+    template <typename ElementT2 = ElementT>
+    ElementT2 &getElement(std::size_t index)
         requires HAS_FAM_ELEMENTS
     {
-        return *reinterpret_cast<ElementT *>(
-            (*m_buffer)[{getFirstElementOffset() + sizeof(ElementT) * index,
-                         getFirstElementOffset() + sizeof(ElementT) * index + sizeof(ElementT)}]
+        return *reinterpret_cast<ElementT2 *>(
+            (*m_buffer)[{getFirstElementOffset() + sizeof(ElementT2) * index,
+                         getFirstElementOffset() + sizeof(ElementT2) * index + sizeof(ElementT2)}]
                 .data());
     }
 
