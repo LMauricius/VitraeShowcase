@@ -165,7 +165,7 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
     }
 
     /**
-     * @returns the number of FAM elements in the underlying RawSharedBuffer
+     * @returns the number of bytes in the underlying RawSharedBuffer
      */
     std::size_t byteSize() const { return m_buffer->size(); }
 
