@@ -103,28 +103,6 @@ struct MethodsClassic : MethodCollection
         FRAGMENT SHADING
         */
 
-        auto p_shadeAmbient =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "light_color_ambient",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "shade_ambient",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .snippet = R"(
-                    void setAmbient(
-                        in vec3 light_color_ambient,
-                        out vec3 shade_ambient
-                    ) {
-                        shade_ambient = light_color_ambient;
-                    }
-                )",
-                .functionName = "setAmbient"}});
-
         auto p_shadeDiffuse =
             root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
                 .inputSpecs =
@@ -251,7 +229,7 @@ struct MethodsClassic : MethodCollection
 
         p_fragmentMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-                .tasks = {p_shadeAmbient, p_shadeDiffuse, p_shadeSpecular, p_phongCombine},
+                .tasks = {p_shadeDiffuse, p_shadeSpecular, p_phongCombine},
                 .friendlyName = "Classic"});
 
         /*

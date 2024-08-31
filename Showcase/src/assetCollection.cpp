@@ -1,5 +1,6 @@
 #include "assetCollection.hpp"
 
+#include "Methods/ambientFlat.hpp"
 #include "Methods/classic.hpp"
 #include "Methods/lightSpaceStable.hpp"
 #include "Methods/renderShades.hpp"
@@ -45,6 +46,7 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
          },
          0},
         {"Base shading", {std::make_shared<MethodsClassic>(root)}, 0},
+        {"Indirect lighting", {std::make_shared<MethodsAmbientFlat>(root)}, 0},
         {"Light/shadow space", {std::make_shared<MethodsLSStable>(root)}, 0},
         {"Shadow filtering",
          {
