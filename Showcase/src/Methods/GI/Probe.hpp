@@ -77,7 +77,7 @@ using ReflectionBufferPtr = SharedBufferPtr<void, G_Source2FacesTransfer>;
 using NeighborIndexBufferPtr = SharedBufferPtr<void, std::uint32_t>;
 using NeighborTransferBufferPtr = SharedBufferPtr<void, G_NeighborTransfer>;
 
-inline constexpr const char *GLSL_DEF_SNIPPET = R"(
+inline constexpr const char *GLSL_PROBE_DEF_SNIPPET = R"(
 const vec3 DIRECTIONS[6] = vec3[](
     vec3(1.0, 0.0, 0.0),  vec3(-1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0),
     vec3(0.0, -1.0, 0.0), vec3(0.0, 0.0, 1.0),  vec3(0.0, 0.0, -1.0)
