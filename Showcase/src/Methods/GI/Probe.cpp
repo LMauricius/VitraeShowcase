@@ -15,7 +15,7 @@ void GI::convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes,
     gpuReflectionTransfers.resizeElements(hostProbes.size());
     gpuLeavingPremulFactors.resizeElements(hostProbes.size());
 
-    std::size_t numNeighborSpecs;
+    std::size_t numNeighborSpecs = 0;
 
     for (std::size_t i = 0; i < hostProbes.size(); i++) {
         auto &hostProbe = hostProbes[i];
@@ -43,7 +43,7 @@ void GI::convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes,
         auto &hostProbe = hostProbes[i];
         auto &gpuProbe = gpuProbes.getElement(i);
 
-        for (std::size_t j = 0; j < hostProbe.neighborSpecs.size(); j++) {
+        for (std::size_t j = 0; j < gpuProbe.neighborSpecCount; j++) {
             auto &hostNeighborSpec = hostProbe.neighborSpecs[j];
 
             gpuNeighborIndices.getElement(gpuProbe.neighborSpecBufStart + j) =
