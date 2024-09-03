@@ -43,7 +43,7 @@ class OpenGLMesh : public Mesh
     String m_friendlyname;
     std::optional<dynasma::LazyPtr<Material>> mMaterial;
     std::vector<Triangle> mTriangles;
-    getBoundingBox m_aabb;
+    BoundingBox m_aabb;
     StableMap<StringId, std::valarray<glm::vec1>> namedVec1Buffers;
     StableMap<StringId, std::valarray<glm::vec2>> namedVec2Buffers;
     StableMap<StringId, std::valarray<glm::vec3>> namedVec3Buffers;
