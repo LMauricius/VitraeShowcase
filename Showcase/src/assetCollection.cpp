@@ -143,9 +143,11 @@ void AssetCollection::reapplyChoosenMethods()
 
     std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenVertexMethods;
     std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenFragMethods;
+    std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenComputeMethods;
     std::vector<dynasma::FirmPtr<Method<ComposeTask>>> choosenComposeMethods;
     Vitrae::String vertName = "";
     Vitrae::String fragName = "";
+    Vitrae::String computeName = "";
     Vitrae::String compName = "";
 
     for (auto &category : methodCategories) {
@@ -164,6 +166,12 @@ void AssetCollection::reapplyChoosenMethods()
             fragName += "_";
         }
 
+        if (category.methods[category.selectedIndex]->p_computeMethod->getFriendlyName() != "") {
+            computeName +=
+                category.methods[category.selectedIndex]->p_computeMethod->getFriendlyName();
+            computeName += "_";
+        }
+
         if (category.methods[category.selectedIndex]->p_composeMethod->getFriendlyName() != "") {
             compName +=
                 category.methods[category.selectedIndex]->p_composeMethod->getFriendlyName();
@@ -179,12 +187,24 @@ void AssetCollection::reapplyChoosenMethods()
         dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
             .fallbackMethods = choosenFragMethods, .friendlyName = fragName});
 
+    auto p_aggregateComputeMethod =
+        dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
+            .fallbackMethods = choosenComputeMethods, .friendlyName = computeName});
+
     auto p_aggregateComposeMethod =
         dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
             .fallbackMethods = choosenComposeMethods, .friendlyName = compName});
 
     comp.setDefaultShadingMethod(p_aggregateVertexMethod, p_aggregateFragmentMethod);
+    comp.setDefaultComputeMethod(p_aggregateComputeMethod);
     comp.setComposeMethod(p_aggregateComposeMethod);
+
+    Renderer &rend = root.getComponent<Renderer>();
+    for (auto &category : methodCategories) {
+        for (auto &setupFunction : category.methods[category.selectedIndex]->setupFunctions) {
+            setupFunction(root, rend, comp.parameters);
+        }
+    }
 }
 
 void AssetCollection::render()

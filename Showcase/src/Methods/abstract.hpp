@@ -16,6 +16,7 @@ struct MethodCollection
     dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod;
     dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod;
     dynasma::FirmPtr<Method<ComposeTask>> p_composeMethod;
+    std::vector<std::function<void(ComponentRoot &, Renderer &, ScopedDict &)>> setupFunctions;
 
     MethodCollection(ComponentRoot &root);
     virtual ~MethodCollection() = default;
