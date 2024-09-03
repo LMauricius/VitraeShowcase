@@ -22,6 +22,7 @@ Compositor::Compositor(ComponentRoot &root, dynasma::FirmPtr<Method<ComposeTask>
                      .renderer = m_root.getComponent<Renderer>(),
                      .p_defaultVertexMethod = m_defaultVertexMethod,
                      .p_defaultFragmentMethod = m_defaultFragmentMethod,
+                     .p_defaultComputeMethod = m_defaultComputeMethod,
                  }),
       m_localProperties(&parameters)
 {
@@ -49,6 +50,11 @@ void Compositor::setDefaultShadingMethod(dynasma::FirmPtr<Method<ShaderTask>> p_
     m_defaultFragmentMethod = p_fragmentMethod;
 }
 
+void Compositor::setDefaultComputeMethod(dynasma::FirmPtr<Method<ShaderTask>> p_method)
+{
+    m_defaultComputeMethod = p_method;
+}
+
 void Compositor::setOutput(dynasma::FirmPtr<FrameStore> p_store)
 {
     m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_store;
@@ -73,6 +79,7 @@ void Compositor::compose()
                              .methodCombinator = m_shadingMethodCombinator,
                              .p_defaultVertexMethod = m_defaultVertexMethod,
                              .p_defaultFragmentMethod = m_defaultFragmentMethod,
+                             .p_defaultComputeMethod = m_defaultComputeMethod,
                              .preparedCompositorFrameStores = m_preparedFrameStores,
                              .preparedCompositorTextures = m_preparedTextures};
 
@@ -127,6 +134,7 @@ void Compositor::rebuildPipeline()
         .renderer = m_root.getComponent<Renderer>(),
         .p_defaultVertexMethod = m_defaultVertexMethod,
         .p_defaultFragmentMethod = m_defaultFragmentMethod,
+        .p_defaultComputeMethod = m_defaultComputeMethod,
     };
 
     m_pipeline = Pipeline<ComposeTask>(

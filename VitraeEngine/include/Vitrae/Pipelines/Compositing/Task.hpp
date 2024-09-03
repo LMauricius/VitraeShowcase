@@ -15,7 +15,8 @@ class Texture;
 struct RenderSetupContext
 {
     Renderer &renderer;
-    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod, p_defaultFragmentMethod;
+    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod, p_defaultFragmentMethod,
+        p_defaultComputeMethod;
 };
 
 struct RenderRunContext
@@ -23,7 +24,8 @@ struct RenderRunContext
     ScopedDict &properties;
     Renderer &renderer;
     MethodCombinator<ShaderTask> &methodCombinator;
-    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod, p_defaultFragmentMethod;
+    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod, p_defaultFragmentMethod,
+        p_defaultComputeMethod;
     const StableMap<StringId, dynasma::FirmPtr<FrameStore>> &preparedCompositorFrameStores;
     const StableMap<StringId, dynasma::FirmPtr<Texture>> &preparedCompositorTextures;
 };
