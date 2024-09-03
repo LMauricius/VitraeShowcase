@@ -318,4 +318,15 @@ std::size_t OpenGLRenderer::getSceneRenderInputDependencyHash(
     }});
 }
 
+void OpenGLRenderer::setRawBufferBinding(const RawSharedBuffer &buf, int bindingIndex)
+{
+    const OpenGLRawSharedBuffer &glbuf = static_cast<const OpenGLRawSharedBuffer &>(buf);
+
+    if (!glbuf.isSynchronized()) {
+        throw std::runtime_error("OpenGLRawSharedBuffer is not synchronized");
+    }
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, glbuf.getGlBufferHandle());
+}
+
 } // namespace Vitrae

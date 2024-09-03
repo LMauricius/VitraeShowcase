@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Assets/SharedBuffer.hpp"
 #include "Vitrae/Pipelines/Task.hpp"
 #include "Vitrae/Renderer.hpp"
 #include "Vitrae/TypeConversion/AssimpTypeConvert.hpp"
@@ -64,9 +65,17 @@ struct GLConversionSpec
     // used only if the type has a flexible array member
     struct FlexibleMemberConversion
     {
-        std::size_t (*getNumElements)(const void *src);
+        std::size_t (*getNumElements)(const Variant &hostValue);
     };
     std::optional<FlexibleMemberConversion> flexibleMemberSpec;
+};
+
+/**
+ * @brief Thrown when there is an error in type specification
+ */
+struct GLSpecificationError : public std::invalid_argument
+{
+    using std::invalid_argument::invalid_argument;
 };
 
 class OpenGLRenderer : public Renderer
@@ -89,6 +98,15 @@ class OpenGLRenderer : public Renderer
     void specifyTypeConversion(const GLConversionSpec &newSpec);
     const GLConversionSpec &getTypeConversion(const TypeInfo &hostType) const;
     const StableMap<StringId, GLTypeSpec> &getAllGlTypeSpecs() const;
+
+    /**
+     * @brief Automatically specified the gl type and conversion for a SharedBuffer type
+     * @tparam SharedBufferT the type of the shared buffer
+     * @param glname the name of the glsl type
+     * @throws GLSpecificationError if the type isn't trivially convertible
+     */
+    template <SharedBufferPtrInst SharedBufferT>
+    void specifyBufferTypeAndConversionAuto(StringView glname);
 
     void specifyVertexBuffer(const PropertySpec &newElSpec);
     template <class T> void specifyVertexBufferAuto()
@@ -129,6 +147,99 @@ class OpenGLRenderer : public Renderer
 
     mutable StableMap<std::size_t, StableMap<StringId, PropertySpec>>
         m_sceneRenderInputDependencies;
+
+    // utility
+    static void setRawBufferBinding(const RawSharedBuffer &buf, int bindingIndex);
 };
+
+template <SharedBufferPtrInst SharedBufferT>
+void OpenGLRenderer::specifyBufferTypeAndConversionAuto(StringView glname)
+{
+    using ElementT = SharedBufferT::ElementT;
+    using HeaderT = SharedBufferT::HeaderT;
+
+    GLTypeSpec typeSpec = GLTypeSpec{
+        .glMutableTypeName = String(glname),
+        .glConstTypeName = String(glname),
+        .glslDefinitionSnippet = "struct " + String(glname) + " {\n",
+        .std140Size = 0,
+        .std140Alignment = 0,
+        .layoutIndexSize = 0,
+    };
+
+    if constexpr (SharedBufferT::HAS_HEADER) {
+        auto &headerConv = getTypeConversion(Variant::getTypeInfo<HeaderT>());
+        auto &headerGlTypeSpec = headerConv.glTypeSpec;
+
+        typeSpec.glslDefinitionSnippet +=
+            String("    ") + headerGlTypeSpec.glMutableTypeName + " header;\n";
+
+        typeSpec.std140Size = headerGlTypeSpec.std140Size;
+        typeSpec.std140Alignment = headerGlTypeSpec.std140Alignment;
+        typeSpec.layoutIndexSize = headerGlTypeSpec.layoutIndexSize;
+
+        if (headerGlTypeSpec.std140Size != sizeof(HeaderT)) {
+            throw GLSpecificationError(
+                "Buffer headers not trivially convertible between host and GLSL types");
+        }
+
+        typeSpec.memberTypeDependencies.push_back(&headerGlTypeSpec);
+    }
+
+    if constexpr (SharedBufferT::HAS_FAM_ELEMENTS) {
+        auto &elementConv = getTypeConversion(Variant::getTypeInfo<ElementT>());
+        auto &elementGlTypeSpec = elementConv.glTypeSpec;
+
+        typeSpec.glslDefinitionSnippet +=
+            String("    ") + elementGlTypeSpec.glMutableTypeName + " elements[];\n";
+
+        typeSpec.flexibleMemberSpec.emplace(GLTypeSpec::FlexibleMemberSpec{
+            .elementGlTypeSpec = elementGlTypeSpec,
+            .maxNumElements = std::numeric_limits<std::uint32_t>::max(),
+        });
+
+        if (typeSpec.std140Alignment < elementGlTypeSpec.std140Alignment) {
+            typeSpec.std140Alignment = elementGlTypeSpec.std140Alignment;
+        }
+        if (typeSpec.std140Size % elementGlTypeSpec.std140Alignment != 0) {
+            typeSpec.std140Size = (typeSpec.std140Size / elementGlTypeSpec.std140Alignment + 1) *
+                                  elementGlTypeSpec.std140Alignment;
+        }
+
+        if (typeSpec.std140Size != SharedBufferT::getFirstElementOffset()) {
+            throw GLSpecificationError(
+                "Buffer elements do not start at the same offset between host and GLSL types");
+        }
+        if (elementGlTypeSpec.std140Size != sizeof(ElementT)) {
+            throw GLSpecificationError(
+                "Buffer elements not trivially convertible between host and GLSL types");
+        }
+
+        typeSpec.memberTypeDependencies.push_back(&elementGlTypeSpec);
+    }
+
+    typeSpec.glslDefinitionSnippet += "};\n";
+
+    specifyGlType(typeSpec);
+
+    GLConversionSpec convSpec = GLConversionSpec{
+        .hostType = Variant::getTypeInfo<SharedBufferT>(),
+        .glTypeSpec = getGlTypeSpec(glname),
+        .setUniform = nullptr,
+        .setBinding = [](int bindingIndex, const Variant &hostValue) {
+            setRawBufferBinding(*hostValue.get<SharedBufferT>().getRawBuffer(), bindingIndex);
+        }};
+
+    if constexpr (SharedBufferT::HAS_FAM_ELEMENTS) {
+        convSpec.flexibleMemberSpec = GLConversionSpec::FlexibleMemberConversion{
+            .getNumElements =
+                [](const Variant &hostValue) {
+                    return hostValue.get<SharedBufferT>().numElements();
+                },
+        };
+    }
+
+    specifyTypeConversion(convSpec);
+}
 
 } // namespace Vitrae
