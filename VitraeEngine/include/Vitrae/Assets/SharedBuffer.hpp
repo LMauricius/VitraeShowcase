@@ -41,7 +41,6 @@ class RawSharedBuffer : public dynasma::PolymorphicBase
         String friendlyName = "";
     };
 
-    RawSharedBuffer();
     virtual ~RawSharedBuffer() = default;
 
     virtual void synchronize() = 0;
@@ -63,6 +62,8 @@ class RawSharedBuffer : public dynasma::PolymorphicBase
     mutable Byte *m_bufferPtr;
     /// @brief  The range of the buffer that needs to be synchronized
     mutable std::pair<std::size_t, std::size_t> m_dirtySpan;
+
+    RawSharedBuffer();
 
     /**
      * @brief This function is called only while m_bufferPtr is nullptr, and has to set m_bufferPtr
