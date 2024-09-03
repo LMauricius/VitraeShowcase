@@ -235,25 +235,25 @@ GLFWwindow *OpenGLRenderer::getWindow()
 
 void OpenGLRenderer::specifyGlType(const GLTypeSpec &newSpec)
 {
-    m_glTypes.emplace(StringId(newSpec.glMutableTypeName), newSpec);
+    m_glTypes.emplace(StringId(newSpec.glMutableTypeName), new GLTypeSpec(newSpec));
 }
 
 void OpenGLRenderer::specifyTypeConversion(const GLConversionSpec &newSpec)
 {
-    m_glConversions.emplace(std::type_index(*newSpec.hostType.p_id), newSpec);
+    m_glConversions.emplace(std::type_index(*newSpec.hostType.p_id), new GLConversionSpec(newSpec));
 }
 
 const GLTypeSpec &OpenGLRenderer::getGlTypeSpec(StringId name) const
 {
-    return m_glTypes.at(name);
+    return *m_glTypes.at(name);
 }
 
 const GLConversionSpec &OpenGLRenderer::getTypeConversion(const TypeInfo &type) const
 {
-    return m_glConversions.at(std::type_index(*type.p_id));
+    return *m_glConversions.at(std::type_index(*type.p_id));
 }
 
-const StableMap<StringId, GLTypeSpec> &OpenGLRenderer::getAllGlTypeSpecs() const
+const StableMap<StringId, std::unique_ptr<GLTypeSpec>> &OpenGLRenderer::getAllGlTypeSpecs() const
 {
     return m_glTypes;
 }
