@@ -6,9 +6,50 @@ namespace GI
 namespace
 {
 
+constexpr float PI2 = 3.14159265 * 2.0;
+
+// 2*pi / light count over a round arc
+constexpr float LIGHT_ARC_COVERAGE = PI2 / 4;
+
 float factorTo(const H_ProbeDefinition &srcProbe, const H_ProbeDefinition &dstProbe,
                int srcDirIndex, int dstDirIndex)
-{}
+{
+    // note: we don't need the exact angular surface for the wall, or exact scales here.
+    // Since the total leaving amounts get normalized,
+    // the shared scalings (such as pi^2 constants) get nullified.
+
+    glm::vec3 srcCenter = srcProbe.position;
+    glm::vec3 wallCenter = dstProbe.position + DIRECTIONS[dstDirIndex] * dstProbe.size / 2.0f;
+    float wallSize;
+    {
+        glm::vec3 wallDiag = (glm::vec3(1.0) - glm::abs(DIRECTIONS[dstDirIndex])) * dstProbe.size;
+        glm::vec3 wallDiagNon0 = wallDiag + glm::abs(DIRECTIONS[dstDirIndex]);
+        wallSize = wallDiagNon0.x * wallDiagNon0.y * wallDiagNon0.z;
+    }
+
+    glm::vec3 src2wallOffset = wallCenter - srcCenter;
+    float src2wallDist = glm::length(src2wallOffset);
+    glm::vec3 src2wallDir = src2wallOffset / src2wallDist;
+
+    float wallDot = glm::dot(src2wallDir, DIRECTIONS[dstDirIndex]);
+    float lightDot = glm::dot(src2wallDir, DIRECTIONS[srcDirIndex]);
+    float wallAngularSurface = wallSize / (src2wallDist * src2wallDist) * wallDot;
+
+    if (wallAngularSurface <= 0.0f) {
+        return 0.0f;
+    }
+
+    float wallArcCoverage = std::sqrt(wallSize) / (PI2 * src2wallDist) * wallDot;
+    float wallArcOffset = std::abs(std::acos(lightDot));
+
+    float wallArcStart = wallArcOffset - wallArcCoverage / 2.0f;
+    float wallArcEnd = wallArcOffset + wallArcCoverage / 2.0f;
+    float visibleAmount =
+        std::max(std::min(LIGHT_ARC_COVERAGE / 2.0f, wallArcEnd), 0.0f) / wallArcCoverage;
+
+    return visibleAmount * wallAngularSurface;
+}
+
 } // namespace
 
 const char *const GLSL_PROBE_GEN_SNIPPET = R"(
