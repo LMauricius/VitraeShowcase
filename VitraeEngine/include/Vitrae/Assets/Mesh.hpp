@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Types/BoundingBox.hpp"
 #include "Vitrae/Types/GraphicPrimitives.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
 
@@ -10,6 +11,7 @@
 #include "dynasma/managers/abstract.hpp"
 #include "dynasma/pointer.hpp"
 
+#include <filesystem>
 #include <span>
 #include <variant>
 
@@ -37,6 +39,7 @@ class Mesh : public dynasma::PolymorphicBase
     virtual void setMaterial(dynasma::LazyPtr<Material> mat) = 0;
     virtual dynasma::LazyPtr<Material> getMaterial() const = 0;
     virtual std::span<const Triangle> getTriangles() const = 0;
+    virtual BoundingBox getBoundingBox() const = 0;
 
     virtual std::size_t memory_cost() const = 0;
 };
