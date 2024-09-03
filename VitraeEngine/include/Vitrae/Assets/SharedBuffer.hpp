@@ -129,7 +129,7 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
      * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
      * with enough size for the HeaderT
      */
-    SharedBufferPtr(ComponentRoot &root, BufferUsageHint usage)
+    SharedBufferPtr(ComponentRoot &root, BufferUsageHints usage)
         : m_buffer(root.getComponent<RawSharedBufferKeeper>().new_asset(RawSharedBufferKeeperSeed{
               .kernel = RawSharedBuffer::SetupParams{.renderer = root.getComponent<Renderer>(),
                                                      .root = root,
@@ -141,7 +141,7 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
      * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
      * with the specified number of elements
      */
-    SharedBufferPtr(ComponentRoot &root, BufferUsageHint usage, std::size_t numElements)
+    SharedBufferPtr(ComponentRoot &root, BufferUsageHints usage, std::size_t numElements)
         requires HAS_FAM_ELEMENTS
         : m_buffer(root.getComponent<RawSharedBufferKeeper>().new_asset(RawSharedBufferKeeperSeed{
               .kernel = RawSharedBuffer::SetupParams{.renderer = root.getComponent<Renderer>(),
