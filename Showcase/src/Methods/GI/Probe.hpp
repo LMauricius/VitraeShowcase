@@ -42,6 +42,7 @@ struct H_ProbeDefinition
     glm::vec3 position;
     glm::vec3 size;
     H_Source2FacesTransfer reflectionTransfer;
+    float leavingPremulFactor[6];
     std::vector<H_NeighborSpec> neighborSpecs;
 };
 
@@ -74,6 +75,7 @@ struct G_ProbeDefinition
 
 using ProbeBufferPtr = SharedBufferPtr<void, G_ProbeDefinition>;
 using ReflectionBufferPtr = SharedBufferPtr<void, G_Source2FacesTransfer>;
+using LeavingPremulFactorBufferPtr = SharedBufferPtr<void, float[6]>;
 using NeighborIndexBufferPtr = SharedBufferPtr<void, std::uint32_t>;
 using NeighborTransferBufferPtr = SharedBufferPtr<void, G_NeighborTransfer>;
 
@@ -108,6 +110,7 @@ Conversion
 
 void convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes, ProbeBufferPtr gpuProbes,
                             ReflectionBufferPtr gpuReflectionTransfers,
+                            LeavingPremulFactorBufferPtr gpuLeavingPremulFactors,
                             NeighborIndexBufferPtr gpuNeighborIndices,
                             NeighborTransferBufferPtr gpuNeighborTransfers);
 

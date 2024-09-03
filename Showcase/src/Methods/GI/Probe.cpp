@@ -5,6 +5,7 @@
 void GI::convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes,
                                 ProbeBufferPtr gpuProbes,
                                 ReflectionBufferPtr gpuReflectionTransfers,
+                                LeavingPremulFactorBufferPtr gpuLeavingPremulFactors,
                                 NeighborIndexBufferPtr gpuNeighborIndices,
                                 NeighborTransferBufferPtr gpuNeighborTransfers)
 {
@@ -12,6 +13,7 @@ void GI::convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes,
 
     gpuProbes.resizeElements(hostProbes.size());
     gpuReflectionTransfers.resizeElements(hostProbes.size());
+    gpuLeavingPremulFactors.resizeElements(hostProbes.size());
 
     std::size_t numNeighborSpecs;
 
@@ -19,6 +21,7 @@ void GI::convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes,
         auto &hostProbe = hostProbes[i];
         auto &gpuProbe = gpuProbes.getElement(i);
         auto &gpuReflectionTransfer = gpuReflectionTransfers.getElement(i);
+        auto &gpuLeavingPremulFactor = gpuLeavingPremulFactors.getElement(i);
 
         gpuProbe.position = glm::vec4(hostProbe.position, 0.0);
         gpuProbe.size = glm::vec4(hostProbe.size, 0.0);
@@ -27,6 +30,7 @@ void GI::convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes,
 
         for (std::size_t d = 0; d < 6; d++) {
             gpuReflectionTransfer.face[d] = glm::vec4(hostProbe.reflectionTransfer.face[d], 0.0);
+            gpuLeavingPremulFactor[d] = hostProbe.leavingPremulFactor[d];
         }
 
         numNeighborSpecs += hostProbe.neighborSpecs.size();
