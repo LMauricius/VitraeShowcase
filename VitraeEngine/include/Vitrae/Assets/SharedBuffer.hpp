@@ -215,6 +215,24 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
                          getFirstElementOffset() + sizeof(ElementT2) * index + sizeof(ElementT2)}]
                 .data());
     }
+    template <typename ElementT2 = ElementT>
+    std::span<ElementT2> getElements()
+        requires HAS_FAM_ELEMENTS
+    {
+        return std::span<ElementT2>(
+            reinterpret_cast<ElementT2 *>(m_buffer->data() + getFirstElementOffset()),
+            numElements());
+    }
+    template <typename ElementT2 = ElementT>
+    std::span<const ElementT2> getElements() const
+        requires HAS_FAM_ELEMENTS
+    {
+        return std::span<const ElementT2>(
+            reinterpret_cast<const ElementT2 *>(
+                dynasma::const_pointer_cast<const RawSharedBuffer>(m_buffer)->data() +
+                getFirstElementOffset()),
+            numElements());
+    }
 
     /**
      * @returns the underlying RawSharedBuffer, type agnostic
