@@ -13,6 +13,7 @@ class OpenGLRawSharedBuffer : public RawSharedBuffer
     ~OpenGLRawSharedBuffer();
 
     void synchronize() override;
+    bool isSynchronized() const override;
     std::size_t memory_cost() const override;
 
     inline GLuint getGlBufferHandle() const { return m_glBufferHandle; }
