@@ -27,7 +27,7 @@ Model::Model(const FileLoadParams &params)
     const aiScene *extScenePtr = importer.ReadFile(
         params.filepath.c_str(), aiProcess_CalcTangentSpace | aiProcess_Triangulate |
                                      aiProcess_JoinIdenticalVertices | aiProcess_SortByPType |
-                                     aiProcess_FlipUVs);
+                                     aiProcess_FlipUVs | aiProcess_GenBoundingBoxes);
 
     if (!extScenePtr) {
         params.root.getErrStream()
