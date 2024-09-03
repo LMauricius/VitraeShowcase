@@ -1,5 +1,7 @@
 #include "Generation.hpp"
 
+#include "MMeter.h"
+
 namespace GI
 {
 
@@ -58,6 +60,8 @@ const char *const GLSL_PROBE_GEN_SNIPPET = R"(
 void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::vec3 worldCenter,
                        glm::vec3 worldSize, float minProbeSize)
 {
+    MMETER_FUNC_PROFILER;
+
     glm::ivec3 gridSize = glm::ivec3(worldSize / minProbeSize);
 
     probes.resize(gridSize.x * gridSize.y * gridSize.z);
