@@ -14,6 +14,7 @@ struct MethodCollection
     ComponentRoot &root;
     dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod;
     dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod;
+    dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod;
     dynasma::FirmPtr<Method<ComposeTask>> p_composeMethod;
 
     MethodCollection(ComponentRoot &root);
