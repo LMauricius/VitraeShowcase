@@ -93,6 +93,8 @@ struct MethodsAmbientGI : MethodCollection
 
             // generate world
             std::vector<GI::H_ProbeDefinition> probes;
+            glm::ivec3 gridSize;
+            glm::vec3 worldStart;
             ProbeBufferPtr gpuProbes(root,
                                      (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW));
             ProbeStateBufferPtr gpuProbeStates(root, (BufferUsageHint::HOST_INIT |
@@ -107,7 +109,8 @@ struct MethodsAmbientGI : MethodCollection
             NeighborTransferBufferPtr gpuNeighborTransfer(
                 root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW));
 
-            generateProbeList(probes, sceneAABB.getCenter(), sceneAABB.getExtent(), 0.5f);
+            generateProbeList(probes, gridSize, worldStart, sceneAABB.getCenter(),
+                              sceneAABB.getExtent(), 200.0f);
             convertHost2GpuBuffers(probes, gpuProbes, gpuReflectionTransfers,
                                    gpuLeavingPremulFactors, gpuNeighborIndices,
                                    gpuNeighborTransfer);
@@ -126,6 +129,8 @@ struct MethodsAmbientGI : MethodCollection
             dict.set("gpuLeavingPremulFactors", gpuLeavingPremulFactors);
             dict.set("gpuNeighborIndices", gpuNeighborIndices);
             dict.set("gpuNeighborTransfer", gpuNeighborTransfer);
+            dict.set("giWorldStart", worldStart);
+            dict.set("giGridSize", gridSize);
         });
     }
 };
