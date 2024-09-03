@@ -11,7 +11,7 @@
 
 namespace Vitrae
 {
-OpenGLMesh::OpenGLMesh() : m_sentToGPU(false) {}
+OpenGLMesh::OpenGLMesh() : m_sentToGPU(false), m_aabb{{}, {}} {}
 
 OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
 {
@@ -56,6 +56,19 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
     extractVertexData(params.root.getAiMeshBufferInfos<aiVector3D>(), namedVec3Buffers);
     extractVertexData(params.root.getAiMeshBufferInfos<aiColor3D>(), namedVec3Buffers);
     extractVertexData(params.root.getAiMeshBufferInfos<aiColor4D>(), namedVec4Buffers);
+
+    m_aabb = {
+        {
+            params.p_extMesh->mAABB.mMin.x,
+            params.p_extMesh->mAABB.mMin.y,
+            params.p_extMesh->mAABB.mMin.z,
+        },
+        {
+            params.p_extMesh->mAABB.mMax.x,
+            params.p_extMesh->mAABB.mMax.y,
+            params.p_extMesh->mAABB.mMax.z,
+        },
+    };
 
     // debug
     m_friendlyname = toString(params.p_extMesh->mName);
@@ -138,6 +151,11 @@ dynasma::LazyPtr<Material> OpenGLMesh::getMaterial() const
 std::span<const Triangle> OpenGLMesh::getTriangles() const
 {
     return mTriangles;
+}
+
+BoundingBox OpenGLMesh::getBoundingBox() const
+{
+    return m_aabb;
 }
 
 } // namespace Vitrae

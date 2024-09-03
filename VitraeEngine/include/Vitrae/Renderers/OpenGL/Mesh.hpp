@@ -27,6 +27,7 @@ class OpenGLMesh : public Mesh
     void setMaterial(dynasma::LazyPtr<Material> mat) override;
     dynasma::LazyPtr<Material> getMaterial() const override;
     std::span<const Triangle> getTriangles() const override;
+    BoundingBox getBoundingBox() const override;
 
     inline std::size_t memory_cost() const override
     {
@@ -42,6 +43,7 @@ class OpenGLMesh : public Mesh
     String m_friendlyname;
     std::optional<dynasma::LazyPtr<Material>> mMaterial;
     std::vector<Triangle> mTriangles;
+    getBoundingBox m_aabb;
     StableMap<StringId, std::valarray<glm::vec1>> namedVec1Buffers;
     StableMap<StringId, std::valarray<glm::vec2>> namedVec2Buffers;
     StableMap<StringId, std::valarray<glm::vec3>> namedVec3Buffers;
