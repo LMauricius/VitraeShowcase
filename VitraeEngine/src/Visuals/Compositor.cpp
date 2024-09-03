@@ -13,24 +13,6 @@ class Renderer;
 Compositor::Compositor(ComponentRoot &root)
     : m_root(root), m_pipeline(), m_localProperties(&parameters)
 {}
-
-Compositor::Compositor(ComponentRoot &root, dynasma::FirmPtr<Method<ComposeTask>> p_method,
-                       dynasma::FirmPtr<FrameStore> p_output)
-    : m_root(root), m_needsRebuild(false), m_needsFrameStoreRegeneration(false),
-      m_pipeline(p_method, {},
-                 RenderSetupContext{
-                     .renderer = m_root.getComponent<Renderer>(),
-                     .p_defaultVertexMethod = m_defaultVertexMethod,
-                     .p_defaultFragmentMethod = m_defaultFragmentMethod,
-                     .p_defaultComputeMethod = m_defaultComputeMethod,
-                 }),
-      m_localProperties(&parameters)
-{
-    m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_output;
-
-    // here we actually setup the pipeline
-    setComposeMethod(p_method);
-}
 std::size_t Compositor::memory_cost() const
 {
     /// TODO: implement

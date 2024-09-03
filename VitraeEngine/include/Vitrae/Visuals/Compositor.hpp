@@ -17,8 +17,6 @@ class Compositor : public dynasma::PolymorphicBase
 {
   public:
     Compositor(ComponentRoot &root);
-    Compositor(ComponentRoot &root, dynasma::FirmPtr<Method<ComposeTask>> p_method,
-               dynasma::FirmPtr<FrameStore> p_output);
     virtual ~Compositor() = default;
 
     std::size_t memory_cost() const;
