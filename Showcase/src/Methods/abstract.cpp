@@ -8,10 +8,7 @@
 MethodCollection::MethodCollection(ComponentRoot &root)
     : root(root), p_vertexMethod(dynasma::makeStandalone<Method<ShaderTask>>(
                       Method<ShaderTask>::MethodParams{})),
-      p_fragmentMethod(
-          dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{})),
-      p_computeMethod(
-          dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{})),
-      p_composeMethod(
-          dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{}))
+      p_fragmentMethod(dynasma::makeStandalone<Method<ShaderTask>>()),
+      p_computeMethod(dynasma::makeStandalone<Method<ShaderTask>>()),
+      p_composeMethod(dynasma::makeStandalone<Method<ComposeTask>>())
 {}
