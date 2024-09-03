@@ -97,7 +97,7 @@ class OpenGLRenderer : public Renderer
     const GLTypeSpec &getGlTypeSpec(StringId glslName) const;
     void specifyTypeConversion(const GLConversionSpec &newSpec);
     const GLConversionSpec &getTypeConversion(const TypeInfo &hostType) const;
-    const StableMap<StringId, GLTypeSpec> &getAllGlTypeSpecs() const;
+    const StableMap<StringId, std::unique_ptr<GLTypeSpec>> &getAllGlTypeSpecs() const;
 
     /**
      * @brief Automatically specified the gl type and conversion for a SharedBuffer type
@@ -138,8 +138,8 @@ class OpenGLRenderer : public Renderer
     std::mutex m_contextMutex;
     GLFWwindow *mp_mainWindow;
 
-    StableMap<StringId, GLTypeSpec> m_glTypes;
-    StableMap<std::type_index, GLConversionSpec> m_glConversions;
+    StableMap<StringId, std::unique_ptr<GLTypeSpec>> m_glTypes;
+    StableMap<std::type_index, std::unique_ptr<GLConversionSpec>> m_glConversions;
 
     StableMap<StringId, std::size_t> m_vertexBufferIndices;
     std::size_t m_vertexBufferFreeIndex;
