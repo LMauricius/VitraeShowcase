@@ -32,6 +32,11 @@ void OpenGLRawSharedBuffer::synchronize()
     }
 }
 
+bool OpenGLRawSharedBuffer::isSynchronized() const
+{
+    return m_bufferPtr == nullptr;
+}
+
 void OpenGLRawSharedBuffer::requestBufferPtr() const
 {
     if (!m_bufferPtr) {

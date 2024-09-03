@@ -44,6 +44,7 @@ class RawSharedBuffer : public dynasma::PolymorphicBase
     virtual ~RawSharedBuffer() = default;
 
     virtual void synchronize() = 0;
+    virtual bool isSynchronized() const = 0;
     virtual std::size_t memory_cost() const = 0;
 
     void resize(std::size_t size);
@@ -91,8 +92,12 @@ using RawSharedBufferKeeper = dynasma::AbstractKeeper<RawSharedBufferKeeperSeed>
  * @tparam HeaderT the type stored at the start of the buffer. Use void if there is no header.
  * @tparam ElementT the type stored in the array after the header. Use void if there is no FAM
  */
-template <class HeaderT, class ElementT> class SharedBufferPtr
+template <class THeaderT, class TElementT> class SharedBufferPtr
 {
+  public:
+    using HeaderT = THeaderT;
+    using ElementT = TElementT;
+
     static constexpr bool HAS_HEADER = !std::is_same_v<HeaderT, void>;
     static constexpr bool HAS_FAM_ELEMENTS = !std::is_same_v<ElementT, void>;
 
@@ -107,7 +112,6 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
             return 0;
     }
 
-  public:
     template <typename ElementT2 = ElementT>
     static constexpr std::size_t calcMinimumBufferSize(std::size_t numElements)
         requires HAS_FAM_ELEMENTS
@@ -237,10 +241,16 @@ template <class HeaderT, class ElementT> class SharedBufferPtr
     /**
      * @returns the underlying RawSharedBuffer, type agnostic
      */
+    dynasma::FirmPtr<RawSharedBuffer> getRawBuffer() { return m_buffer; }
     dynasma::FirmPtr<const RawSharedBuffer> getRawBuffer() const { return m_buffer; }
 
   protected:
     dynasma::FirmPtr<RawSharedBuffer> m_buffer;
+};
+
+template <class T>
+concept SharedBufferPtrInst = requires(T t) {
+    { SharedBufferPtr{t} } -> std::same_as<T>;
 };
 
 } // namespace Vitrae
