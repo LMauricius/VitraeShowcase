@@ -73,7 +73,13 @@ struct G_ProbeDefinition
     std::uint32_t neighborSpecCount;
 };
 
+struct G_ProbeState
+{
+    glm::vec4 illumination[6];
+};
+
 using ProbeBufferPtr = SharedBufferPtr<void, G_ProbeDefinition>;
+using ProbeStateBufferPtr = SharedBufferPtr<void, G_ProbeState>;
 using ReflectionBufferPtr = SharedBufferPtr<void, G_Source2FacesTransfer>;
 using LeavingPremulFactorBufferPtr = SharedBufferPtr<void, float[6]>;
 using NeighborIndexBufferPtr = SharedBufferPtr<void, std::uint32_t>;
