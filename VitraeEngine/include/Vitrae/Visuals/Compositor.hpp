@@ -26,6 +26,7 @@ class Compositor : public dynasma::PolymorphicBase
     void setComposeMethod(dynasma::FirmPtr<Method<ComposeTask>> p_method);
     void setDefaultShadingMethod(dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod,
                                  dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod);
+    void setDefaultComputeMethod(dynasma::FirmPtr<Method<ShaderTask>> p_method);
     void setOutput(dynasma::FirmPtr<FrameStore> p_store);
 
     void compose();
@@ -43,7 +44,8 @@ class Compositor : public dynasma::PolymorphicBase
     std::set<dynasma::FirmPtr<FrameStore>> m_uniqueFrameStores;
     StableMap<StringId, dynasma::FirmPtr<Texture>> m_preparedTextures;
     dynasma::FirmPtr<Method<ComposeTask>> mp_composeMethod;
-    dynasma::FirmPtr<Method<ShaderTask>> m_defaultVertexMethod, m_defaultFragmentMethod;
+    dynasma::FirmPtr<Method<ShaderTask>> m_defaultVertexMethod, m_defaultFragmentMethod,
+        m_defaultComputeMethod;
 
     void rebuildPipeline();
     void regenerateFrameStores();
