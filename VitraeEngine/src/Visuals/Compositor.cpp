@@ -11,7 +11,12 @@ namespace Vitrae
 {
 class Renderer;
 Compositor::Compositor(ComponentRoot &root)
-    : m_root(root), m_pipeline(), m_localProperties(&parameters)
+    : m_root(root), m_needsRebuild(true), m_needsFrameStoreRegeneration(true), m_pipeline(),
+      m_localProperties(&parameters),
+      mp_composeMethod(dynasma::makeStandalone<Method<ComposeTask>>()),
+      m_defaultVertexMethod(dynasma::makeStandalone<Method<ShaderTask>>()),
+      m_defaultFragmentMethod(dynasma::makeStandalone<Method<ShaderTask>>()),
+      m_defaultComputeMethod(dynasma::makeStandalone<Method<ShaderTask>>())
 {}
 std::size_t Compositor::memory_cost() const
 {

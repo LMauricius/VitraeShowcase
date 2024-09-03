@@ -40,6 +40,11 @@ template <TaskChild BasicTask> class Method : public dynasma::PolymorphicBase
 
     using MethodManager = dynasma::AbstractManager<MethodManagerSeed>;
 
+    // Default constructors
+    Method() = default;
+    Method(const Method &other) = default;
+    Method(Method &&other) = default;
+
     // Constructor
     Method(const MethodParams &params) : m_friendlyName(params.friendlyName)
     {
@@ -64,6 +69,10 @@ template <TaskChild BasicTask> class Method : public dynasma::PolymorphicBase
 
     // Destructor
     ~Method() = default;
+
+    // Default assignments
+    Method &operator=(const Method &other) = default;
+    Method &operator=(Method &&other) = default;
 
     std::size_t memory_cost() const
     {
