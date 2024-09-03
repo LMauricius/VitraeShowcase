@@ -17,10 +17,10 @@ Scene::Scene(const FileLoadParams &params)
 {
     Assimp::Importer importer;
 
-    const aiScene *scene = importer.ReadFile(params.filepath.c_str(),
-                                             aiProcess_CalcTangentSpace | aiProcess_Triangulate |
-                                                 aiProcess_JoinIdenticalVertices |
-                                                 aiProcess_SortByPType | aiProcess_FlipUVs);
+    const aiScene *scene = importer.ReadFile(
+        params.filepath.c_str(), aiProcess_CalcTangentSpace | aiProcess_Triangulate |
+                                     aiProcess_JoinIdenticalVertices | aiProcess_SortByPType |
+                                     aiProcess_FlipUVs | aiProcess_GenBoundingBoxes);
 
     if (!scene) {
         params.root.getErrStream() << importer.GetErrorString();
