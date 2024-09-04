@@ -192,7 +192,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             std::map<StringId, String> outputParametersToGlobalVars;
 
             // boilerplate stuff
-            ss << "#version 330 core\n"
+            ss << "#version 460 core\n"
                << "\n"
                << "\n";
 
@@ -241,6 +241,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 if (minimalMethod == OpenGLRenderer::GpuValueStorageMethod::SSBO) {
 
                     // SSBOs
+                    ss << "layout(std430) ";
 
                     if (glslMemberList.empty()) {
                         ss << "buffer " << spec.name << " {\n";
@@ -250,8 +251,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                         inputParametersToGlobalVars.emplace(nameId,
                                                             bufferVarPrefix + spec.name + ".value");
                     } else {
-                        ss << "buffer " << spec.name << " {\n";
-                        ss << glslMemberList << "\n";
+                        ss << "buffer " << spec.name << " {";
+                        ss << glslMemberList;
                         ss << "} " << bufferVarPrefix << spec.name << ";\n";
 
                         inputParametersToGlobalVars.emplace(nameId, bufferVarPrefix + spec.name);
@@ -273,6 +274,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                     case OpenGLRenderer::GpuValueStorageMethod::UBO:
 
                         // (also) SSBOs
+                        ss << "layout(std430) ";
 
                         if (glslMemberList.empty()) {
                             ss << "buffer " << spec.name << " {\n";
@@ -282,8 +284,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                             inputParametersToGlobalVars.emplace(nameId, bufferVarPrefix +
                                                                             spec.name + ".value");
                         } else {
-                            ss << "buffer " << spec.name << " {\n";
-                            ss << glslMemberList << "\n";
+                            ss << "buffer " << spec.name << " {";
+                            ss << glslMemberList;
                             ss << "} " << uniVarPrefix << spec.name << ";\n";
 
                             inputParametersToGlobalVars.emplace(nameId,
@@ -540,11 +542,10 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                                             .glNameId = glGetUniformLocation(programGLName,
                                                                              uniFullName.c_str())});
             } else {
-                ssboSpecs.emplace(uniNameId,
-                                  VariableSpec{.srcSpec = uniSpec,
-                                               .glNameId = (GLint)glGetProgramResourceIndex(
-                                                   programGLName, GL_SHADER_STORAGE_BLOCK,
-                                                   uniSpec.name.c_str())});
+                GLint index = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
+                                                        uniSpec.name.c_str());
+                ssboSpecs.emplace(uniNameId, VariableSpec{.srcSpec = uniSpec, .glNameId = index});
+                glUniformBlockBinding(programGLName, index, index);
             }
         } else {
 
@@ -567,11 +568,10 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                                                              programGLName, uniFullName.c_str())});
                 break;
             case OpenGLRenderer::GpuValueStorageMethod::SSBO:
-                ssboSpecs.emplace(uniNameId,
-                                  VariableSpec{.srcSpec = uniSpec,
-                                               .glNameId = (GLint)glGetProgramResourceIndex(
-                                                   programGLName, GL_SHADER_STORAGE_BLOCK,
-                                                   uniSpec.name.c_str())});
+                GLint index = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
+                                                        uniSpec.name.c_str());
+                ssboSpecs.emplace(uniNameId, VariableSpec{.srcSpec = uniSpec, .glNameId = index});
+                glUniformBlockBinding(programGLName, index, index);
                 break;
             }
         }
