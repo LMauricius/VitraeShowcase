@@ -233,8 +233,7 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                     auto p_firstMat = materials2props.begin()->first;
                     auto &firstMatProperties = p_firstMat->getProperties();
                     auto &firstMatTextures = p_firstMat->getTextures();
-                    int freeBindingIndex = 0;
-                    GLint glModelMatrixUniformId;
+                    GLint glModelMatrixUniformLocation;
 
                     {
                         MMETER_SCOPE_PROFILER("Uniform setup");
@@ -242,7 +241,7 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                         for (auto [propertyNameId, uniSpec] : p_compiledShader->uniformSpecs) {
                             if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
                                 // this is set per model
-                                glModelMatrixUniformId = uniSpec.glNameId;
+                                glModelMatrixUniformLocation = uniSpec.location;
 
                             } else {
                                 if (firstMatProperties.find(propertyNameId) ==
@@ -250,7 +249,7 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                                     auto p = args.properties.getPtr(propertyNameId);
                                     if (p) {
                                         rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-                                            .setUniform(uniSpec.glNameId, *p);
+                                            .setUniform(uniSpec.location, *p);
                                     }
 
                                     specifyInputDependency(uniSpec.srcSpec);
@@ -258,19 +257,17 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                             }
                         }
 
-                        for (auto [propertyNameId, uniSpec] : p_compiledShader->bindingSpecs) {
+                        for (auto [propertyNameId, bindingSpec] : p_compiledShader->bindingSpecs) {
                             if (firstMatProperties.find(propertyNameId) ==
                                     firstMatProperties.end() &&
                                 firstMatTextures.find(propertyNameId) == firstMatTextures.end()) {
                                 auto p = args.properties.getPtr(propertyNameId);
                                 if (p) {
-                                    rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-                                        .setBinding(freeBindingIndex, *p);
-                                    glUniform1i(uniSpec.glNameId, freeBindingIndex);
-                                    freeBindingIndex++;
+                                    rend.getTypeConversion(bindingSpec.srcSpec.typeInfo)
+                                        .setBinding(bindingSpec.bindingIndex, *p);
                                 }
 
-                                specifyInputDependency(uniSpec.srcSpec);
+                                specifyInputDependency(bindingSpec.srcSpec);
                             }
                         }
                     }
@@ -280,13 +277,11 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                         if (auto it = p_compiledShader->uniformSpecs.find(nameId);
                             it != p_compiledShader->uniformSpecs.end()) {
                             rend.getTypeConversion((*it).second.srcSpec.typeInfo)
-                                .setUniform((*it).second.glNameId, value);
+                                .setUniform((*it).second.location, value);
                         } else if (auto it = p_compiledShader->bindingSpecs.find(nameId);
                                    it != p_compiledShader->bindingSpecs.end()) {
                             rend.getTypeConversion((*it).second.srcSpec.typeInfo)
-                                .setBinding(freeBindingIndex, value);
-                            glUniform1i((*it).second.glNameId, freeBindingIndex);
-                            freeBindingIndex++;
+                                .setBinding((*it).second.bindingIndex, value);
                         }
                     };
 
@@ -318,7 +313,7 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
 
                                     glBindVertexArray(mesh.VAO);
                                     glUniformMatrix4fv(
-                                        glModelMatrixUniformId, 1, GL_FALSE,
+                                        glModelMatrixUniformLocation, 1, GL_FALSE,
                                         &(p_meshProp->transform.getModelMatrix()[0][0]));
                                     glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(),
                                                    GL_UNSIGNED_INT, 0);

@@ -93,10 +93,17 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
         inline auto operator<=>(const ComputeShaderParams &o) const { return m_hash <=> o.m_hash; }
     };
 
-    struct VariableSpec
+    struct UniformSpec
     {
         PropertySpec srcSpec;
-        GLint glNameId;
+        GLint location;
+    };
+
+    struct BindingSpec
+    {
+        PropertySpec srcSpec;
+        GLint location;
+        GLuint bindingIndex;
     };
 
     CompiledGLSLShader(MovableSpan<CompilationSpec> compilationSpecs, ComponentRoot &root,
@@ -108,10 +115,9 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
     inline std::size_t memory_cost() const { return 1; }
 
     GLuint programGLName;
-    StableMap<StringId, VariableSpec> uniformSpecs;
-    StableMap<StringId, VariableSpec> bindingSpecs;
-    StableMap<StringId, VariableSpec> uboSpecs;
-    StableMap<StringId, VariableSpec> ssboSpecs;
+    StableMap<StringId, UniformSpec> uniformSpecs;
+    StableMap<StringId, BindingSpec> bindingSpecs;
+    StableMap<StringId, BindingSpec> uboSpecs;
 };
 
 struct CompiledGLSLShaderCacherSeed
