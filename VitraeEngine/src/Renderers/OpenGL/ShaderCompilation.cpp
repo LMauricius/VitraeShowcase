@@ -23,10 +23,19 @@ CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(
 {}
 
 CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
-    dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
-    dynasma::FirmPtr<const PropertyList> p_desiredResults, ComponentRoot &root)
+    ComponentRoot &root, dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
+    dynasma::FirmPtr<const PropertyList> p_desiredResults, glm::uvec3 groupSize,
+    bool allowOutOfBoundsCompute)
     : mp_computeMethod(p_computeMethod), mp_desiredResults(p_desiredResults), mp_root(&root),
-      m_hash(combinedHashes<2>({{p_computeMethod->getHash(), p_desiredResults->getHash()}}))
+      m_groupSize(groupSize), m_allowOutOfBoundsCompute(allowOutOfBoundsCompute),
+      m_hash(combinedHashes<6>({{
+          p_computeMethod->getHash(),
+          p_desiredResults->getHash(),
+          groupSize.x,
+          groupSize.y,
+          groupSize.z,
+          allowOutOfBoundsCompute,
+      }}))
 {}
 
 CompiledGLSLShader::CompiledGLSLShader(const SurfaceShaderParams &params)
