@@ -295,24 +295,23 @@ OpenGLRenderer::GpuValueStorageMethod OpenGLRenderer::getGpuStorageMethod(
         return GpuValueStorageMethod::UBO;
     }
 }
-const StableMap<StringId, PropertySpec> &OpenGLRenderer::getSceneRenderInputDependencies(
-    std::size_t hash) const
+const StableMap<StringId, PropertySpec> &OpenGLRenderer::getInputDependencyCache(
+    std::size_t id) const
 {
-    return m_sceneRenderInputDependencies[hash];
+    return m_sceneRenderInputDependencies[id];
 }
 
-StableMap<StringId, PropertySpec> &OpenGLRenderer::getEditableSceneRenderInputDependencies(
-    std::size_t hash)
+StableMap<StringId, PropertySpec> &OpenGLRenderer::getEditableInputDependencyCache(std::size_t id)
 {
-    return m_sceneRenderInputDependencies[hash];
+    return m_sceneRenderInputDependencies[id];
 }
 
-std::size_t OpenGLRenderer::getSceneRenderInputDependencyHash(
-    const ComposeTask *p_composeTask, dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
+std::size_t OpenGLRenderer::getInputDependencyCacheID(
+    const Task *p_task, dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
     dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod) const
 {
     return combinedHashes({{
-        (std::size_t)p_composeTask,
+        (std::size_t)p_task,
         std::hash<dynasma::LazyPtr<Method<ShaderTask>>>{}(p_defaultVertexMethod),
         std::hash<dynasma::LazyPtr<Method<ShaderTask>>>{}(p_defaultFragmentMethod),
     }});
