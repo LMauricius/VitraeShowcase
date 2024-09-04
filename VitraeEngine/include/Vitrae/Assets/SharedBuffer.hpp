@@ -157,7 +157,44 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
     /**
      * Constructs a SharedBufferPtr from a RawSharedBuffer FirmPtr
      */
-    SharedBufferPtr(dynasma::FirmPtr<RawSharedBuffer> buffer) : m_buffer(buffer) {}
+    SharedBufferPtr(dynasma::FirmPtr<RawSharedBuffer> p_buffer) : m_buffer(p_buffer) {}
+
+    /**
+     * @brief Default constructs a null pointer
+     * @note Using any methods that count or access elements is UB,
+     * until reassigning this to a properly constructed SharedBufferPtr
+     */
+    SharedBufferPtr() = default;
+
+    /**
+     * @brief Moves the pointer. Nullifies the other
+     */
+    SharedBufferPtr(SharedBufferPtr &&other) = default;
+
+    /**
+     * @brief copies the pointer.
+     */
+    SharedBufferPtr(const SharedBufferPtr &other) = default;
+
+    /**
+     * @brief Move assigns the pointer. Nullifies the other
+     */
+    SharedBufferPtr &operator=(SharedBufferPtr &&other) = default;
+
+    /**
+     * @brief Copy assigns the pointer.
+     */
+    SharedBufferPtr &operator=(const SharedBufferPtr &other) = default;
+
+    /**
+     * @brief Assigns the pointer to the raw buffer.
+     * @note Make sure the buffer is compatible with the expected data types
+     */
+    SharedBufferPtr &operator=(dynasma::FirmPtr<RawSharedBuffer> p_buffer)
+    {
+        m_buffer = p_buffer;
+        return *this;
+    }
 
     /**
      * Resizes the underlying RawSharedBuffer to contain the given number of FAM elements
