@@ -91,7 +91,7 @@ const StableMap<StringId, PropertySpec> &OpenGLComposeSceneRender::getInputSpecs
     const RenderSetupContext &args) const
 {
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(args.renderer);
-    return rend.getSceneRenderInputDependencies(rend.getSceneRenderInputDependencyHash(
+    return rend.getInputDependencyCache(rend.getInputDependencyCacheID(
         this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
 }
 
@@ -106,9 +106,8 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
 
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_root.getComponent<Renderer>());
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
-    auto &inputDependencies =
-        rend.getEditableSceneRenderInputDependencies(rend.getSceneRenderInputDependencyHash(
-            this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
+    auto &inputDependencies = rend.getEditableInputDependencyCache(rend.getInputDependencyCacheID(
+        this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
 
     bool needsRebuild = false;
     auto specifyInputDependency = [&](const PropertySpec &spec) {
