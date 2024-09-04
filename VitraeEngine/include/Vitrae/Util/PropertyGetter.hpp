@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Util/Hashing.hpp"
 #include "Vitrae/Util/ScopedDict.hpp"
 
 #include <variant>
@@ -86,3 +87,17 @@ template <class T> class PropertyGetter
 };
 
 } // namespace Vitrae
+
+namespace std
+{
+template <class T> struct hash<Vitrae::PropertyGetter<T>>
+{
+    size_t operator()(const Vitrae::PropertyGetter<T> &p) const
+    {
+        if (p.isFixed())
+            return Vitrae::combinedHashes<2>({{0, hash<T>()(p.getFixedValue())}});
+        else
+            return Vitrae::combinedHashes<2>({{1, hash<Vitrae::StringId>{}(p.getSpec().name)}});
+    }
+};
+} // namespace std
