@@ -59,7 +59,7 @@ struct GLConversionSpec
     const TypeInfo &hostType;
     const GLTypeSpec &glTypeSpec;
 
-    void (*setUniform)(GLint glUniformId, const Variant &hostValue) = nullptr;
+    void (*setUniform)(GLint location, const Variant &hostValue) = nullptr;
     void (*setBinding)(int bindingIndex, const Variant &hostValue) = nullptr;
 
     // used only if the type has a flexible array member
