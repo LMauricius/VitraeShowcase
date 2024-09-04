@@ -77,6 +77,12 @@ template <class T> class PropertyGetter
         return PropertySpec{.name = std::get<0>(m_nameOrValue).name,
                             .typeInfo = Variant::getTypeInfo<T>()};
     }
+
+    /**
+     * @returns PropertySpec for a dynamic property
+     * @note throws std::bad_variant_access if not isFixed()
+     */
+    const T &getFixedValue() const { return std::get<1>(m_nameOrValue); }
 };
 
 } // namespace Vitrae
