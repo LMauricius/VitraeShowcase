@@ -149,6 +149,8 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
 
         for (auto &meshProp : scene.meshProps) {
             auto mat = meshProp.p_mesh->getMaterial().getLoaded();
+            OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*meshProp.p_mesh);
+            mesh.loadToGPU(rend);
 
             methods2materials2props[{mat->getVertexMethod(), mat->getFragmentMethod()}]
                                    [meshProp.p_mesh->getMaterial()]
@@ -314,7 +316,6 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                                 for (auto p_meshProp : props) {
                                     OpenGLMesh &mesh =
                                         static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
-                                    mesh.loadToGPU(rend);
 
                                     glBindVertexArray(mesh.VAO);
                                     glUniformMatrix4fv(
