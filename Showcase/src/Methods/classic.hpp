@@ -199,7 +199,7 @@ struct MethodsClassic : MethodCollection
                         in vec3 light_color_primary, in float light_shadow_factor,
                         out vec3 shade_specular
                     ) {
-                        vec4 color_specular_tot = texture2D(tex_specular, tex_coord);
+                        vec4 color_specular_tot = texture(tex_specular, tex_coord);
                         vec3 dirToEye = normalize(camera_position - position_world.xyz);
                         vec3 reflRay = 2 * dot(-light_direction, normal) * normal + light_direction;
                         shade_specular =
@@ -240,7 +240,7 @@ struct MethodsClassic : MethodCollection
                         in vec2 tex_coord,
                         out vec4 phong_shade
                     ) {
-                        vec4 color_diffuse = texture2D(tex_diffuse, tex_coord);
+                        vec4 color_diffuse = texture(tex_diffuse, tex_coord);
                         phong_shade = vec4(
                             color_diffuse.rgb * (shade_diffuse + shade_ambient) +
                             shade_specular, 
