@@ -73,11 +73,11 @@ void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridS
     };
     auto getProbe = [&](glm::ivec3 ind) -> auto & { return probes[getIndex(ind)]; };
 
-    // edge probes' centers are put at world edges
-    glm::vec3 probeSize = worldSize / glm::vec3(gridSize * 2 - 2) * 2.0f;
+    // edge probes' edges are put at world edges
+    glm::vec3 probeSize = worldSize / glm::vec3(gridSize);
     glm::ivec3 minIndex = glm::ivec3(0, 0, 0);
     glm::ivec3 maxIndex = gridSize - 1;
-    glm::vec3 ind2OffsetConversion = worldSize / glm::vec3(maxIndex);
+    glm::vec3 ind2OffsetConversion = worldSize / glm::vec3(gridSize);
 
     {
         MMETER_SCOPE_PROFILER("Probe gen");
