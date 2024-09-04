@@ -40,35 +40,57 @@ struct MethodsAmbientGI : MethodCollection
         */
 
         auto p_shadeAmbient =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "gpuProbeStates",
-                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
-                        PropertySpec{.name = "giWorldStart",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "giGridSize",
-                                     .typeInfo = Variant::getTypeInfo<glm::ivec3>()},
-                        PropertySpec{.name = "position_world",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec4>()},
-                        PropertySpec{.name = "normal",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "shade_ambient",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .snippet = R"(
+            root.getComponent<ShaderFunctionKeeper>().new_asset(
+                {ShaderFunction::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "gpuProbeStates",
+                                         .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                            PropertySpec{.name = "giWorldStart",
+                                         .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "giWorldSize",
+                                         .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "giGridSize",
+                                         .typeInfo = Variant::getTypeInfo<glm::ivec3>()},
+                            PropertySpec{.name = "position_world",
+                                         .typeInfo = Variant::getTypeInfo<glm::vec4>()},
+                            PropertySpec{.name = "normal",
+                                         .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "shade_ambient",
+                                         .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .snippet = R"(
                     void setGlobalLighting(
-                        in vec3 giWorldStart, in ivec3 giGridSize,
+                        in vec3 giWorldStart, in vec3 giWorldSize, in ivec3 giGridSize,
                         in vec4 position_world, in vec3 normal,
                         out vec3 shade_ambient
                     ) {
-                        shade_ambient = vec3(0.0);
+                        ivec3 gridPos = ivec3(floor(
+                            (position_world.xyz / position_world.w - giWorldStart) / giWorldSize * giGridSize
+                        ));
+                        gridPos = clamp(gridPos, ivec3(0), giGridSize - ivec3(1));
+
+                        uint ind = gridPos.x * giGridSize.y * giGridSize.z + gridPos.y * giGridSize.z + gridPos.z;
+
+                        bvec3 normalIsNeg = lessThan(normal, vec3(0.0));
+                        vec3 absNormal = abs(normal);
+
+                        shade_ambient = 
+                                buffer_gpuProbeStates.elements[ind].illumination[
+                                    0 + int(normalIsNeg.x)
+                                ].rgb * absNormal.x +
+                                buffer_gpuProbeStates.elements[ind].illumination[
+                                    2 + int(normalIsNeg.y)
+                                ].rgb * absNormal.y +
+                                buffer_gpuProbeStates.elements[ind].illumination[
+                                    4 + int(normalIsNeg.z)
+                                ].rgb * absNormal.z;
                     }
                 )",
-                .functionName = "setGlobalLighting"}});
+                    .functionName = "setGlobalLighting"}});
 
         p_fragmentMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
@@ -205,6 +227,7 @@ struct MethodsAmbientGI : MethodCollection
             dict.set("gpuNeighborIndices", gpuNeighborIndices);
             dict.set("gpuNeighborTransfer", gpuNeighborTransfer);
             dict.set("giWorldStart", worldStart);
+            dict.set("giWorldSize", sceneAABB.getExtent());
             dict.set("giGridSize", gridSize);
         });
     }
