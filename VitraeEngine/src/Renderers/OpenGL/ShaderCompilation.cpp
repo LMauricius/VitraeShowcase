@@ -128,6 +128,21 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         }
     }
 
+    // separate inputs into uniform and vertex layout variables
+    for (auto [nameId, spec] : helperOrder[0]->pipeline.inputSpecs) {
+        if (rend.getAllVertexBufferSpecs().find(spec.name) !=
+            rend.getAllVertexBufferSpecs().end()) {
+            elemVarSpecs.emplace(nameId, spec);
+        } else {
+            uniformVarSpecs.emplace(nameId, spec);
+        }
+    }
+    if (helperOrder[0]->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
+        for (auto [nameId, spec] : helperOrder[0]->pipeline.outputSpecs) {
+            // uniformVarSpecs.emplace(nameId, spec);
+        }
+    }
+
     // make a list of all types we need to define
     std::vector<const GLTypeSpec *> typeDeclarationOrder;
 
@@ -136,7 +151,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
         std::function<void(const GLTypeSpec &)> processTypeNameId =
             [&](const GLTypeSpec &glTypeSpec) -> void {
-            if (mentionedTypes.find(&glTypeSpec) != mentionedTypes.end()) {
+            if (mentionedTypes.find(&glTypeSpec) == mentionedTypes.end()) {
                 mentionedTypes.insert(&glTypeSpec);
 
                 for (auto p_dependencyTypeSpec : glTypeSpec.memberTypeDependencies) {
@@ -163,21 +178,6 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             for (auto p_type : usedTypeSet) {
                 processTypeNameId(rend.getTypeConversion(*p_type).glTypeSpec);
             }
-        }
-    }
-
-    // separate inputs into uniform and vertex layout variables
-    for (auto [nameId, spec] : helperOrder[0]->pipeline.inputSpecs) {
-        if (rend.getAllVertexBufferSpecs().find(spec.name) !=
-            rend.getAllVertexBufferSpecs().end()) {
-            elemVarSpecs.emplace(nameId, spec);
-        } else {
-            uniformVarSpecs.emplace(nameId, spec);
-        }
-    }
-    if (helperOrder[0]->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
-        for (auto [nameId, spec] : helperOrder[0]->pipeline.outputSpecs) {
-            // uniformVarSpecs.emplace(nameId, spec);
         }
     }
 
