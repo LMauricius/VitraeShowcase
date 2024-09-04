@@ -73,12 +73,15 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
         dynasma::FirmPtr<Method<ShaderTask>> mp_computeMethod;
         dynasma::FirmPtr<const PropertyList> mp_desiredResults;
         ComponentRoot *mp_root;
+        glm::uvec3 m_groupSize;
+        bool m_allowOutOfBoundsCompute;
         std::size_t m_hash;
 
       public:
-        ComputeShaderParams(dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
+        ComputeShaderParams(ComponentRoot &root,
+                            dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
                             dynasma::FirmPtr<const PropertyList> p_desiredResults,
-                            ComponentRoot &root);
+                            glm::uvec3 groupSize, bool allowOutOfBoundsCompute);
 
         inline auto getComputeMethodPtr() const { return mp_computeMethod; }
         inline auto getDesiredResultsPtr() const { return mp_desiredResults; }
@@ -115,7 +118,8 @@ struct CompiledGLSLShaderCacherSeed
 {
     using Asset = CompiledGLSLShader;
 
-    std::variant<CompiledGLSLShader::SurfaceShaderParams> kernel;
+    std::variant<CompiledGLSLShader::SurfaceShaderParams, CompiledGLSLShader::ComputeShaderParams>
+        kernel;
 
     inline std::size_t load_cost() const { return 1; }
 
