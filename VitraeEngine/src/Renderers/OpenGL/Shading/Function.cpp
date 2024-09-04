@@ -73,20 +73,26 @@ void OpenGLShaderFunction::outputDeclarationCode(BuildContext args) const
     for (const auto &nameId : m_inputOrder) {
         const PropertySpec &spec = m_inputSpecs.at(nameId);
         const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
-        if (hadFirstArg) {
-            args.output << ", ";
+        if (renderer.getGpuStorageMethod(glTypeSpec) !=
+            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
+            if (hadFirstArg) {
+                args.output << ", ";
+            }
+            args.output << glTypeSpec.glConstTypeName;
+            hadFirstArg = true;
         }
-        args.output << glTypeSpec.glConstTypeName;
-        hadFirstArg = true;
     }
     for (const auto &nameId : m_outputOrder) {
         const PropertySpec &spec = m_outputSpecs.at(nameId);
         const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
-        if (hadFirstArg) {
-            args.output << ", ";
+        if (renderer.getGpuStorageMethod(glTypeSpec) !=
+            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
+            if (hadFirstArg) {
+                args.output << ", ";
+            }
+            args.output << "out " << glTypeSpec.glMutableTypeName;
+            hadFirstArg = true;
         }
-        args.output << "out " << glTypeSpec.glMutableTypeName;
-        hadFirstArg = true;
     }
     args.output << ");";
 }
@@ -105,18 +111,28 @@ void OpenGLShaderFunction::outputUsageCode(
     args.output << m_functionName << "(";
     bool hadFirstArg = false;
     for (const auto &nameId : m_inputOrder) {
-        if (hadFirstArg) {
-            args.output << ", ";
+        const PropertySpec &spec = m_inputSpecs.at(nameId);
+        const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
+        if (renderer.getGpuStorageMethod(glTypeSpec) !=
+            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
+            if (hadFirstArg) {
+                args.output << ", ";
+            }
+            args.output << inputParamsToSharedVariables.at(nameId);
+            hadFirstArg = true;
         }
-        args.output << inputParamsToSharedVariables.at(nameId);
-        hadFirstArg = true;
     }
     for (const auto &nameId : m_outputOrder) {
-        if (hadFirstArg) {
-            args.output << ", ";
+        const PropertySpec &spec = m_outputSpecs.at(nameId);
+        const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
+        if (renderer.getGpuStorageMethod(glTypeSpec) !=
+            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
+            if (hadFirstArg) {
+                args.output << ", ";
+            }
+            args.output << outputParamsToSharedVariables.at(nameId);
+            hadFirstArg = true;
         }
-        args.output << outputParamsToSharedVariables.at(nameId);
-        hadFirstArg = true;
     }
     args.output << ");";
 }
