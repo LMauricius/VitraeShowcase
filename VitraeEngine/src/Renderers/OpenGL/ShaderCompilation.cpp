@@ -190,6 +190,18 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         }
     }
 
+    // prepare binding indexes
+    std::map<StringId, GLuint> namedBindings;
+    auto getBinding = [&](StringId name) -> GLuint {
+        auto it = namedBindings.find(name);
+        if (it == namedBindings.end()) {
+            namedBindings.emplace(name, (GLuint)namedBindings.size());
+            return (GLuint)(namedBindings.size() - 1);
+        } else {
+            return it->second;
+        }
+    };
+
     // build the source code
     {
         String prevVarPrefix = "";
@@ -250,7 +262,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 if (minimalMethod == OpenGLRenderer::GpuValueStorageMethod::SSBO) {
 
                     // SSBOs
-                    ss << "layout(std430) ";
+                    ss << "layout(std430, binding=" << getBinding(nameId) << ") ";
 
                     if (glslMemberList.empty()) {
                         ss << "buffer " << spec.name << " {\n";
@@ -274,6 +286,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                         // EDITABLE IMAGE UNIFORMs
 
+                        ss << "layout(binding=" << getBinding(nameId) << ") ";
                         ss << "uniform " << specToMutableGlName(spec.typeInfo) << " "
                            << uniVarPrefix << spec.name << ";\n";
 
@@ -283,11 +296,12 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                     case OpenGLRenderer::GpuValueStorageMethod::UBO:
 
                         // (also) SSBOs
-                        ss << "layout(std430) ";
+                        ss << "layout(std430, binding=" << getBinding(nameId) << ") ";
 
                         if (glslMemberList.empty()) {
                             ss << "buffer " << spec.name << " {\n";
-                            ss << "\t" << specToMutableGlName(spec.typeInfo) << " value" << ";\n";
+                            ss << "\t" << specToMutableGlName(spec.typeInfo) << " value"
+                               << ";\n";
                             ss << "} " << uniVarPrefix << spec.name << ";\n";
 
                             inputParametersToGlobalVars.emplace(nameId, bufferVarPrefix +
@@ -323,6 +337,9 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                         // UNIFORMS
 
+                        if (minimalMethod != OpenGLRenderer::GpuValueStorageMethod::Uniform) {
+                            ss << "layout(binding=" << getBinding(nameId) << ") ";
+                        }
                         ss << "uniform " << specToConstGlName(spec.typeInfo) << " " << uniVarPrefix
                            << spec.name << ";\n";
 
@@ -332,6 +349,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                         // UNIFORM BUFFER OBJECTS
 
+                        ss << "layout(std430, binding=" << getBinding(nameId) << ") ";
                         if (glslMemberList.empty()) {
                             ss << "uniform " << uniVarPrefix << spec.name << " {\n";
                             ss << "\t" << specToConstGlName(spec.typeInfo) << " value" << ";\n";
@@ -546,41 +564,54 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                       desiredOutputs.getSpecNameIds().end(),
                       uniNameId) != desiredOutputs.getSpecNameIds().end()) {
             if (minimalStorageMethod == OpenGLRenderer::GpuValueStorageMethod::UniformBinding) {
-                bindingSpecs.emplace(
-                    uniNameId, VariableSpec{.srcSpec = uniSpec,
-                                            .glNameId = glGetUniformLocation(programGLName,
-                                                                             uniFullName.c_str())});
+                bindingSpecs.emplace(uniNameId, BindingSpec{
+                                                    .srcSpec = uniSpec,
+                                                    .location = glGetUniformLocation(
+                                                        programGLName, uniFullName.c_str()),
+                                                    .bindingIndex = namedBindings.at(uniNameId),
+                                                });
             } else {
                 GLint index = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
                                                         uniSpec.name.c_str());
-                ssboSpecs.emplace(uniNameId, VariableSpec{.srcSpec = uniSpec, .glNameId = index});
-                glUniformBlockBinding(programGLName, index, index);
+                bindingSpecs.emplace(uniNameId, BindingSpec{
+                                                    .srcSpec = uniSpec,
+                                                    .location = index,
+                                                    .bindingIndex = namedBindings.at(uniNameId),
+                                                });
             }
         } else {
 
             switch (minimalStorageMethod) {
             case OpenGLRenderer::GpuValueStorageMethod::Uniform:
                 uniformSpecs.emplace(
-                    uniNameId, VariableSpec{.srcSpec = uniSpec,
-                                            .glNameId = glGetUniformLocation(programGLName,
-                                                                             uniFullName.c_str())});
+                    uniNameId, UniformSpec{.srcSpec = uniSpec,
+                                           .location = glGetUniformLocation(programGLName,
+                                                                            uniFullName.c_str())});
                 break;
             case OpenGLRenderer::GpuValueStorageMethod::UniformBinding:
-                bindingSpecs.emplace(
-                    uniNameId, VariableSpec{.srcSpec = uniSpec,
-                                            .glNameId = glGetUniformLocation(programGLName,
-                                                                             uniFullName.c_str())});
+                bindingSpecs.emplace(uniNameId, BindingSpec{
+                                                    .srcSpec = uniSpec,
+                                                    .location = glGetUniformLocation(
+                                                        programGLName, uniFullName.c_str()),
+                                                    .bindingIndex = namedBindings.at(uniNameId),
+                                                });
                 break;
             case OpenGLRenderer::GpuValueStorageMethod::UBO:
-                uboSpecs.emplace(uniNameId, VariableSpec{.srcSpec = uniSpec,
-                                                         .glNameId = (GLint)glGetUniformBlockIndex(
-                                                             programGLName, uniFullName.c_str())});
+                uboSpecs.emplace(uniNameId, BindingSpec{
+                                                .srcSpec = uniSpec,
+                                                .location = (GLint)glGetUniformBlockIndex(
+                                                    programGLName, uniFullName.c_str()),
+                                                .bindingIndex = namedBindings.at(uniNameId),
+                                            });
                 break;
             case OpenGLRenderer::GpuValueStorageMethod::SSBO:
                 GLint index = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
                                                         uniSpec.name.c_str());
-                ssboSpecs.emplace(uniNameId, VariableSpec{.srcSpec = uniSpec, .glNameId = index});
-                glUniformBlockBinding(programGLName, index, index);
+                bindingSpecs.emplace(uniNameId, BindingSpec{
+                                                    .srcSpec = uniSpec,
+                                                    .location = index,
+                                                    .bindingIndex = namedBindings.at(uniNameId),
+                                                });
                 break;
             }
         }
