@@ -85,29 +85,44 @@ using LeavingPremulFactorBufferPtr = SharedBufferPtr<void, float[6]>;
 using NeighborIndexBufferPtr = SharedBufferPtr<void, std::uint32_t>;
 using NeighborTransferBufferPtr = SharedBufferPtr<void, G_NeighborTransfer>;
 
-inline constexpr const char *GLSL_PROBE_DEF_SNIPPET = R"(
-const vec3 DIRECTIONS[6] = vec3[](
-    vec3(1.0, 0.0, 0.0),  vec3(-1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0),
-    vec3(0.0, -1.0, 0.0), vec3(0.0, 0.0, 1.0),  vec3(0.0, 0.0, -1.0)
-);
-
+inline constexpr const char *GLSL_TRANSFER_DEF_SNIPPET = R"(
 struct Transfer {
     vec4 color;
 };
+)";
+
+inline constexpr const char *GLSL_S2F_TRANSFER_DEF_SNIPPET = R"(
 struct Source2FacesTransfer {
     Transfer face[6];
 };
+)";
+
+inline constexpr const char *GLSL_NEIGHBOR_TRANSFER_DEF_SNIPPET = R"(
 struct NeighborTransfer {
     Source2FacesTransfer source[6];
 };
+)";
 
+inline constexpr const char *GLSL_PROBE_DEF_SNIPPET = R"(
 struct ProbeDefinition {
     vec4 position;
     vec4 size;
     uint neighborSpecBufStart;
     uint neighborSpecCount;
 };
+)";
 
+inline constexpr const char *GLSL_PROBE_STATE_SNIPPET = R"(
+struct ProbeState {
+    vec4 illumination[6];
+};
+)";
+
+inline constexpr const char *GLSL_PROBE_UTILITY_SNIPPET = R"(
+const vec3 DIRECTIONS[6] = vec3[](
+    vec3(1.0, 0.0, 0.0),  vec3(-1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0),
+    vec3(0.0, -1.0, 0.0), vec3(0.0, 0.0, 1.0),  vec3(0.0, 0.0, -1.0)
+);
 )";
 
 /*

@@ -12,6 +12,7 @@
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Constant.hpp"
 #include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Renderers/OpenGL.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -42,7 +43,15 @@ struct MethodsAmbientGI : MethodCollection
             root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
                 .inputSpecs =
                     {
-                        PropertySpec{.name = "light_color_ambient",
+                        PropertySpec{.name = "gpuProbeStates",
+                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                        PropertySpec{.name = "giWorldStart",
+                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                        PropertySpec{.name = "giGridSize",
+                                     .typeInfo = Variant::getTypeInfo<glm::ivec3>()},
+                        PropertySpec{.name = "position_world",
+                                     .typeInfo = Variant::getTypeInfo<glm::vec4>()},
+                        PropertySpec{.name = "normal",
                                      .typeInfo = Variant::getTypeInfo<glm::vec3>()},
                     },
                 .outputSpecs =
@@ -52,10 +61,11 @@ struct MethodsAmbientGI : MethodCollection
                     },
                 .snippet = R"(
                     void setGlobalLighting(
-                        in vec3 light_color_ambient,
+                        in vec3 giWorldStart, in ivec3 giGridSize,
+                        in vec4 position_world, in vec3 normal,
                         out vec3 shade_ambient
                     ) {
-                        shade_ambient = light_color_ambient;
+                        shade_ambient = vec3(0.0);
                     }
                 )",
                 .functionName = "setGlobalLighting"}});
@@ -81,6 +91,71 @@ struct MethodsAmbientGI : MethodCollection
         /*
         SETUP
         */
+        setupFunctions.push_back([](ComponentRoot &root, Renderer &renderer, ScopedDict &dict) {
+            MMETER_SCOPE_PROFILER("GI type specification");
+
+            OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(renderer);
+
+            rend.specifyGlType({
+                .glMutableTypeName = "Transfer",
+                .glConstTypeName = "Transfer",
+                .glslDefinitionSnippet = GLSL_TRANSFER_DEF_SNIPPET,
+                .memberTypeDependencies = {&rend.getGlTypeSpec("vec4")},
+                .std140Size = 16,
+                .std140Alignment = 16,
+                .layoutIndexSize = 1,
+            });
+            rend.specifyGlType({
+                .glMutableTypeName = "Source2FacesTransfer",
+                .glConstTypeName = "Source2FacesTransfer",
+                .glslDefinitionSnippet = GLSL_S2F_TRANSFER_DEF_SNIPPET,
+                .memberTypeDependencies = {&rend.getGlTypeSpec("Transfer")},
+                .std140Size = 16 * 6,
+                .std140Alignment = 16,
+                .layoutIndexSize = 1 * 6,
+            });
+            rend.specifyGlType({
+                .glMutableTypeName = "NeighborTransfer",
+                .glConstTypeName = "NeighborTransfer",
+                .glslDefinitionSnippet = GLSL_NEIGHBOR_TRANSFER_DEF_SNIPPET,
+                .memberTypeDependencies = {&rend.getGlTypeSpec("Source2FacesTransfer")},
+                .std140Size = 16 * 6 * 6,
+                .std140Alignment = 16,
+                .layoutIndexSize = 1 * 6 * 6,
+            });
+            rend.specifyGlType({
+                .glMutableTypeName = "ProbeDefinition",
+                .glConstTypeName = "ProbeDefinition",
+                .glslDefinitionSnippet = GLSL_PROBE_DEF_SNIPPET,
+                .memberTypeDependencies = {&rend.getGlTypeSpec("vec4"),
+                                           &rend.getGlTypeSpec("uint")},
+                .std140Size = 40,
+                .std140Alignment = 16,
+                .layoutIndexSize = 4,
+            });
+            rend.specifyTypeConversion({
+                .hostType = Variant::getTypeInfo<G_ProbeDefinition>(),
+                .glTypeSpec = rend.getGlTypeSpec("ProbeDefinition"),
+            });
+
+            rend.specifyGlType({
+                .glMutableTypeName = "ProbeState",
+                .glConstTypeName = "ProbeState",
+                .glslDefinitionSnippet = GLSL_PROBE_STATE_SNIPPET,
+                .memberTypeDependencies = {&rend.getGlTypeSpec("vec4"),
+                                           &rend.getGlTypeSpec("uint")},
+                .std140Size = 16 * 6,
+                .std140Alignment = 16,
+                .layoutIndexSize = 6,
+            });
+            rend.specifyTypeConversion({
+                .hostType = Variant::getTypeInfo<G_ProbeState>(),
+                .glTypeSpec = rend.getGlTypeSpec("ProbeState"),
+            });
+
+            rend.specifyBufferTypeAndConversionAuto<ProbeBufferPtr>("ProbeBuffer");
+            rend.specifyBufferTypeAndConversionAuto<ProbeStateBufferPtr>("ProbeStateBuffer");
+        });
         setupFunctions.push_back([](ComponentRoot &root, Renderer &renderer, ScopedDict &dict) {
             MMETER_SCOPE_PROFILER("GI setup");
 
