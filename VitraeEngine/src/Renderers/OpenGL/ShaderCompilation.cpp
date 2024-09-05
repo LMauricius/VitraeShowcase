@@ -25,8 +25,8 @@ CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(
 CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
     ComponentRoot &root, dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
     dynasma::FirmPtr<const PropertyList> p_desiredResults,
-    PropertyGetter<std::size_t> invocationCountX, PropertyGetter<std::size_t> invocationCountY,
-    PropertyGetter<std::size_t> invocationCountZ, glm::uvec3 groupSize,
+    PropertyGetter<std::uint32_t> invocationCountX, PropertyGetter<std::uint32_t> invocationCountY,
+    PropertyGetter<std::uint32_t> invocationCountZ, glm::uvec3 groupSize,
     bool allowOutOfBoundsCompute)
     : mp_computeMethod(p_computeMethod), mp_desiredResults(p_desiredResults), mp_root(&root),
       m_invocationCountX(invocationCountX), m_invocationCountY(invocationCountY),
@@ -35,9 +35,9 @@ CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
       m_hash(combinedHashes<9>({{
           p_computeMethod->getHash(),
           p_desiredResults->getHash(),
-          std::hash<PropertyGetter<std::size_t>>{}(invocationCountX),
-          std::hash<PropertyGetter<std::size_t>>{}(invocationCountY),
-          std::hash<PropertyGetter<std::size_t>>{}(invocationCountZ),
+          std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountX),
+          std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountY),
+          std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountZ),
           groupSize.x,
           groupSize.y,
           groupSize.z,
@@ -157,12 +157,14 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
     // separate inputs into uniform and vertex layout variables
     for (auto [nameId, spec] : helperOrder[0]->pipeline.inputSpecs) {
-        if (helperOrder[0]->p_compSpec->shaderType == GL_VERTEX_SHADER &&
-            rend.getAllVertexBufferSpecs().find(spec.name) !=
-                rend.getAllVertexBufferSpecs().end()) {
-            elemVarSpecs.emplace(nameId, spec);
-        } else {
-            uniformVarSpecs.emplace(nameId, spec);
+        if (&spec.typeInfo != &Variant::getTypeInfo<void>()) {
+            if (helperOrder[0]->p_compSpec->shaderType == GL_VERTEX_SHADER &&
+                rend.getAllVertexBufferSpecs().find(spec.name) !=
+                    rend.getAllVertexBufferSpecs().end()) {
+                elemVarSpecs.emplace(nameId, spec);
+            } else {
+                uniformVarSpecs.emplace(nameId, spec);
+            }
         }
     }
 
@@ -547,9 +549,12 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
             // pipethrough variables
             for (auto nameId : p_helper->pipeline.pipethroughInputNames) {
-                if (uniformVarSpecs.find(nameId) == uniformVarSpecs.end()) {
-                    ss << "    " << outputParametersToGlobalVars.at(nameId) << " = "
-                       << inputParametersToGlobalVars.at(nameId) << ";\n";
+                if (&p_helper->pipeline.inputSpecs.at(nameId).typeInfo !=
+                    &Variant::getTypeInfo<void>()) {
+                    if (uniformVarSpecs.find(nameId) == uniformVarSpecs.end()) {
+                        ss << "    " << outputParametersToGlobalVars.at(nameId) << " = "
+                           << inputParametersToGlobalVars.at(nameId) << ";\n";
+                    }
                 }
             }
 
