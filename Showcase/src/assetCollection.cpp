@@ -145,6 +145,7 @@ void AssetCollection::reapplyChoosenMethods()
     for (auto &category : methodCategories) {
         choosenVertexMethods.push_back(category.methods[category.selectedIndex]->p_vertexMethod);
         choosenFragMethods.push_back(category.methods[category.selectedIndex]->p_fragmentMethod);
+        choosenComputeMethods.push_back(category.methods[category.selectedIndex]->p_computeMethod);
         choosenComposeMethods.push_back(category.methods[category.selectedIndex]->p_composeMethod);
 
         if (category.methods[category.selectedIndex]->p_vertexMethod->getFriendlyName() != "") {
