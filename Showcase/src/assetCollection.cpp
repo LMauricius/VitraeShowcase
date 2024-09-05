@@ -148,6 +148,13 @@ void AssetCollection::reapplyChoosenMethods()
         choosenComputeMethods.push_back(category.methods[category.selectedIndex]->p_computeMethod);
         choosenComposeMethods.push_back(category.methods[category.selectedIndex]->p_composeMethod);
 
+        choosenVertexMethods.push_back(
+            category.methods[category.selectedIndex]->p_genericShaderMethod);
+        choosenFragMethods.push_back(
+            category.methods[category.selectedIndex]->p_genericShaderMethod);
+        choosenComputeMethods.push_back(
+            category.methods[category.selectedIndex]->p_genericShaderMethod);
+
         if (category.methods[category.selectedIndex]->p_vertexMethod->getFriendlyName() != "") {
             vertName += category.methods[category.selectedIndex]->p_vertexMethod->getFriendlyName();
             vertName += "_";

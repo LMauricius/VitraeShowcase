@@ -12,6 +12,7 @@ using namespace Vitrae;
 struct MethodCollection
 {
     ComponentRoot &root;
+    dynasma::FirmPtr<Method<ShaderTask>> p_genericShaderMethod;
     dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod;
     dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod;
     dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod;
