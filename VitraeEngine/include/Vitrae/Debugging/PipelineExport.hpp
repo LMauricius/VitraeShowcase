@@ -53,15 +53,23 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
     auto outputPropNode = [&](StringView id, const PropertySpec &spec, bool horizontal) {
         out << id << " [";
         out << "label=\"" << escapedLabel(spec.name);
-        if (horizontal) {
-            out << ": " << escapedLabel(spec.typeInfo.getShortTypeName()) << "\", ";
+        if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+            out << "\", ";
+            out << "shape=hexagon, ";
+            out << "style=\"rounded,filled\", ";
+            out << "fillcolor=\"lightgoldenrod\", ";
+            out << "bgcolor=\"lightgoldenrod\", ";
         } else {
-            out << "\\n: " << escapedLabel(spec.typeInfo.getShortTypeName()) << "\", ";
+            if (horizontal) {
+                out << ": " << escapedLabel(spec.typeInfo.getShortTypeName()) << "\", ";
+            } else {
+                out << "\\n: " << escapedLabel(spec.typeInfo.getShortTypeName()) << "\", ";
+            }
+            out << "shape=box, ";
+            out << "style=\"rounded,filled\", ";
+            out << "fillcolor=\"lightyellow\", ";
+            out << "bgcolor=\"lightyellow\", ";
         }
-        out << "shape=box, ";
-        out << "style=\"rounded,filled\", ";
-        out << "fillcolor=\"lightyellow\", ";
-        out << "bgcolor=\"lightyellow\", ";
         out << "];\n";
     };
     auto outputInvisNode = [&](StringView id) {
