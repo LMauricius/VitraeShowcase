@@ -24,13 +24,20 @@ CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(
 
 CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
     ComponentRoot &root, dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
-    dynasma::FirmPtr<const PropertyList> p_desiredResults, glm::uvec3 groupSize,
+    dynasma::FirmPtr<const PropertyList> p_desiredResults,
+    PropertyGetter<std::size_t> invocationCountX, PropertyGetter<std::size_t> invocationCountY,
+    PropertyGetter<std::size_t> invocationCountZ, glm::uvec3 groupSize,
     bool allowOutOfBoundsCompute)
     : mp_computeMethod(p_computeMethod), mp_desiredResults(p_desiredResults), mp_root(&root),
-      m_groupSize(groupSize), m_allowOutOfBoundsCompute(allowOutOfBoundsCompute),
-      m_hash(combinedHashes<6>({{
+      m_invocationCountX(invocationCountX), m_invocationCountY(invocationCountY),
+      m_invocationCountZ(invocationCountZ), m_groupSize(groupSize),
+      m_allowOutOfBoundsCompute(allowOutOfBoundsCompute),
+      m_hash(combinedHashes<9>({{
           p_computeMethod->getHash(),
           p_desiredResults->getHash(),
+          std::hash<PropertyGetter<std::size_t>>{}(invocationCountX),
+          std::hash<PropertyGetter<std::size_t>>{}(invocationCountY),
+          std::hash<PropertyGetter<std::size_t>>{}(invocationCountZ),
           groupSize.x,
           groupSize.y,
           groupSize.z,
@@ -56,12 +63,23 @@ CompiledGLSLShader::CompiledGLSLShader(const SurfaceShaderParams &params)
 {}
 
 CompiledGLSLShader::CompiledGLSLShader(const ComputeShaderParams &params)
-    : CompiledGLSLShader({{
-                             CompilationSpec{.p_method = params.getComputeMethodPtr(),
-                                             .outVarPrefix = "comp_",
-                                             .shaderType = GL_COMPUTE_SHADER},
-                         }},
-                         params.getRoot(), *params.getDesiredResultsPtr())
+    : CompiledGLSLShader(
+          {{
+              CompilationSpec{
+                  .p_method = params.getComputeMethodPtr(),
+                  .outVarPrefix = "comp_",
+                  .shaderType = GL_COMPUTE_SHADER,
+                  .computeSpec =
+                      ComputeCompilationSpec{
+                          .invocationCountX = params.getInvocationCountX(),
+                          .invocationCountY = params.getInvocationCountY(),
+                          .invocationCountZ = params.getInvocationCountZ(),
+                          .groupSize = params.getGroupSize(),
+                          .allowOutOfBoundsCompute = params.getAllowOutOfBoundsCompute(),
+                      },
+              },
+          }},
+          params.getRoot(), *params.getDesiredResultsPtr())
 {}
 
 CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationSpecs,
@@ -139,16 +157,32 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
     // separate inputs into uniform and vertex layout variables
     for (auto [nameId, spec] : helperOrder[0]->pipeline.inputSpecs) {
-        if (rend.getAllVertexBufferSpecs().find(spec.name) !=
-            rend.getAllVertexBufferSpecs().end()) {
+        if (helperOrder[0]->p_compSpec->shaderType == GL_VERTEX_SHADER &&
+            rend.getAllVertexBufferSpecs().find(spec.name) !=
+                rend.getAllVertexBufferSpecs().end()) {
             elemVarSpecs.emplace(nameId, spec);
         } else {
             uniformVarSpecs.emplace(nameId, spec);
         }
     }
+
+    // additional inputs rrequired by the shader itself
     if (helperOrder[0]->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
-        for (auto [nameId, spec] : helperOrder[0]->pipeline.outputSpecs) {
-            // uniformVarSpecs.emplace(nameId, spec);
+        auto &computeSpec = helperOrder[0]->p_compSpec->computeSpec.value();
+
+        if (!computeSpec.allowOutOfBoundsCompute) {
+            if (!computeSpec.invocationCountX.isFixed()) {
+                uniformVarSpecs.emplace(computeSpec.invocationCountX.getSpec().name,
+                                        computeSpec.invocationCountX.getSpec());
+            }
+            if (!computeSpec.invocationCountY.isFixed()) {
+                uniformVarSpecs.emplace(computeSpec.invocationCountY.getSpec().name,
+                                        computeSpec.invocationCountY.getSpec());
+            }
+            if (!computeSpec.invocationCountZ.isFixed()) {
+                uniformVarSpecs.emplace(computeSpec.invocationCountZ.getSpec().name,
+                                        computeSpec.invocationCountZ.getSpec());
+            }
         }
     }
 
@@ -216,6 +250,16 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             ss << "#version 460 core\n"
                << "\n"
                << "\n";
+
+            // compute shader spec
+            if (p_helper->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
+                auto &computeSpec = helperOrder[0]->p_compSpec->computeSpec.value();
+
+                ss << "layout (local_size_x = " << computeSpec.groupSize.x
+                   << ", local_size_y = " << computeSpec.groupSize.y
+                   << ", local_size_z = " << computeSpec.groupSize.z << ") in;\n"
+                   << "\n";
+            }
 
             // type definitions
             for (auto p_glType : typeDeclarationOrder) {
@@ -447,6 +491,50 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 }
                 inputParametersToGlobalVars.emplace(nameId, localVarPrefix + spec.name);
                 outputParametersToGlobalVars.emplace(nameId, localVarPrefix + spec.name);
+            }
+
+            // early return conditions
+            if (p_helper->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
+                auto &computeSpec = helperOrder[0]->p_compSpec->computeSpec.value();
+
+                if (!computeSpec.allowOutOfBoundsCompute) {
+                    if (computeSpec.invocationCountX.isFixed()) {
+                        if (computeSpec.invocationCountX.getFixedValue() % computeSpec.groupSize.x)
+                            ss << "    if (gl_GlobalInvocationID.x >= "
+                               << computeSpec.invocationCountX.getFixedValue() << ") return;\n";
+
+                    } else {
+                        if (computeSpec.groupSize.x > 1)
+                            ss << "    if (gl_GlobalInvocationID.x >= "
+                               << inputParametersToGlobalVars.at(
+                                      computeSpec.invocationCountX.getSpec().name)
+                               << ") return;\n";
+                    }
+
+                    if (computeSpec.invocationCountY.isFixed()) {
+                        if (computeSpec.invocationCountY.getFixedValue() % computeSpec.groupSize.y)
+                            ss << "    if (gl_GlobalInvocationID.y >= "
+                               << computeSpec.invocationCountY.getFixedValue() << ") return;\n";
+                    } else {
+                        if (computeSpec.groupSize.y > 1)
+                            ss << "    if (gl_GlobalInvocationID.y >= "
+                               << inputParametersToGlobalVars.at(
+                                      computeSpec.invocationCountY.getSpec().name)
+                               << ") return;\n";
+                    }
+
+                    if (computeSpec.invocationCountZ.isFixed()) {
+                        if (computeSpec.invocationCountZ.getFixedValue() % computeSpec.groupSize.z)
+                            ss << "    if (gl_GlobalInvocationID.z >= "
+                               << computeSpec.invocationCountZ.getFixedValue() << ") return;\n";
+                    } else {
+                        if (computeSpec.groupSize.z > 1)
+                            ss << "    if (gl_GlobalInvocationID.z >= "
+                               << inputParametersToGlobalVars.at(
+                                      computeSpec.invocationCountZ.getSpec().name)
+                               << ") return;\n";
+                    }
+                }
             }
 
             // execution pipeline

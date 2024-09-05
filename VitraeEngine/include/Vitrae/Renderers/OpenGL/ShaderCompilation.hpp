@@ -4,6 +4,7 @@
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Types/Typedefs.hpp"
 #include "Vitrae/Util/MovableSpan.hpp"
+#include "Vitrae/Util/PropertyGetter.hpp"
 #include "Vitrae/Util/Variant.hpp"
 
 #include "dynasma/cachers/abstract.hpp"
@@ -21,6 +22,15 @@ class ComponentRoot;
 class CompiledGLSLShader : public dynasma::PolymorphicBase
 {
   public:
+    struct ComputeCompilationSpec
+    {
+        PropertyGetter<std::size_t> invocationCountX;
+        PropertyGetter<std::size_t> invocationCountY;
+        PropertyGetter<std::size_t> invocationCountZ;
+        glm::uvec3 groupSize;
+        bool allowOutOfBoundsCompute;
+    };
+
     struct CompilationSpec
     {
         // the specified shading method
@@ -35,6 +45,9 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
         // gl shader type
         GLenum shaderType;
+
+        // for compute shaders
+        std::optional<ComputeCompilationSpec> computeSpec;
     };
 
     class SurfaceShaderParams
@@ -73,6 +86,9 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
         dynasma::FirmPtr<Method<ShaderTask>> mp_computeMethod;
         dynasma::FirmPtr<const PropertyList> mp_desiredResults;
         ComponentRoot *mp_root;
+        PropertyGetter<std::size_t> m_invocationCountX;
+        PropertyGetter<std::size_t> m_invocationCountY;
+        PropertyGetter<std::size_t> m_invocationCountZ;
         glm::uvec3 m_groupSize;
         bool m_allowOutOfBoundsCompute;
         std::size_t m_hash;
@@ -81,11 +97,19 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
         ComputeShaderParams(ComponentRoot &root,
                             dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
                             dynasma::FirmPtr<const PropertyList> p_desiredResults,
-                            glm::uvec3 groupSize, bool allowOutOfBoundsCompute);
+                            PropertyGetter<std::size_t> invocationCountX,
+                            PropertyGetter<std::size_t> invocationCountY,
+                            PropertyGetter<std::size_t> invocationCountZ, glm::uvec3 groupSize,
+                            bool allowOutOfBoundsCompute);
 
         inline auto getComputeMethodPtr() const { return mp_computeMethod; }
         inline auto getDesiredResultsPtr() const { return mp_desiredResults; }
         inline ComponentRoot &getRoot() const { return *mp_root; }
+        inline PropertyGetter<std::size_t> getInvocationCountX() const { return m_invocationCountX; }
+        inline PropertyGetter<std::size_t> getInvocationCountY() const { return m_invocationCountY; }
+        inline PropertyGetter<std::size_t> getInvocationCountZ() const { return m_invocationCountZ; }
+        inline glm::uvec3 getGroupSize() const { return m_groupSize; }
+        inline bool getAllowOutOfBoundsCompute() const { return m_allowOutOfBoundsCompute; }
 
         inline std::size_t getHash() const { return m_hash; }
 
