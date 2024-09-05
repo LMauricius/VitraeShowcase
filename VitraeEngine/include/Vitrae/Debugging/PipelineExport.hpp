@@ -50,10 +50,14 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
         out << "bgcolor=\"lightblue\", ";
         out << "];\n";
     };
-    auto outputPropNode = [&](StringView id, const PropertySpec &spec) {
+    auto outputPropNode = [&](StringView id, const PropertySpec &spec, bool horizontal) {
         out << id << " [";
         out << "label=\"" << escapedLabel(spec.name);
-        out << "\\n: " << escapedLabel(spec.typeInfo.getShortTypeName()) << "\", ";
+        if (horizontal) {
+            out << ": " << escapedLabel(spec.typeInfo.getShortTypeName()) << "\", ";
+        } else {
+            out << "\\n: " << escapedLabel(spec.typeInfo.getShortTypeName()) << "\", ";
+        }
         out << "shape=box, ";
         out << "style=\"rounded,filled\", ";
         out << "fillcolor=\"lightyellow\", ";
@@ -131,9 +135,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
         }
     }
 
-    bool horizontalInputsOutputs = pipeline.inputSpecs.size() > pipeline.items.size() * 2.5 ||
-                                   pipeline.outputSpecs.size() > pipeline.items.size() * 2.5;
-    horizontalInputsOutputs = false;
+    bool horizontalInputsOutputs = pipeline.inputSpecs.size() > pipeline.items.size() ||
+                                   pipeline.outputSpecs.size() > pipeline.items.size();
 
     /*
     Output
@@ -141,7 +144,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
 
     out << "digraph {\n";
     out << "\trankdir=\"LR\"\n";
-    out << "\tranksep=0.02\n";
+    out << "\tranksep=0.25\n";
+    out << "\tnodesep=0.13\n";
     out << "\tcompound=true;\n";
 
     // inputs
@@ -150,12 +154,9 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
     out << "\t\tcluster=true;\n";
     out << "\t\tstyle=dashed;\n";
 
-    out << "\t\t";
-    outputInvisNode("cluster_inputs_node");
-
     for (auto [nameId, spec] : pipeline.inputSpecs) {
         out << "\t\t";
-        outputPropNode(getInputPropId(spec), spec);
+        outputPropNode(getInputPropId(spec), spec, horizontalInputsOutputs);
     }
     out << "\t}\n";
 
@@ -163,14 +164,12 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
     out << "\t\tcluster=true;\n";
     out << "\t\tstyle=invis;\n";
 
-    out << "\t\t";
-    outputInvisNode("cluster_processing_node");
-
     // intermediates
     for (auto [nameId, p_spec] : intermediateSpecs) {
-        if (itemUsedOutputs.find(nameId) != itemUsedOutputs.end()) {
+        if (pipeline.inputSpecs.find(nameId) == pipeline.inputSpecs.end() &&
+            itemUsedOutputs.find(nameId) != itemUsedOutputs.end()) {
             out << "\t\t";
-            outputPropNode(getOutputPropId(*p_spec), *p_spec);
+            outputPropNode(getOutputPropId(*p_spec), *p_spec, false);
         }
     }
 
@@ -184,8 +183,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
         for (auto [nameId, localNameId] : item.inputToLocalVariables) {
             out << "\t";
             outputConnection(getInputPropId(*intermediateSpecs.at(nameId)), getTaskId(*item.p_task),
-                             !horizontalInputsOutputs ||
-                                 pipeline.inputSpecs.find(nameId) == pipeline.inputSpecs.end());
+                             true);
         }
     }
     out << "\t}\n";
@@ -196,16 +194,13 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
     out << "\t\tcluster=true;\n";
     out << "\t\tstyle=dashed;\n";
 
-    out << "\t\t";
-    outputInvisNode("cluster_outputs_node");
-
     for (auto [nameId, spec] : pipeline.outputSpecs) {
         out << "\t\t";
         if (pipeline.pipethroughInputNames.find(nameId) != pipeline.pipethroughInputNames.end() ||
             itemUsedOutputs.find(nameId) != itemUsedOutputs.end()) {
-            outputPropNode(getOutputPropId(spec) + "_out", spec);
+            outputPropNode(getOutputPropId(spec) + "_out", spec, horizontalInputsOutputs);
         } else {
-            outputPropNode(getOutputPropId(spec), spec);
+            outputPropNode(getOutputPropId(spec), spec, horizontalInputsOutputs);
         }
     }
 
@@ -214,11 +209,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
         for (auto [nameId, localNameId] : item.outputToLocalVariables) {
             if (usedOutputs.find(nameId) != usedOutputs.end()) {
                 out << "\t\t";
-                outputConnection(
-                    getTaskId(*item.p_task), getOutputPropId(*intermediateSpecs.at(nameId)),
-                    !horizontalInputsOutputs ||
-                        pipeline.outputSpecs.find(nameId) == pipeline.outputSpecs.end() ||
-                        itemUsedOutputs.find(nameId) != itemUsedOutputs.end());
+                outputConnection(getTaskId(*item.p_task),
+                                 getOutputPropId(*intermediateSpecs.at(nameId)), true);
             }
         }
     }
@@ -239,89 +231,6 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
             out << "\t";
             outputEquivalence(getOutputPropId(spec), getOutputPropId(spec) + "_out", false);
         }
-    }
-
-    // order clusters
-    /*if (pipeline.inputSpecs.size() && pipeline.items.size()) {
-        outputInvisibleDirection(getInputPropId((*pipeline.inputSpecs.begin()).second),
-                                 getTaskId(*pipeline.items.front().p_task), false, "cluster_inputs",
-                                 "cluster_processing");
-    }*/
-    outputInvisibleDirection("cluster_inputs_node", "cluster_processing_node", false,
-                             "cluster_inputs", "cluster_processing");
-    /*if (pipeline.items.size() && pipeline.outputSpecs.size()) {
-        String outNodeId;
-        auto &outNodeSpec = (*pipeline.outputSpecs.begin()).second;
-
-        if (pipeline.pipethroughInputNames.find(outNodeSpec.name) !=
-                pipeline.pipethroughInputNames.end() ||
-            itemUsedOutputs.find(outNodeSpec.name) != itemUsedOutputs.end()) {
-            outNodeId = getOutputPropId(outNodeSpec) + "_out";
-        } else {
-            outNodeId = getOutputPropId(outNodeSpec);
-        }
-        outputInvisibleDirection(getTaskId(*pipeline.items.front().p_task), outNodeId, false,
-                                 "cluster_processing", "cluster_outputs");
-    }*/
-    outputInvisibleDirection("cluster_processing_node", "cluster_outputs_node", true,
-                             "cluster_processing", "cluster_outputs");
-
-    // for many inputs/outputs we lay them in the opposite direction to the graph
-    // order them by appearence
-    if (horizontalInputsOutputs) {
-        String lastInputNodeId = "cluster_inputs_node";
-        String lastOutputNodeId = "";
-
-        std::set<StringId> processedNodes;
-        auto processInputNode = [&](const String &nodeId) {
-            if (processedNodes.find(nodeId) == processedNodes.end()) {
-                if (lastInputNodeId.length()) {
-                    out << "\t\t";
-                    outputInvisibleDirection(lastInputNodeId, nodeId, true);
-                }
-                processedNodes.insert(nodeId);
-                lastInputNodeId = nodeId;
-            }
-        };
-        auto processOutputNode = [&](const String &nodeId) {
-            if (processedNodes.find(nodeId) == processedNodes.end()) {
-                if (lastOutputNodeId.length()) {
-                    out << "\t\t";
-                    outputInvisibleDirection(lastOutputNodeId, nodeId, true);
-                }
-                processedNodes.insert(nodeId);
-                lastOutputNodeId = nodeId;
-            }
-        };
-
-        for (auto nameId : pipeline.pipethroughInputNames) {
-            processInputNode(getInputPropId(*intermediateSpecs.at(nameId)));
-            processOutputNode(getOutputPropId(*intermediateSpecs.at(nameId)) + "_out");
-            out << "\t\t";
-            sameRank(getInputPropId(*intermediateSpecs.at(nameId)),
-                     getOutputPropId(*intermediateSpecs.at(nameId)) + "_out");
-        }
-
-        for (auto &item : pipeline.items) {
-            for (auto [nameId, localNameId] : item.outputToLocalVariables) {
-                if (pipeline.outputSpecs.find(nameId) != pipeline.outputSpecs.end()) {
-                    if (itemUsedOutputs.find(nameId) != itemUsedOutputs.end()) {
-                        processOutputNode(getOutputPropId(*intermediateSpecs.at(nameId)) + "_out");
-                    } else {
-                        processOutputNode(getOutputPropId(*intermediateSpecs.at(nameId)));
-                    }
-                }
-            }
-            for (auto [nameId, localNameId] : item.inputToLocalVariables) {
-                if (pipeline.inputSpecs.find(nameId) != pipeline.inputSpecs.end()) {
-                    processInputNode(getInputPropId(*intermediateSpecs.at(nameId)));
-                }
-            }
-        }
-
-        processOutputNode("cluster_outputs_node");
-
-        out << "\t\tnewrank=true;\n";
     }
 
     out << "}";
