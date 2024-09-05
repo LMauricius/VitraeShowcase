@@ -17,7 +17,8 @@ namespace Vitrae
 OpenGLComposeCompute::OpenGLComposeCompute(const SetupParams &params)
     : ComposeCompute(std::span<const PropertySpec>{},
                      std::span<const PropertySpec>(params.outputSpecs)),
-      m_root(params.root), m_computeSetup(params.computeSetup)
+      m_root(params.root), m_computeSetup(params.computeSetup),
+      m_executeCondition(params.executeCondition)
 {
     // base inputs
     if (!m_computeSetup.invocationCountX.isFixed()) {
@@ -88,6 +89,10 @@ const StableMap<StringId, PropertySpec> &OpenGLComposeCompute::getOutputSpecs() 
 void OpenGLComposeCompute::run(RenderRunContext args) const
 {
     MMETER_SCOPE_PROFILER("OpenGLComposeCompute::run");
+
+    if (m_executeCondition && !m_executeCondition(args)) {
+        return;
+    }
 
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_root.getComponent<Renderer>());
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
