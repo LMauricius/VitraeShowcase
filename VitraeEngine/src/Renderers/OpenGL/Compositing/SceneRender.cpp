@@ -270,6 +270,13 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                                 specifyInputDependency(bindingSpec.srcSpec);
                             }
                         }
+
+                        for (auto tokenPropName : p_compiledShader->tokenPropertyNames) {
+                            specifyInputDependency(PropertySpec{
+                                .name = tokenPropName,
+                                .typeInfo = Variant::getTypeInfo<void>(),
+                            });
+                        }
                     }
 
                     // helper for material properties

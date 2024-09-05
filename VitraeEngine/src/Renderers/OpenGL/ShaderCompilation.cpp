@@ -157,14 +157,14 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
     // separate inputs into uniform and vertex layout variables
     for (auto [nameId, spec] : helperOrder[0]->pipeline.inputSpecs) {
-        if (&spec.typeInfo != &Variant::getTypeInfo<void>()) {
-            if (helperOrder[0]->p_compSpec->shaderType == GL_VERTEX_SHADER &&
-                rend.getAllVertexBufferSpecs().find(spec.name) !=
-                    rend.getAllVertexBufferSpecs().end()) {
-                elemVarSpecs.emplace(nameId, spec);
-            } else {
-                uniformVarSpecs.emplace(nameId, spec);
-            }
+        if (&spec.typeInfo == &Variant::getTypeInfo<void>()) {
+            tokenPropertyNames.insert(spec.name);
+        } else if (helperOrder[0]->p_compSpec->shaderType == GL_VERTEX_SHADER &&
+                   rend.getAllVertexBufferSpecs().find(spec.name) !=
+                       rend.getAllVertexBufferSpecs().end()) {
+            elemVarSpecs.emplace(nameId, spec);
+        } else {
+            uniformVarSpecs.emplace(nameId, spec);
         }
     }
 
@@ -221,7 +221,9 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             }
 
             for (auto p_type : usedTypeSet) {
-                processTypeNameId(rend.getTypeConversion(*p_type).glTypeSpec);
+                if (*p_type != Variant::getTypeInfo<void>()) {
+                    processTypeNameId(rend.getTypeConversion(*p_type).glTypeSpec);
+                }
             }
         }
     }
