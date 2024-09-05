@@ -19,6 +19,7 @@ class ComposeCompute : public ComposeTask
         ComponentRoot &root;
         std::vector<PropertySpec> outputSpecs;
         GpuComputeSetupParams computeSetup;
+        std::function<bool(RenderRunContext &)> executeCondition;
     };
 
     using ComposeTask::ComposeTask;

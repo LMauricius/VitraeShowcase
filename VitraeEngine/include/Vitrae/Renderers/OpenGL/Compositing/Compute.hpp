@@ -33,6 +33,7 @@ class OpenGLComposeCompute : public ComposeCompute
     ComponentRoot &m_root;
     GpuComputeSetupParams m_computeSetup;
     String m_friendlyName;
+    std::function<bool(RenderRunContext &)> m_executeCondition;
 
     dynasma::FirmPtr<const PropertyList> mp_outputComponents;
 };
