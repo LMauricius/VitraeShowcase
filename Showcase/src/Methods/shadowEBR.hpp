@@ -28,7 +28,7 @@ struct MethodsShadowEBR : MethodCollection
             Method<ShaderTask>::MethodParams{.tasks = {}});
 
         /*
-        FRAGMENT SHADING
+        FRAGMENT/GENERIC SHADING
         */
 
         /*auto p_alias =
@@ -168,7 +168,7 @@ struct MethodsShadowEBR : MethodCollection
                 )",
                 .functionName = "lightShadowFactor"}});
 
-        p_fragmentMethod =
+        p_genericShaderMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
                 .tasks = {p_viewNormal2D, p_shadowLightFactor}, .friendlyName = "ShadowEBR"});
 
