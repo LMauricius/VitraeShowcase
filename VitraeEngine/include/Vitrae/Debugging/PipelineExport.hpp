@@ -216,9 +216,15 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
     for (auto &item : pipeline.items) {
         for (auto [nameId, localNameId] : item.outputToLocalVariables) {
             if (usedOutputs.find(nameId) != usedOutputs.end()) {
-                out << "\t\t";
-                outputConnection(getTaskId(*item.p_task),
-                                 getOutputPropId(*intermediateSpecs.at(nameId)), true);
+                if (pipeline.inputSpecs.find(nameId) != pipeline.inputSpecs.end()) {
+                    out << "\t\t";
+                    outputConnection(getTaskId(*item.p_task),
+                                     getOutputPropId(*intermediateSpecs.at(nameId)) + "_out", true);
+                } else {
+                    out << "\t\t";
+                    outputConnection(getTaskId(*item.p_task),
+                                     getOutputPropId(*intermediateSpecs.at(nameId)), true);
+                }
             }
         }
     }
