@@ -7,6 +7,7 @@
 #include "GI/Probe.hpp"
 
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
+#include "Vitrae/Pipelines/Compositing/Compute.hpp"
 #include "Vitrae/Pipelines/Compositing/FrameToTexture.hpp"
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
@@ -44,6 +45,8 @@ struct MethodsAmbientGI : MethodCollection
                 {ShaderFunction::StringParams{
                     .inputSpecs =
                         {
+                            PropertySpec{.name = "gpuProbes",
+                                         .typeInfo = Variant::getTypeInfo<ProbeBufferPtr>()},
                             PropertySpec{.name = "gpuProbeStates",
                                          .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
                             PropertySpec{.name = "giWorldStart",
@@ -69,11 +72,13 @@ struct MethodsAmbientGI : MethodCollection
                         out vec3 shade_ambient
                     ) {
                         ivec3 gridPos = ivec3(floor(
-                            (position_world.xyz / position_world.w - giWorldStart) / giWorldSize * giGridSize
+                            (position_world.xyz - giWorldStart) / giWorldSize * vec3(giGridSize)
                         ));
-                        gridPos = clamp(gridPos, ivec3(0), giGridSize - ivec3(1));
+                        //gridPos = clamp(gridPos, ivec3(0), giGridSize - ivec3(1));
 
                         uint ind = gridPos.x * giGridSize.y * giGridSize.z + gridPos.y * giGridSize.z + gridPos.z;
+                        vec3 probeSize = (giWorldSize / vec3(giGridSize));
+                        vec3 probePos = giWorldStart + (vec3(gridPos) + 0.5) * probeSize;
 
                         bvec3 normalIsNeg = lessThan(normal, vec3(0.0));
                         vec3 absNormal = abs(normal);
@@ -88,6 +93,12 @@ struct MethodsAmbientGI : MethodCollection
                                 buffer_gpuProbeStates.elements[ind].illumination[
                                     4 + int(normalIsNeg.z)
                                 ].rgb * absNormal.z;
+                        /*vec3 offset = abs(position_world.xyz - buffer_gpuProbes.elements[ind].position.xyz) /
+                                        buffer_gpuProbes.elements[ind].size.xyz * 2.0;*/
+                        vec3 offset = abs(position_world.xyz - probePos) / probeSize * 2.0;
+                        vec3 darkening = min(vec3(1.0) - (offset - 0.9) / 0.1, vec3(1.0));
+                        float darkeningS = min(darkening.x, min(darkening.y, darkening.z));
+                        shade_ambient = vec3(gridPos) / vec3(giGridSize) * darkeningS; // debug
                     }
                 )",
                     .functionName = "setGlobalLighting"}});
@@ -100,15 +111,113 @@ struct MethodsAmbientGI : MethodCollection
         COMPUTE SHADING
         */
 
-        p_computeMethod = dynasma::makeStandalone<Method<ShaderTask>>(
-            Method<ShaderTask>::MethodParams{.tasks = {}, .friendlyName = "GlobalIllumination"});
+        auto p_giPropagate =
+            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
+                .inputSpecs =
+                    {
+                        PropertySpec{.name = "gpuProbeStates_prev",
+                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                        PropertySpec{.name = "gpuProbeStates",
+                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                        PropertySpec{.name = "gpuProbes",
+                                     .typeInfo = Variant::getTypeInfo<ProbeBufferPtr>()},
+                        PropertySpec{.name = "camera_position",
+                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                        PropertySpec{.name = "swapped_probes",
+                                     .typeInfo = Variant::getTypeInfo<void>()},
+                    },
+                .outputSpecs =
+                    {
+                        PropertySpec{.name = "gpuProbeStates",
+                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                        PropertySpec{.name = "updated_probes",
+                                     .typeInfo = Variant::getTypeInfo<void>()},
+                    },
+                .snippet = R"(
+                    void giPropagate(
+                        in vec3 camera_position
+                    ) {
+                        uint probeIndex = gl_GlobalInvocationID.x;
+                        uint faceIndex = gl_GlobalInvocationID.y;
+
+                        buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = min(
+                            vec3(1.0),
+                            vec3(5.0) / distance(
+                                buffer_gpuProbes.elements[probeIndex].position.xyz,
+                                camera_position
+                            )
+                        )
+                    }
+                )",
+                .functionName = "giPropagate"}});
+
+        p_computeMethod =
+            dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
+                .tasks = {p_giPropagate}, .friendlyName = "GlobalIllumination"});
 
         /*
         COMPOSING
         */
+        auto p_swapProbeBuffers =
+            dynasma::makeStandalone<ComposeFunction>(ComposeFunction::SetupParams{
+                .inputSpecs =
+                    {
+                        PropertySpec{.name = "gpuProbeStates",
+                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                    },
+                .outputSpecs =
+                    {
+                        PropertySpec{.name = "gpuProbeStates_prev",
+                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                        PropertySpec{.name = "gpuProbeStates",
+                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                        PropertySpec{.name = "swapped_probes",
+                                     .typeInfo = Variant::getTypeInfo<void>()},
+                    },
+                .p_function =
+                    [&root](const RenderRunContext &context) {
+                        auto gpuProbeStates =
+                            context.properties.get("gpuProbeStates").get<ProbeStateBufferPtr>();
+                        ProbeStateBufferPtr gpuProbeStates_prev;
+
+                        // allocate the new buffer if we don't have it yet
+                        if (auto pv_gpuProbeStates_prev =
+                                context.properties.getPtr("gpuProbeStates_prev");
+                            pv_gpuProbeStates_prev == nullptr) {
+                            gpuProbeStates_prev = ProbeStateBufferPtr(
+                                root, BufferUsageHint::GPU_COMPUTE | BufferUsageHint::GPU_DRAW,
+                                gpuProbeStates.numElements());
+                        } else {
+                            gpuProbeStates_prev =
+                                pv_gpuProbeStates_prev->get<ProbeStateBufferPtr>();
+                        }
+
+                        // swap buffers
+                        context.properties.set("gpuProbeStates_prev", gpuProbeStates);
+                        context.properties.set("gpuProbeStates", gpuProbeStates_prev);
+                    },
+                .friendlyName = "Swap probe buffers",
+            });
+
+        auto p_updateProbes =
+            root.getComponent<ComposeComputeKeeper>().new_asset({ComposeCompute::SetupParams{
+                .root = root,
+                .outputSpecs =
+                    {
+                        PropertySpec{.name = "gpuProbeStates",
+                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                        PropertySpec{.name = "updated_probes",
+                                     .typeInfo = Variant::getTypeInfo<void>()},
+                    },
+                .computeSetup = {
+                    .invocationCountX = {"gpuProbeCount"},
+                    .invocationCountY = 6,
+                    .groupSizeY = 6,
+                }}});
 
         p_composeMethod = dynasma::makeStandalone<Method<ComposeTask>>(
-            Method<ComposeTask>::MethodParams{.tasks = {}, .friendlyName = "GlobalIllumination"});
+            Method<ComposeTask>::MethodParams{.tasks = {p_swapProbeBuffers, p_updateProbes},
+                                              .friendlyName = "GlobalIllumination"});
 
         /*
         SETUP
@@ -183,10 +292,13 @@ struct MethodsAmbientGI : MethodCollection
 
             // get the AABB of the scene
             const Scene &scene = *dict.get("scene").get<dynasma::FirmPtr<Scene>>();
-            BoundingBox sceneAABB = scene.meshProps[0].p_mesh->getBoundingBox();
-            for (const auto &mesh : scene.meshProps) {
-                sceneAABB.merge(mesh.p_mesh->getBoundingBox());
+            BoundingBox sceneAABB = transformed(scene.meshProps[0].transform.getModelMatrix(),
+                                                scene.meshProps[0].p_mesh->getBoundingBox());
+            for (const auto &meshProp : scene.meshProps) {
+                sceneAABB.merge(transformed(meshProp.transform.getModelMatrix(),
+                                            meshProp.p_mesh->getBoundingBox()));
             }
+            sceneAABB.expand(1.1); // make it a bit bigger than the model
 
             // generate world
             std::vector<GI::H_ProbeDefinition> probes;
@@ -207,7 +319,7 @@ struct MethodsAmbientGI : MethodCollection
                 root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW));
 
             generateProbeList(probes, gridSize, worldStart, sceneAABB.getCenter(),
-                              sceneAABB.getExtent(), 200.0f);
+                              sceneAABB.getExtent(), 5.0f);
             convertHost2GpuBuffers(probes, gpuProbes, gpuReflectionTransfers,
                                    gpuLeavingPremulFactors, gpuNeighborIndices,
                                    gpuNeighborTransfer);
@@ -219,6 +331,13 @@ struct MethodsAmbientGI : MethodCollection
                 }
             }
 
+            gpuProbes.getRawBuffer()->synchronize();
+            gpuProbeStates.getRawBuffer()->synchronize();
+            gpuReflectionTransfers.getRawBuffer()->synchronize();
+            gpuLeavingPremulFactors.getRawBuffer()->synchronize();
+            gpuNeighborIndices.getRawBuffer()->synchronize();
+            gpuNeighborTransfer.getRawBuffer()->synchronize();
+
             // store properties
             dict.set("gpuProbes", gpuProbes);
             dict.set("gpuProbeStates", gpuProbeStates);
@@ -229,6 +348,7 @@ struct MethodsAmbientGI : MethodCollection
             dict.set("giWorldStart", worldStart);
             dict.set("giWorldSize", sceneAABB.getExtent());
             dict.set("giGridSize", gridSize);
+            dict.set("gpuProbeCount", gpuProbes.numElements());
         });
     }
 };
