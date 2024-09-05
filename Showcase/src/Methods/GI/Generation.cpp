@@ -87,7 +87,8 @@ void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridS
                 for (int z = 0; z < gridSize.z; z++) {
                     auto &probe = getProbe({x, y, z});
 
-                    probe.position = worldStart + glm::vec3(x, y, z) * ind2OffsetConversion;
+                    probe.position =
+                        worldStart + (glm::vec3(x, y, z) + 0.5f) * ind2OffsetConversion;
                     probe.size = probeSize;
 
                     for (int neighx : {-1, 0, 1}) {
