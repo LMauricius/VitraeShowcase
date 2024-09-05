@@ -13,6 +13,7 @@
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Constant.hpp"
 #include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Pipelines/Shading/Header.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 
 #include "dynasma/standalone.hpp"
@@ -35,6 +36,20 @@ struct MethodsAmbientGI : MethodCollection
 
         p_vertexMethod = dynasma::makeStandalone<Method<ShaderTask>>(
             Method<ShaderTask>::MethodParams{.tasks = {}});
+
+        /*
+        GENERIC SHADING
+        */
+
+        auto p_giHeader = root.getComponent<ShaderHeaderKeeper>().new_asset(
+            {ShaderHeader::StringParams{.inputTokenNames = {},
+                                        .outputTokenNames = {"gi_utilities"},
+                                        .snippet = GI::GLSL_PROBE_UTILITY_SNIPPET,
+                                        .friendlyName = "giConstants"}});
+
+        p_genericShaderMethod =
+            dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
+                .tasks = {p_giHeader}, .friendlyName = "GlobalIllumination"});
 
         /*
         FRAGMENT SHADING
@@ -95,10 +110,6 @@ struct MethodsAmbientGI : MethodCollection
                                 buffer_gpuProbeStates.elements[ind].illumination[
                                     4 + int(normalIsNeg.z)
                                 ].rgb * absNormal.z;
-                        //vec3 offset = abs(position_world.xyz - probePos) / probeSize * 2.0;
-                        //vec3 darkening = min(vec3(1.0) - (offset - 0.9) / 0.1, vec3(1.0));
-                        //float darkeningS = min(darkening.x, min(darkening.y, darkening.z));
-                        //shade_ambient = vec3(gridPos) / vec3(giGridSize) * darkeningS; // debug
                     }
                 )",
                     .functionName = "setGlobalLighting"}});
@@ -126,6 +137,9 @@ struct MethodsAmbientGI : MethodCollection
                                          .typeInfo = Variant::getTypeInfo<glm::vec3>()},
                             PropertySpec{.name = "camera_position",
                                          .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+
+                            PropertySpec{.name = "gi_utilities",
+                                         .typeInfo = Variant::getTypeInfo<void>()},
                             PropertySpec{.name = "swapped_probes",
                                          .typeInfo = Variant::getTypeInfo<void>()},
                         },
@@ -152,7 +166,10 @@ struct MethodsAmbientGI : MethodCollection
                         buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = vec4(min(
                             vec3(1.0),
                             vec3(5.0) / scaledDist / 100
-                        ), 1.0);
+                        ), 1.0) * dot(
+                            DIRECTIONS[faceIndex],
+                            normalize(camera_position - probePos)
+                        );
                     }
                 )",
                     .functionName = "giPropagate"}});
