@@ -133,25 +133,32 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
      * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
      * with enough size for the HeaderT
      */
-    SharedBufferPtr(ComponentRoot &root, BufferUsageHints usage)
-        : m_buffer(root.getComponent<RawSharedBufferKeeper>().new_asset(RawSharedBufferKeeperSeed{
-              .kernel = RawSharedBuffer::SetupParams{.renderer = root.getComponent<Renderer>(),
-                                                     .root = root,
-                                                     .usage = usage,
-                                                     .size = calcMinimumBufferSize()}}))
+    SharedBufferPtr(ComponentRoot &root, BufferUsageHints usage, StringView friendlyName = "")
+        : m_buffer(root.getComponent<RawSharedBufferKeeper>().new_asset(
+              RawSharedBufferKeeperSeed{.kernel = RawSharedBuffer::SetupParams{
+                                            .renderer = root.getComponent<Renderer>(),
+                                            .root = root,
+                                            .usage = usage,
+                                            .size = calcMinimumBufferSize(),
+                                            .friendlyName = String(friendlyName),
+                                        }}))
     {}
 
     /**
      * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
      * with the specified number of elements
      */
-    SharedBufferPtr(ComponentRoot &root, BufferUsageHints usage, std::size_t numElements)
+    SharedBufferPtr(ComponentRoot &root, BufferUsageHints usage, std::size_t numElements,
+                    StringView friendlyName = "")
         requires HAS_FAM_ELEMENTS
-        : m_buffer(root.getComponent<RawSharedBufferKeeper>().new_asset(RawSharedBufferKeeperSeed{
-              .kernel = RawSharedBuffer::SetupParams{.renderer = root.getComponent<Renderer>(),
-                                                     .root = root,
-                                                     .usage = usage,
-                                                     .size = calcMinimumBufferSize(numElements)}}))
+        : m_buffer(root.getComponent<RawSharedBufferKeeper>().new_asset(
+              RawSharedBufferKeeperSeed{.kernel = RawSharedBuffer::SetupParams{
+                                            .renderer = root.getComponent<Renderer>(),
+                                            .root = root,
+                                            .usage = usage,
+                                            .size = calcMinimumBufferSize(numElements),
+                                            .friendlyName = String(friendlyName),
+                                        }}))
     {}
 
     /**
