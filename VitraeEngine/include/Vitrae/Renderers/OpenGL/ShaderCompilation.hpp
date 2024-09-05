@@ -139,6 +139,7 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
     inline std::size_t memory_cost() const { return 1; }
 
     GLuint programGLName;
+    std::set<String> tokenPropertyNames;
     StableMap<StringId, UniformSpec> uniformSpecs;
     StableMap<StringId, BindingSpec> bindingSpecs;
     StableMap<StringId, BindingSpec> uboSpecs;

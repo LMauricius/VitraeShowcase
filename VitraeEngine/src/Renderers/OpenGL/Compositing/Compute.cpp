@@ -56,13 +56,13 @@ OpenGLComposeCompute::OpenGLComposeCompute(const SetupParams &params)
     } else {
         m_friendlyName += params.computeSetup.invocationCountX.getSpec().name;
     }
-    m_friendlyName = ", ";
+    m_friendlyName += ", ";
     if (params.computeSetup.invocationCountY.isFixed()) {
         m_friendlyName += std::to_string(params.computeSetup.invocationCountY.getFixedValue());
     } else {
         m_friendlyName += params.computeSetup.invocationCountY.getSpec().name;
     }
-    m_friendlyName = ", ";
+    m_friendlyName += ", ";
     if (params.computeSetup.invocationCountZ.isFixed()) {
         m_friendlyName += std::to_string(params.computeSetup.invocationCountZ.getFixedValue());
     } else {
@@ -129,6 +129,13 @@ void OpenGLComposeCompute::run(RenderRunContext args) const
     glUseProgram(p_compiledShader->programGLName);
 
     // set uniforms
+    for (auto tokenPropName : p_compiledShader->tokenPropertyNames) {
+        specifyInputDependency(PropertySpec{
+            .name = tokenPropName,
+            .typeInfo = Variant::getTypeInfo<void>(),
+        });
+    }
+
     for (auto [propertyNameId, uniSpec] : p_compiledShader->uniformSpecs) {
         auto p = args.properties.getPtr(propertyNameId);
         if (p) {
@@ -137,6 +144,7 @@ void OpenGLComposeCompute::run(RenderRunContext args) const
 
         specifyInputDependency(uniSpec.srcSpec);
     }
+
     for (auto [propertyNameId, bindingSpec] : p_compiledShader->bindingSpecs) {
         auto p = args.properties.getPtr(propertyNameId);
         if (p) {
