@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vitrae/Types/Typedefs.hpp"
+
 #include <any>
 #include <cstdlib>
 #include <sstream>
@@ -28,11 +30,13 @@ class VariantVTable
     std::size_t size;
     std::size_t alignment;
 
+    inline StringView getShortTypeName() const { return shortTypeNameGetter(); }
+
     constexpr VariantVTable()
         : p_id(nullptr), size(0), alignment(0), hasShortObjectOptimization(false),
-          emptyConstructor(nullptr), copyConstructor(nullptr), moveConstructor(nullptr),
-          destructor(nullptr), isEqual(nullptr), isLessThan(nullptr), toBool(nullptr),
-          toString(nullptr), hash(nullptr){};
+          shortTypeNameGetter(nullptr), emptyConstructor(nullptr), copyConstructor(nullptr),
+          moveConstructor(nullptr), destructor(nullptr), isEqual(nullptr), isLessThan(nullptr),
+          toBool(nullptr), toString(nullptr), hash(nullptr) {};
     ~VariantVTable() = default;
 
     // comparisons (just compare type_info)
@@ -49,6 +53,9 @@ class VariantVTable
     VariantVTable &operator=(const VariantVTable &) = default;
     VariantVTable &operator=(VariantVTable &&) = default;
 
+    // meta
+    StringView (*shortTypeNameGetter)();
+
     // memory management
     void (*emptyConstructor)(Variant &self);
     void (*copyConstructor)(Variant &self, const Variant &other);
@@ -63,6 +70,14 @@ class VariantVTable
     bool (*toBool)(const Variant &p);
     std::string (*toString)(const Variant &p);
     std::size_t (*hash)(const Variant &p);
+
+    // utilities
+    static String constructShortTypeName(const std::type_info *p_id);
+    template <class T> static StringView getShortTypeName()
+    {
+        static String name = constructShortTypeName(&typeid(T));
+        return name;
+    }
 };
 
 using TypeInfo = VariantVTable;
@@ -101,6 +116,9 @@ class Variant
 
         // public info
         table.p_id = &typeid(T);
+
+        // getters
+        table.shortTypeNameGetter = VariantVTable::getShortTypeName<T>;
 
         // memory management
 
