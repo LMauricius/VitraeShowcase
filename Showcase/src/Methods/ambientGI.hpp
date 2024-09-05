@@ -260,7 +260,7 @@ struct MethodsAmbientGI : MethodCollection
                 .glslDefinitionSnippet = GLSL_PROBE_DEF_SNIPPET,
                 .memberTypeDependencies = {&rend.getGlTypeSpec("vec4"),
                                            &rend.getGlTypeSpec("uint")},
-                .std140Size = 40,
+                .std140Size = 32,
                 .std140Alignment = 16,
                 .layoutIndexSize = 4,
             });

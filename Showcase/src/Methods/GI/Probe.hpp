@@ -67,9 +67,9 @@ struct G_NeighborTransfer
 
 struct G_ProbeDefinition
 {
-    glm::vec4 position;
-    glm::vec4 size;
+    glm::vec3 position;
     std::uint32_t neighborSpecBufStart;
+    glm::vec3 size;
     std::uint32_t neighborSpecCount;
 };
 
@@ -105,9 +105,9 @@ struct NeighborTransfer {
 
 inline constexpr const char *GLSL_PROBE_DEF_SNIPPET = R"(
 struct ProbeDefinition {
-    vec4 position;
-    vec4 size;
+    vec3 position;
     uint neighborSpecBufStart;
+    vec3 size;
     uint neighborSpecCount;
 };
 )";

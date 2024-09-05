@@ -23,8 +23,8 @@ void GI::convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes,
         auto &gpuReflectionTransfer = gpuReflectionTransfers.getElement(i);
         auto &gpuLeavingPremulFactor = gpuLeavingPremulFactors.getElement(i);
 
-        gpuProbe.position = glm::vec4(hostProbe.position, 0.0);
-        gpuProbe.size = glm::vec4(hostProbe.size, 0.0);
+        gpuProbe.position = hostProbe.position;
+        gpuProbe.size = hostProbe.size;
         gpuProbe.neighborSpecBufStart = numNeighborSpecs;
         gpuProbe.neighborSpecCount = hostProbe.neighborSpecs.size();
 
