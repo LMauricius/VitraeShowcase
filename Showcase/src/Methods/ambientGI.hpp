@@ -59,6 +59,8 @@ struct MethodsAmbientGI : MethodCollection
                                          .typeInfo = Variant::getTypeInfo<glm::vec4>()},
                             PropertySpec{.name = "normal",
                                          .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "updated_probes",
+                                         .typeInfo = Variant::getTypeInfo<void>()},
                         },
                     .outputSpecs =
                         {
@@ -74,11 +76,11 @@ struct MethodsAmbientGI : MethodCollection
                         ivec3 gridPos = ivec3(floor(
                             (position_world.xyz - giWorldStart) / giWorldSize * vec3(giGridSize)
                         ));
-                        //gridPos = clamp(gridPos, ivec3(0), giGridSize - ivec3(1));
+                        gridPos = clamp(gridPos, ivec3(0), giGridSize - ivec3(1));
 
                         uint ind = gridPos.x * giGridSize.y * giGridSize.z + gridPos.y * giGridSize.z + gridPos.z;
-                        vec3 probeSize = (giWorldSize / vec3(giGridSize));
-                        vec3 probePos = giWorldStart + (vec3(gridPos) + 0.5) * probeSize;
+                        vec3 probeSize = buffer_gpuProbes.elements[ind].size.xyz;//(giWorldSize / vec3(giGridSize));
+                        vec3 probePos = buffer_gpuProbes.elements[ind].position.xyz;//giWorldStart + (vec3(gridPos) + 0.5) * probeSize;
 
                         bvec3 normalIsNeg = lessThan(normal, vec3(0.0));
                         vec3 absNormal = abs(normal);
@@ -93,12 +95,10 @@ struct MethodsAmbientGI : MethodCollection
                                 buffer_gpuProbeStates.elements[ind].illumination[
                                     4 + int(normalIsNeg.z)
                                 ].rgb * absNormal.z;
-                        /*vec3 offset = abs(position_world.xyz - buffer_gpuProbes.elements[ind].position.xyz) /
-                                        buffer_gpuProbes.elements[ind].size.xyz * 2.0;*/
-                        vec3 offset = abs(position_world.xyz - probePos) / probeSize * 2.0;
-                        vec3 darkening = min(vec3(1.0) - (offset - 0.9) / 0.1, vec3(1.0));
-                        float darkeningS = min(darkening.x, min(darkening.y, darkening.z));
-                        shade_ambient = vec3(gridPos) / vec3(giGridSize) * darkeningS; // debug
+                        //vec3 offset = abs(position_world.xyz - probePos) / probeSize * 2.0;
+                        //vec3 darkening = min(vec3(1.0) - (offset - 0.9) / 0.1, vec3(1.0));
+                        //float darkeningS = min(darkening.x, min(darkening.y, darkening.z));
+                        //shade_ambient = vec3(gridPos) / vec3(giGridSize) * darkeningS; // debug
                     }
                 )",
                     .functionName = "setGlobalLighting"}});
@@ -112,44 +112,50 @@ struct MethodsAmbientGI : MethodCollection
         */
 
         auto p_giPropagate =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "gpuProbeStates_prev",
-                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
-                        PropertySpec{.name = "gpuProbeStates",
-                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
-                        PropertySpec{.name = "gpuProbes",
-                                     .typeInfo = Variant::getTypeInfo<ProbeBufferPtr>()},
-                        PropertySpec{.name = "camera_position",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "swapped_probes",
-                                     .typeInfo = Variant::getTypeInfo<void>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "gpuProbeStates",
-                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
-                        PropertySpec{.name = "updated_probes",
-                                     .typeInfo = Variant::getTypeInfo<void>()},
-                    },
-                .snippet = R"(
+            root.getComponent<ShaderFunctionKeeper>().new_asset(
+                {ShaderFunction::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "gpuProbeStates_prev",
+                                         .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                            PropertySpec{.name = "gpuProbeStates",
+                                         .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                            PropertySpec{.name = "gpuProbes",
+                                         .typeInfo = Variant::getTypeInfo<ProbeBufferPtr>()},
+                            PropertySpec{.name = "giWorldSize",
+                                         .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "camera_position",
+                                         .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "swapped_probes",
+                                         .typeInfo = Variant::getTypeInfo<void>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "gpuProbeStates",
+                                         .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                            PropertySpec{.name = "updated_probes",
+                                         .typeInfo = Variant::getTypeInfo<void>()},
+                        },
+                    .snippet = R"(
                     void giPropagate(
-                        in vec3 camera_position
+                        in vec3 giWorldSize, in vec3 camera_position
                     ) {
                         uint probeIndex = gl_GlobalInvocationID.x;
                         uint faceIndex = gl_GlobalInvocationID.y;
 
-                        buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = min(
+                        vec3 probeSize = buffer_gpuProbes.elements[probeIndex].size;
+                        vec3 probePos = buffer_gpuProbes.elements[probeIndex].position;
+
+                        float worldScale = max(giWorldSize.x, max(giWorldSize.y, giWorldSize.z));
+                        float scaledDist = distance(probePos, camera_position) / worldScale;
+
+                        buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = vec4(min(
                             vec3(1.0),
-                            vec3(5.0) / distance(
-                                buffer_gpuProbes.elements[probeIndex].position.xyz,
-                                camera_position
-                            )
-                        )
+                            vec3(5.0) / scaledDist / 100
+                        ), 1.0);
                     }
                 )",
-                .functionName = "giPropagate"}});
+                    .functionName = "giPropagate"}});
 
         p_computeMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
@@ -304,19 +310,25 @@ struct MethodsAmbientGI : MethodCollection
             std::vector<GI::H_ProbeDefinition> probes;
             glm::ivec3 gridSize;
             glm::vec3 worldStart;
-            ProbeBufferPtr gpuProbes(root,
-                                     (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW));
-            ProbeStateBufferPtr gpuProbeStates(root, (BufferUsageHint::HOST_INIT |
-                                                      BufferUsageHint::GPU_COMPUTE |
-                                                      BufferUsageHint::GPU_DRAW));
+            ProbeBufferPtr gpuProbes(root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW),
+                                     "gpuProbes");
+            ProbeStateBufferPtr gpuProbeStates(root,
+                                               (BufferUsageHint::HOST_INIT |
+                                                BufferUsageHint::GPU_COMPUTE |
+                                                BufferUsageHint::GPU_DRAW),
+                                               "gpuProbeStates");
             ReflectionBufferPtr gpuReflectionTransfers(
-                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW));
+                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW),
+                "gpuReflectionTransfers");
             LeavingPremulFactorBufferPtr gpuLeavingPremulFactors(
-                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW));
+                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW),
+                "gpuLeavingPremulFactors");
             NeighborIndexBufferPtr gpuNeighborIndices(
-                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW));
+                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW),
+                "gpuNeighborIndices");
             NeighborTransferBufferPtr gpuNeighborTransfer(
-                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW));
+                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW),
+                "gpuNeighborTransfer");
 
             generateProbeList(probes, gridSize, worldStart, sceneAABB.getCenter(),
                               sceneAABB.getExtent(), 5.0f);
