@@ -100,7 +100,7 @@ struct MethodsClassic : MethodCollection
                 .friendlyName = "Classic"});
 
         /*
-        FRAGMENT SHADING
+        FRAGMENT/GENERIC SHADING
         */
 
         auto p_shadeDiffuse =
@@ -227,7 +227,7 @@ struct MethodsClassic : MethodCollection
                 )",
                         .functionName = "phongCombine"}});
 
-        p_fragmentMethod =
+        p_genericShaderMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
                 .tasks = {p_shadeDiffuse, p_shadeSpecular, p_phongCombine},
                 .friendlyName = "Classic"});
