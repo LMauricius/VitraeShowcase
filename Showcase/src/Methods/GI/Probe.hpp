@@ -79,7 +79,7 @@ using NeighborFilterBufferPtr = SharedBufferPtr<void, glm::vec4>;
 
 inline constexpr const char *GLSL_REFLECTION_DEF_SNIPPET = R"(
 struct Reflection {
-    float face[6];
+    vec4 face[6];
 };
 )";
 
