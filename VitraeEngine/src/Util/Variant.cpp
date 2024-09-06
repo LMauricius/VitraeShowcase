@@ -96,9 +96,9 @@ String VariantVTable::constructShortTypeName(const std::type_info *p_id)
 
         const std::regex voidArrayPattern(R"((.*), void[])");
         ret = std::regex_replace(ret, voidArrayPattern, "$1");
-
-        return ret;
     }
+
+    return ret;
 }
 
 } // namespace Vitrae
