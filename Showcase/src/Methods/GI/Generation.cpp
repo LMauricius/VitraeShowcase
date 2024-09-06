@@ -20,9 +20,9 @@ float factorTo(const H_ProbeDefinition &srcProbe, const H_ProbeDefinition &dstPr
     // Since the total leaving amounts get normalized,
     // the shared scalings (such as pi^2 constants) get nullified.
 
-    glm::vec3 srcCenter = srcProbe.position;
+    const glm::vec3 &srcCenter = srcProbe.position;
     glm::vec3 wallCenter = dstProbe.position + DIRECTIONS[dstDirIndex] * dstProbe.size / 2.0f;
-    float wallSize;
+    float wallSize = 1.0;
     {
         glm::vec3 wallDiag = (glm::vec3(1.0) - glm::abs(DIRECTIONS[dstDirIndex])) * dstProbe.size;
         glm::vec3 wallDiagNon0 = wallDiag + glm::abs(DIRECTIONS[dstDirIndex]);
@@ -55,11 +55,51 @@ float factorTo(const H_ProbeDefinition &srcProbe, const H_ProbeDefinition &dstPr
 } // namespace
 
 const char *const GLSL_PROBE_GEN_SNIPPET = R"(
+const float PI2 = 3.14159265 * 2.0;
+const float LIGHT_ARC_COVERAGE = PI2 / 4;
+
+float factorTo(uint srcProbeindex, uint dstProbeindex, uint srcDirIndex, uint dstDirIndex)
+{
+    // note: we don't need the exact angular surface for the wall, or exact scales here.
+    // Since the total leaving amounts get normalized,
+    // the shared scalings (such as pi^2 constants) get nullified.
+
+    vec3 srcCenter = buffer_gpuProbes.elements[srcProbeindex].position;
+    vec3 wallCenter = buffer_gpuProbes.elements[dstProbeindex].position + DIRECTIONS[dstDirIndex] * buffer_gpuProbes.elements[dstProbeindex].size / 2.0f;
+    float wallSize = 1.0;
+    {
+        vec3 wallDiag = (vec3(1.0) - abs(DIRECTIONS[dstDirIndex])) * buffer_gpuProbes.elements[dstProbeindex].size;
+        vec3 wallDiagNon0 = wallDiag + abs(DIRECTIONS[dstDirIndex]);
+        wallSize = wallDiagNon0.x * wallDiagNon0.y * wallDiagNon0.z;
+    }
+
+    vec3 src2wallOffset = wallCenter - srcCenter;
+    float src2wallDist = length(src2wallOffset);
+    vec3 src2wallDir = src2wallOffset / src2wallDist;
+
+    float wallDot = dot(src2wallDir, DIRECTIONS[dstDirIndex]);
+    float lightDot = dot(src2wallDir, DIRECTIONS[srcDirIndex]);
+    float wallAngularSurface = wallSize / (src2wallDist * src2wallDist) * wallDot;
+
+    if (wallAngularSurface <= 0.0f) {
+        return 0.0f;
+    }
+
+    float wallArcCoverage = sqrt(wallSize) / (PI2 * src2wallDist) * wallDot;
+    float wallArcOffset = abs(acos(lightDot));
+
+    float wallArcStart = wallArcOffset - wallArcCoverage / 2.0f;
+    float wallArcEnd = wallArcOffset + wallArcCoverage / 2.0f;
+    float visibleAmount =
+        max(min(LIGHT_ARC_COVERAGE / 2.0f, wallArcEnd), 0.0f) / wallArcCoverage;
+
+    return visibleAmount * wallAngularSurface;
+}
 )";
 
 void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridSize,
                        glm::vec3 &worldStart, glm::vec3 worldCenter, glm::vec3 worldSize,
-                       float minProbeSize)
+                       float minProbeSize, bool cpuTransferGen)
 {
     MMETER_FUNC_PROFILER;
 
@@ -113,7 +153,7 @@ void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridS
         }
     }
 
-    {
+    if (cpuTransferGen) {
         MMETER_SCOPE_PROFILER("Transfer gen");
 
         for (int x = 0; x < gridSize.x; x++) {

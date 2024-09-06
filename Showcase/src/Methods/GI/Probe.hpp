@@ -77,11 +77,15 @@ struct G_ProbeState
 {
     glm::vec4 illumination[6];
 };
+struct G_LeavingPremulFactors
+{
+    float face[6]; // ind = to which face
+};
 
 using ProbeBufferPtr = SharedBufferPtr<void, G_ProbeDefinition>;
 using ProbeStateBufferPtr = SharedBufferPtr<void, G_ProbeState>;
 using ReflectionBufferPtr = SharedBufferPtr<void, G_Source2FacesTransfer>;
-using LeavingPremulFactorBufferPtr = SharedBufferPtr<void, float[6]>;
+using LeavingPremulFactorBufferPtr = SharedBufferPtr<void, G_LeavingPremulFactors>;
 using NeighborIndexBufferPtr = SharedBufferPtr<void, std::uint32_t>;
 using NeighborTransferBufferPtr = SharedBufferPtr<void, G_NeighborTransfer>;
 
@@ -94,6 +98,12 @@ struct Transfer {
 inline constexpr const char *GLSL_S2F_TRANSFER_DEF_SNIPPET = R"(
 struct Source2FacesTransfer {
     Transfer face[6];
+};
+)";
+
+inline constexpr const char *GLSL_LEAVING_PREMUL_TRANSFER_DEF_SNIPPET = R"(
+struct LeavingPremulFactors {
+    float face[6];
 };
 )";
 
