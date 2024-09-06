@@ -140,11 +140,8 @@ void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridS
                                     z + neighz >= maxIndex.z) {
                                     continue;
                                 }
-                                auto &neighProbe = getProbe({x + neighx, y + neighy, z + neighz});
-                                probe.neighborSpecs.push_back({
-                                    getIndex({x + neighx, y + neighy, z + neighz}),
-                                    H_NeighborTransfer{},
-                                });
+                                probe.neighborIndices.push_back(
+                                    getIndex({x + neighx, y + neighy, z + neighz}));
                             }
                         }
                     }
@@ -153,30 +150,32 @@ void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridS
         }
     }
 
-    if (cpuTransferGen) {
-        MMETER_SCOPE_PROFILER("Transfer gen");
+    if (cpuTransferGen) {}
+}
 
-        for (int x = 0; x < gridSize.x; x++) {
-            for (int y = 0; y < gridSize.y; y++) {
-                for (int z = 0; z < gridSize.z; z++) {
-                    auto &probe = getProbe({x, y, z});
+void generateTransfers(std::vector<H_ProbeDefinition> &probes,
+                       NeighborTransferBufferPtr gpuNeighborTransfers,
+                       NeighborFilterBufferPtr gpuNeighborFilters)
+{
+    MMETER_SCOPE_PROFILER("Transfer gen");
 
-                    for (int myDirInd = 0; myDirInd < 6; myDirInd++) {
-                        float totalLeaving = 0.0;
-                        for (int neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
-                            for (auto &neighSpec : probe.neighborSpecs) {
-                                neighSpec.transfer.source[neighDirInd].face[myDirInd] =
-                                    glm::vec3(1, 1, 1) *
-                                    factorTo(probes[neighSpec.index], probe, neighDirInd, myDirInd);
-                                totalLeaving +=
-                                    factorTo(probe, probes[neighSpec.index], myDirInd, neighDirInd);
-                            }
-                        }
+    for (auto &probe : probes) {
+        for (int myDirInd = 0; myDirInd < 6; myDirInd++) {
+            float totalLeaving = 0.0;
+            for (int neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
+                for (auto neighIndex : probe.neighborIndices) {
 
-                        probe.leavingPremulFactor[myDirInd] = 1.0f / totalLeaving;
-                    }
+                    auto &neighTrans = gpuNeighborTransfers.getElement(neighIndex);
+                    auto &neighFilter = gpuNeighborFilters.getElement(neighIndex);
+
+                    neighTrans.source[neighDirInd].face[myDirInd] =
+                        factorTo(probes[neighIndex], probe, neighDirInd, myDirInd);
+                    neighFilter = glm::vec4(1.0f);
+                    totalLeaving += factorTo(probe, probes[neighIndex], myDirInd, neighDirInd);
                 }
             }
+
+            probe.leavingPremulFactor.face[myDirInd] = 1.0f / totalLeaving;
         }
     }
 }

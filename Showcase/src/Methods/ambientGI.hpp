@@ -100,7 +100,7 @@ struct MethodsAmbientGI : MethodCollection
                         bvec3 normalIsNeg = lessThan(normal, vec3(0.0));
                         vec3 absNormal = abs(normal);
 
-                        /*shade_ambient = 
+                        shade_ambient = 
                                 buffer_gpuProbeStates.elements[ind].illumination[
                                     0 + int(normalIsNeg.x)
                                 ].rgb * absNormal.x +
@@ -109,13 +109,7 @@ struct MethodsAmbientGI : MethodCollection
                                 ].rgb * absNormal.y +
                                 buffer_gpuProbeStates.elements[ind].illumination[
                                     4 + int(normalIsNeg.z)
-                                ].rgb * absNormal.z;*/
-
-                        shade_ambient = vec3(0.0);
-                        for (int i = 0; i < 6; i++) {
-                            shade_ambient = buffer_gpuProbeStates.elements[ind].illumination[i].rgb;
-                        }
-                        shade_ambient /= 6.0;
+                                ].rgb * absNormal.z;
                     }
                     )",
                     .functionName = "setGlobalLighting"}});
@@ -152,16 +146,20 @@ struct MethodsAmbientGI : MethodCollection
                                                     .typeInfo = Variant::
                                                         getTypeInfo<NeighborTransferBufferPtr>()},
                                                 PropertySpec{
+                                                    .name = "gpuNeighborFilters",
+                                                    .typeInfo = Variant::getTypeInfo<NeighborFilterBufferPtr>()},
+                                                PropertySpec{
                                                     .name = "gpuLeavingPremulFactors",
                                                     .typeInfo = Variant::getTypeInfo<LeavingPremulFactorBufferPtr>()},
                                                 PropertySpec{
-                                                    .name = "giWorldSize", .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                                                    .name = "giWorldSize",
+                                                    .typeInfo = Variant::getTypeInfo<glm::vec3>()},
                                                 PropertySpec{
                                                     .name = "camera_position",
                                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
 
-                                                PropertySpec{
-                                                    .name = "gi_utilities", .typeInfo = Variant::getTypeInfo<void>()},
+                                                PropertySpec{.name = "gi_utilities",
+                                                             .typeInfo = Variant::getTypeInfo<void>()},
                                                 PropertySpec{
                                                     .name = "swapped_probes",
                                                     .typeInfo = Variant::getTypeInfo<void>()},
@@ -186,7 +184,7 @@ void giPropagate(
 
     // if camera is inside probe, glow
     if (all(lessThan(abs(camera_position - probePos), probeSize * 0.5))) {
-        buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = vec4(50.0);
+        buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = vec4(5.0);
     } else {
         buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = vec4(0.0);
     }
@@ -195,7 +193,8 @@ void giPropagate(
         for (uint neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
             buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] += (
                 buffer_gpuProbeStates_prev.elements[neighInd].illumination[neighDirInd] *
-                buffer_gpuNeighborTransfer.elements[neighInd].source[faceIndex].face[neighDirInd].color *
+                buffer_gpuNeighborFilters.elements[neighInd] *
+                buffer_gpuNeighborTransfer.elements[neighInd].source[faceIndex].face[neighDirInd] *
                 buffer_gpuLeavingPremulFactors.elements[probeIndex].face[faceIndex]
             );
         }
@@ -214,6 +213,8 @@ void giPropagate(
                                      .typeInfo = Variant::getTypeInfo<NeighborIndexBufferPtr>()},
                         PropertySpec{.name = "gpuNeighborTransfer",
                                      .typeInfo = Variant::getTypeInfo<NeighborTransferBufferPtr>()},
+                        PropertySpec{.name = "gpuNeighborFilters",
+                                     .typeInfo = Variant::getTypeInfo<NeighborFilterBufferPtr>()},
                         PropertySpec{.name = "gpuLeavingPremulFactors",
                                      .typeInfo =
                                          Variant::getTypeInfo<LeavingPremulFactorBufferPtr>()},
@@ -227,26 +228,27 @@ void giPropagate(
                                      .typeInfo = Variant::getTypeInfo<void>()},
                     },
                 .snippet = String(GI::GLSL_PROBE_GEN_SNIPPET) + R"(
-                void giGenerateTransfers() {
-                    uint probeIndex = gl_GlobalInvocationID.x;
-                    uint myDirInd = gl_GlobalInvocationID.y;
+void giGenerateTransfers() {
+    uint probeIndex = gl_GlobalInvocationID.x;
+    uint myDirInd = gl_GlobalInvocationID.y;
 
-                    uint neighborStartInd = buffer_gpuProbes.elements[probeIndex].neighborSpecBufStart;
-                    uint neighborCount = buffer_gpuProbes.elements[probeIndex].neighborSpecCount;
+    uint neighborStartInd = buffer_gpuProbes.elements[probeIndex].neighborSpecBufStart;
+    uint neighborCount = buffer_gpuProbes.elements[probeIndex].neighborSpecCount;
 
-                    float totalLeaving = 0.0;
-                    for (uint i = neighborStartInd; i < neighborStartInd + neighborCount; i++) {
-                        for (uint neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
-                            buffer_gpuNeighborTransfer.elements[i].source[neighDirInd].face[myDirInd].color =
-                                vec4(1, 1, 1, 1) *
-                                1.0;//factorTo(i, probeIndex, neighDirInd, myDirInd);
-                            totalLeaving +=
-                                1.0;//factorTo(probeIndex, i, myDirInd, neighDirInd);
-                        }
-                    }
+    float totalLeaving = 0.0;
+    for (uint i = neighborStartInd; i < neighborStartInd + neighborCount; i++) {
+        uint neighInd = buffer_gpuNeighborIndices.elements[i];
+        for (uint neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
+            buffer_gpuNeighborTransfer.elements[neighInd].source[neighDirInd].face[myDirInd] =
+                1.0;//factorTo(neighInd, probeIndex, neighDirInd, myDirInd);
+            buffer_gpuNeighborFilters.elements[neighInd] = vec4(1, 1, 1, 1);
+            totalLeaving +=
+                1.0;//factorTo(probeIndex, neighInd, myDirInd, neighDirInd);
+        }
+    }
 
-                    buffer_gpuLeavingPremulFactors.elements[probeIndex].face[myDirInd] = 1.0 / totalLeaving;
-                }
+    buffer_gpuLeavingPremulFactors.elements[probeIndex].face[myDirInd] = 1.0 / totalLeaving;
+}
                 )",
                 .functionName = "giGenerateTransfers"}});
 
@@ -364,44 +366,44 @@ void giPropagate(
             OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(renderer);
 
             rend.specifyGlType({
-                .glMutableTypeName = "Transfer",
-                .glConstTypeName = "Transfer",
-                .glslDefinitionSnippet = GLSL_TRANSFER_DEF_SNIPPET,
+                .glMutableTypeName = "Reflection",
+                .glConstTypeName = "Reflection",
+                .glslDefinitionSnippet = GLSL_REFLECTION_DEF_SNIPPET,
                 .memberTypeDependencies = {&rend.getGlTypeSpec("vec4")},
-                .std140Size = 16,
-                .std140Alignment = 16,
-                .layoutIndexSize = 1,
-            });
-            rend.specifyTypeConversion({
-                .hostType = Variant::getTypeInfo<G_Transfer>(),
-                .glTypeSpec = rend.getGlTypeSpec("Transfer"),
-            });
-
-            rend.specifyGlType({
-                .glMutableTypeName = "Source2FacesTransfer",
-                .glConstTypeName = "Source2FacesTransfer",
-                .glslDefinitionSnippet = GLSL_S2F_TRANSFER_DEF_SNIPPET,
-                .memberTypeDependencies = {&rend.getGlTypeSpec("Transfer")},
                 .std140Size = 16 * 6,
                 .std140Alignment = 16,
                 .layoutIndexSize = 1 * 6,
             });
             rend.specifyTypeConversion({
-                .hostType = Variant::getTypeInfo<G_Source2FacesTransfer>(),
-                .glTypeSpec = rend.getGlTypeSpec("Source2FacesTransfer"),
+                .hostType = Variant::getTypeInfo<Reflection>(),
+                .glTypeSpec = rend.getGlTypeSpec("Reflection"),
+            });
+
+            rend.specifyGlType({
+                .glMutableTypeName = "FaceTransfer",
+                .glConstTypeName = "FaceTransfer",
+                .glslDefinitionSnippet = GLSL_FACE_TRANSFER_DEF_SNIPPET,
+                .memberTypeDependencies = {&rend.getGlTypeSpec("float")},
+                .std140Size = 4 * 6,
+                .std140Alignment = 4,
+                .layoutIndexSize = 1 * 6,
+            });
+            rend.specifyTypeConversion({
+                .hostType = Variant::getTypeInfo<FaceTransfer>(),
+                .glTypeSpec = rend.getGlTypeSpec("FaceTransfer"),
             });
 
             rend.specifyGlType({
                 .glMutableTypeName = "NeighborTransfer",
                 .glConstTypeName = "NeighborTransfer",
                 .glslDefinitionSnippet = GLSL_NEIGHBOR_TRANSFER_DEF_SNIPPET,
-                .memberTypeDependencies = {&rend.getGlTypeSpec("Source2FacesTransfer")},
-                .std140Size = 16 * 6 * 6,
-                .std140Alignment = 16,
+                .memberTypeDependencies = {&rend.getGlTypeSpec("FaceTransfer")},
+                .std140Size = 4 * 6 * 6,
+                .std140Alignment = 4,
                 .layoutIndexSize = 1 * 6 * 6,
             });
             rend.specifyTypeConversion({
-                .hostType = Variant::getTypeInfo<G_NeighborTransfer>(),
+                .hostType = Variant::getTypeInfo<NeighborTransfer>(),
                 .glTypeSpec = rend.getGlTypeSpec("NeighborTransfer"),
             });
 
@@ -424,8 +426,7 @@ void giPropagate(
                 .glMutableTypeName = "ProbeState",
                 .glConstTypeName = "ProbeState",
                 .glslDefinitionSnippet = GLSL_PROBE_STATE_SNIPPET,
-                .memberTypeDependencies = {&rend.getGlTypeSpec("vec4"),
-                                           &rend.getGlTypeSpec("uint")},
+                .memberTypeDependencies = {&rend.getGlTypeSpec("vec4")},
                 .std140Size = 16 * 6,
                 .std140Alignment = 16,
                 .layoutIndexSize = 6,
@@ -435,26 +436,14 @@ void giPropagate(
                 .glTypeSpec = rend.getGlTypeSpec("ProbeState"),
             });
 
-            rend.specifyGlType({
-                .glMutableTypeName = "LeavingPremulFactors",
-                .glConstTypeName = "LeavingPremulFactors",
-                .glslDefinitionSnippet = GLSL_LEAVING_PREMUL_TRANSFER_DEF_SNIPPET,
-                .memberTypeDependencies = {&rend.getGlTypeSpec("float")},
-                .std140Size = 4 * 6,
-                .std140Alignment = 4,
-                .layoutIndexSize = 6,
-            });
-            rend.specifyTypeConversion({
-                .hostType = Variant::getTypeInfo<G_LeavingPremulFactors>(),
-                .glTypeSpec = rend.getGlTypeSpec("LeavingPremulFactors"),
-            });
-
             rend.specifyBufferTypeAndConversionAuto<ProbeBufferPtr>("ProbeBuffer");
             rend.specifyBufferTypeAndConversionAuto<ProbeStateBufferPtr>("ProbeStateBuffer");
             rend.specifyBufferTypeAndConversionAuto<ReflectionBufferPtr>("ReflectionBuffer");
             rend.specifyBufferTypeAndConversionAuto<NeighborIndexBufferPtr>("NeighborIndexBuffer");
             rend.specifyBufferTypeAndConversionAuto<NeighborTransferBufferPtr>(
                 "NeighborTransferBuffer");
+            rend.specifyBufferTypeAndConversionAuto<NeighborFilterBufferPtr>(
+                "NeighborFilterBuffer");
             rend.specifyBufferTypeAndConversionAuto<LeavingPremulFactorBufferPtr>(
                 "LeavingPremulFactorBuffer");
         });
@@ -494,12 +483,16 @@ void giPropagate(
             NeighborTransferBufferPtr gpuNeighborTransfer(
                 root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW),
                 "gpuNeighborTransfer");
+            NeighborFilterBufferPtr gpuNeighborFilters(
+                root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW),
+                "gpuNeighborFilters");
 
             generateProbeList(probes, gridSize, worldStart, sceneAABB.getCenter(),
-                              sceneAABB.getExtent(), 1.5f, false);
+                              sceneAABB.getExtent(), 3.0f, false);
             convertHost2GpuBuffers(probes, gpuProbes, gpuReflectionTransfers,
-                                   gpuLeavingPremulFactors, gpuNeighborIndices,
-                                   gpuNeighborTransfer);
+                                   gpuLeavingPremulFactors, gpuNeighborIndices, gpuNeighborTransfer,
+                                   gpuNeighborFilters);
+            // generateTransfers(probes, gpuNeighborTransfer, gpuNeighborFilters);
 
             gpuProbeStates.resizeElements(probes.size());
             for (std::size_t i = 0; i < probes.size(); ++i) {
@@ -514,6 +507,7 @@ void giPropagate(
             gpuLeavingPremulFactors.getRawBuffer()->synchronize();
             gpuNeighborIndices.getRawBuffer()->synchronize();
             gpuNeighborTransfer.getRawBuffer()->synchronize();
+            gpuNeighborFilters.getRawBuffer()->synchronize();
 
             // store properties
             dict.set("gpuProbes", gpuProbes);
@@ -522,6 +516,7 @@ void giPropagate(
             dict.set("gpuLeavingPremulFactors", gpuLeavingPremulFactors);
             dict.set("gpuNeighborIndices", gpuNeighborIndices);
             dict.set("gpuNeighborTransfer", gpuNeighborTransfer);
+            dict.set("gpuNeighborFilters", gpuNeighborFilters);
             dict.set("giWorldStart", worldStart);
             dict.set("giWorldSize", sceneAABB.getExtent());
             dict.set("giGridSize", gridSize);
@@ -541,12 +536,17 @@ void giPropagate(
                                  << std::endl;
             root.getInfoStream() << "gpuNeighborTransfer size: " << gpuNeighborTransfer.byteSize()
                                  << std::endl;
-            root.getInfoStream() << "Total GPU size: " << (
-                gpuProbes.byteSize() + gpuProbeStates.byteSize() +
-                gpuReflectionTransfers.byteSize() + gpuLeavingPremulFactors.byteSize() +
-                gpuNeighborIndices.byteSize() + gpuNeighborTransfer.byteSize()
-            ) / 1000000.0f << " MB"
+            root.getInfoStream() << "gpuNeighborFilters size: " << gpuNeighborFilters.byteSize()
                                  << std::endl;
+            root.getInfoStream() << "Total GPU size: "
+                                 << (gpuProbes.byteSize() + gpuProbeStates.byteSize() +
+                                     gpuReflectionTransfers.byteSize() +
+                                     gpuLeavingPremulFactors.byteSize() +
+                                     gpuNeighborIndices.byteSize() +
+                                     gpuNeighborTransfer.byteSize() +
+                                     gpuNeighborFilters.byteSize()) /
+                                        1000000.0f
+                                 << " MB" << std::endl;
             root.getInfoStream() << "=== /GI STATISTICS ===" << std::endl;
         });
     }

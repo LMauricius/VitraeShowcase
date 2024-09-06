@@ -18,32 +18,33 @@ inline constexpr glm::vec3 DIRECTIONS[] = {
 };
 
 /*
-Cpu structs
+Cpu and Gpu structs
 */
 
-using H_Transfer = glm::vec3; // per color
-struct H_Source2FacesTransfer
+struct Reflection
 {
-    H_Transfer face[6]; // ind = to which face
+    glm::vec4 face[6]; // ind = to which face
 };
-struct H_NeighborTransfer
+struct FaceTransfer
 {
-    H_Source2FacesTransfer source[6]; // ind = which neigh source
+    float face[6]; // ind = to which face
+};
+struct NeighborTransfer
+{
+    FaceTransfer source[6]; // ind = which neigh source
 };
 
-struct H_NeighborSpec
-{
-    std::uint32_t index;
-    H_NeighborTransfer transfer;
-};
+/*
+Cpu structs
+*/
 
 struct H_ProbeDefinition
 {
     glm::vec3 position;
     glm::vec3 size;
-    H_Source2FacesTransfer reflectionTransfer;
-    float leavingPremulFactor[6];
-    std::vector<H_NeighborSpec> neighborSpecs;
+    Reflection reflection;
+    FaceTransfer leavingPremulFactor;
+    std::vector<std::uint32_t> neighborIndices;
 };
 
 struct H_ProbeState
@@ -54,16 +55,6 @@ struct H_ProbeState
 /*
 Gpu structs
 */
-
-using G_Transfer = glm::vec4; // per color
-struct G_Source2FacesTransfer
-{
-    G_Transfer face[6]; // ind = to which face
-};
-struct G_NeighborTransfer
-{
-    G_Source2FacesTransfer source[6]; // ind = which neigh source
-};
 
 struct G_ProbeDefinition
 {
@@ -77,39 +68,30 @@ struct G_ProbeState
 {
     glm::vec4 illumination[6];
 };
-struct G_LeavingPremulFactors
-{
-    float face[6]; // ind = to which face
-};
 
 using ProbeBufferPtr = SharedBufferPtr<void, G_ProbeDefinition>;
 using ProbeStateBufferPtr = SharedBufferPtr<void, G_ProbeState>;
-using ReflectionBufferPtr = SharedBufferPtr<void, G_Source2FacesTransfer>;
-using LeavingPremulFactorBufferPtr = SharedBufferPtr<void, G_LeavingPremulFactors>;
+using ReflectionBufferPtr = SharedBufferPtr<void, Reflection>;
+using LeavingPremulFactorBufferPtr = SharedBufferPtr<void, FaceTransfer>;
 using NeighborIndexBufferPtr = SharedBufferPtr<void, std::uint32_t>;
-using NeighborTransferBufferPtr = SharedBufferPtr<void, G_NeighborTransfer>;
+using NeighborTransferBufferPtr = SharedBufferPtr<void, NeighborTransfer>;
+using NeighborFilterBufferPtr = SharedBufferPtr<void, glm::vec4>;
 
-inline constexpr const char *GLSL_TRANSFER_DEF_SNIPPET = R"(
-struct Transfer {
-    vec4 color;
+inline constexpr const char *GLSL_REFLECTION_DEF_SNIPPET = R"(
+struct Reflection {
+    float face[6];
 };
 )";
 
-inline constexpr const char *GLSL_S2F_TRANSFER_DEF_SNIPPET = R"(
-struct Source2FacesTransfer {
-    Transfer face[6];
-};
-)";
-
-inline constexpr const char *GLSL_LEAVING_PREMUL_TRANSFER_DEF_SNIPPET = R"(
-struct LeavingPremulFactors {
+inline constexpr const char *GLSL_FACE_TRANSFER_DEF_SNIPPET = R"(
+struct FaceTransfer {
     float face[6];
 };
 )";
 
 inline constexpr const char *GLSL_NEIGHBOR_TRANSFER_DEF_SNIPPET = R"(
 struct NeighborTransfer {
-    Source2FacesTransfer source[6];
+    FaceTransfer source[6];
 };
 )";
 
@@ -143,6 +125,7 @@ void convertHost2GpuBuffers(std::span<const H_ProbeDefinition> hostProbes, Probe
                             ReflectionBufferPtr gpuReflectionTransfers,
                             LeavingPremulFactorBufferPtr gpuLeavingPremulFactors,
                             NeighborIndexBufferPtr gpuNeighborIndices,
-                            NeighborTransferBufferPtr gpuNeighborTransfers);
+                            NeighborTransferBufferPtr gpuNeighborTransfers,
+                            NeighborFilterBufferPtr gpuNeighborFilters);
 
 } // namespace GI
