@@ -489,7 +489,9 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             // local variables
             ss << "void main() {\n";
             for (auto [nameId, spec] : p_helper->pipeline.localSpecs) {
-                if (spec.typeInfo != Variant::getTypeInfo<void>()) {
+                if (spec.typeInfo != Variant::getTypeInfo<void>() &&
+                    rend.getGpuStorageMethod(rend.getTypeConversion(spec.typeInfo).glTypeSpec) !=
+                        OpenGLRenderer::GpuValueStorageMethod::SSBO) {
                     ss << "    " << specToMutableGlName(spec.typeInfo) << " " << localVarPrefix
                        << spec.name << ";\n";
                 }
