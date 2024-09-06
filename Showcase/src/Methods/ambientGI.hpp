@@ -111,7 +111,7 @@ struct MethodsAmbientGI : MethodCollection
                                     4 + int(normalIsNeg.z)
                                 ].rgb * absNormal.z;
                     }
-                )",
+                    )",
                     .functionName = "setGlobalLighting"}});
 
         p_fragmentMethod =
@@ -145,8 +145,6 @@ struct MethodsAmbientGI : MethodCollection
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "gpuProbeStates",
-                                         .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
                             PropertySpec{.name = "updated_probes",
                                          .typeInfo = Variant::getTypeInfo<void>()},
                         },
@@ -171,12 +169,55 @@ struct MethodsAmbientGI : MethodCollection
                             normalize(camera_position - probePos)
                         );
                     }
-                )",
+                    )",
                     .functionName = "giPropagate"}});
 
-        p_computeMethod =
-            dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-                .tasks = {p_giPropagate}, .friendlyName = "GlobalIllumination"});
+        auto p_generateTransfersShader =
+            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
+                .inputSpecs =
+                    {
+                        PropertySpec{.name = "gpuProbes",
+                                     .typeInfo = Variant::getTypeInfo<ProbeBufferPtr>()},
+                        PropertySpec{.name = "gpuNeighborIndices",
+                                     .typeInfo = Variant::getTypeInfo<NeighborIndexBufferPtr>()},
+                        PropertySpec{.name = "gpuNeighborTransfer",
+                                     .typeInfo = Variant::getTypeInfo<NeighborTransferBufferPtr>()},
+                        PropertySpec{.name = "gpuLeavingPremulFactors",
+                                     .typeInfo =
+                                         Variant::getTypeInfo<LeavingPremulFactorBufferPtr>()},
+                    },
+                .outputSpecs =
+                    {
+                        PropertySpec{.name = "generated_probe_transfers",
+                                     .typeInfo = Variant::getTypeInfo<void>()},
+                    },
+                .snippet = String(GI::GLSL_PROBE_GEN_SNIPPET) + R"(
+                void giGenerateTransfers() {
+                    uint probeIndex = gl_GlobalInvocationID.x;
+                    uint myDirInd = gl_GlobalInvocationID.y;
+
+                    uint neighborStartInd = buffer_gpuProbes.elements[probeIndex].neighborSpecBufStart;
+                    uint neighborCount = buffer_gpuProbes.elements[probeIndex].neighborSpecCount;
+
+                    float totalLeaving = 0.0;
+                    for (uint i = neighborStartInd; i < neighborStartInd + neighborCount; i++) {
+                        for (uint neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
+                            buffer_gpuNeighborTransfer.elements[i].source[neighDirInd].face[myDirInd].color =
+                                vec4(1, 1, 1, 1) *
+                                factorTo(i, probeIndex, neighDirInd, myDirInd);
+                            totalLeaving +=
+                                factorTo(probeIndex, i, myDirInd, neighDirInd);
+                        }
+                    }
+
+                    buffer_gpuLeavingPremulFactors.elements[probeIndex].face[myDirInd] = totalLeaving;
+                }
+                )",
+                .functionName = "giGenerateTransfers"}});
+
+        p_computeMethod = dynasma::makeStandalone<Method<ShaderTask>>(
+            Method<ShaderTask>::MethodParams{.tasks = {p_giPropagate, p_generateTransfersShader},
+                                             .friendlyName = "GlobalIllumination"});
 
         /*
         COMPOSING
@@ -187,6 +228,8 @@ struct MethodsAmbientGI : MethodCollection
                     {
                         PropertySpec{.name = "gpuProbeStates",
                                      .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
+                        PropertySpec{.name = "generated_probe_transfers",
+                                     .typeInfo = Variant::getTypeInfo<void>()},
                     },
                 .outputSpecs =
                     {
@@ -222,13 +265,36 @@ struct MethodsAmbientGI : MethodCollection
                 .friendlyName = "Swap probe buffers",
             });
 
+        auto p_generateProbeTransfers =
+            root.getComponent<ComposeComputeKeeper>().new_asset({ComposeCompute::SetupParams{
+                .root = root,
+                .outputSpecs =
+                    {
+                        PropertySpec{.name = "generated_probe_transfers",
+                                     .typeInfo = Variant::getTypeInfo<void>()},
+                    },
+                .computeSetup =
+                    {
+                        .invocationCountX = {"gpuProbeCount"},
+                        .invocationCountY = 6,
+                        .groupSizeY = 6,
+                    },
+                .executeCondition =
+                    [](RenderRunContext &context) {
+                        if (context.properties.has("generated_probe_transfers")) {
+                            return false;
+                        } else {
+                            context.properties.set("generated_probe_transfers", true);
+                            return true;
+                        }
+                    },
+            }});
+
         auto p_updateProbes =
             root.getComponent<ComposeComputeKeeper>().new_asset({ComposeCompute::SetupParams{
                 .root = root,
                 .outputSpecs =
                     {
-                        PropertySpec{.name = "gpuProbeStates",
-                                     .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
                         PropertySpec{.name = "updated_probes",
                                      .typeInfo = Variant::getTypeInfo<void>()},
                     },
@@ -238,9 +304,10 @@ struct MethodsAmbientGI : MethodCollection
                     .groupSizeY = 6,
                 }}});
 
-        p_composeMethod = dynasma::makeStandalone<Method<ComposeTask>>(
-            Method<ComposeTask>::MethodParams{.tasks = {p_swapProbeBuffers, p_updateProbes},
-                                              .friendlyName = "GlobalIllumination"});
+        p_composeMethod =
+            dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
+                .tasks = {p_swapProbeBuffers, p_generateProbeTransfers, p_updateProbes},
+                .friendlyName = "GlobalIllumination"});
 
         /*
         SETUP
@@ -259,6 +326,11 @@ struct MethodsAmbientGI : MethodCollection
                 .std140Alignment = 16,
                 .layoutIndexSize = 1,
             });
+            rend.specifyTypeConversion({
+                .hostType = Variant::getTypeInfo<G_Transfer>(),
+                .glTypeSpec = rend.getGlTypeSpec("Transfer"),
+            });
+
             rend.specifyGlType({
                 .glMutableTypeName = "Source2FacesTransfer",
                 .glConstTypeName = "Source2FacesTransfer",
@@ -268,6 +340,11 @@ struct MethodsAmbientGI : MethodCollection
                 .std140Alignment = 16,
                 .layoutIndexSize = 1 * 6,
             });
+            rend.specifyTypeConversion({
+                .hostType = Variant::getTypeInfo<G_Source2FacesTransfer>(),
+                .glTypeSpec = rend.getGlTypeSpec("Source2FacesTransfer"),
+            });
+
             rend.specifyGlType({
                 .glMutableTypeName = "NeighborTransfer",
                 .glConstTypeName = "NeighborTransfer",
@@ -277,6 +354,11 @@ struct MethodsAmbientGI : MethodCollection
                 .std140Alignment = 16,
                 .layoutIndexSize = 1 * 6 * 6,
             });
+            rend.specifyTypeConversion({
+                .hostType = Variant::getTypeInfo<G_NeighborTransfer>(),
+                .glTypeSpec = rend.getGlTypeSpec("NeighborTransfer"),
+            });
+
             rend.specifyGlType({
                 .glMutableTypeName = "ProbeDefinition",
                 .glConstTypeName = "ProbeDefinition",
@@ -307,8 +389,28 @@ struct MethodsAmbientGI : MethodCollection
                 .glTypeSpec = rend.getGlTypeSpec("ProbeState"),
             });
 
+            rend.specifyGlType({
+                .glMutableTypeName = "LeavingPremulFactors",
+                .glConstTypeName = "LeavingPremulFactors",
+                .glslDefinitionSnippet = GLSL_LEAVING_PREMUL_TRANSFER_DEF_SNIPPET,
+                .memberTypeDependencies = {&rend.getGlTypeSpec("float")},
+                .std140Size = 4 * 6,
+                .std140Alignment = 4,
+                .layoutIndexSize = 6,
+            });
+            rend.specifyTypeConversion({
+                .hostType = Variant::getTypeInfo<G_LeavingPremulFactors>(),
+                .glTypeSpec = rend.getGlTypeSpec("LeavingPremulFactors"),
+            });
+
             rend.specifyBufferTypeAndConversionAuto<ProbeBufferPtr>("ProbeBuffer");
             rend.specifyBufferTypeAndConversionAuto<ProbeStateBufferPtr>("ProbeStateBuffer");
+            rend.specifyBufferTypeAndConversionAuto<ReflectionBufferPtr>("ReflectionBuffer");
+            rend.specifyBufferTypeAndConversionAuto<NeighborIndexBufferPtr>("NeighborIndexBuffer");
+            rend.specifyBufferTypeAndConversionAuto<NeighborTransferBufferPtr>(
+                "NeighborTransferBuffer");
+            rend.specifyBufferTypeAndConversionAuto<LeavingPremulFactorBufferPtr>(
+                "LeavingPremulFactorBuffer");
         });
         setupFunctions.push_back([](ComponentRoot &root, Renderer &renderer, ScopedDict &dict) {
             MMETER_SCOPE_PROFILER("GI setup");
@@ -348,7 +450,7 @@ struct MethodsAmbientGI : MethodCollection
                 "gpuNeighborTransfer");
 
             generateProbeList(probes, gridSize, worldStart, sceneAABB.getCenter(),
-                              sceneAABB.getExtent(), 5.0f);
+                              sceneAABB.getExtent(), 1.5f, false);
             convertHost2GpuBuffers(probes, gpuProbes, gpuReflectionTransfers,
                                    gpuLeavingPremulFactors, gpuNeighborIndices,
                                    gpuNeighborTransfer);
