@@ -131,19 +131,30 @@ void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridS
                         worldStart + (glm::vec3(x, y, z) + 0.5f) * ind2OffsetConversion;
                     probe.size = probeSize;
 
-                    for (int neighx : {-1, 0, 1}) {
-                        for (int neighy : {-1, 0, 1}) {
-                            for (int neighz : {-1, 0, 1}) {
-                                if ((neighx == 0 && neighy == 0 && neighz == 0) || x + neighx < 0 ||
-                                    x + neighx >= maxIndex.x || y + neighy < 0 ||
-                                    y + neighy >= maxIndex.y || z + neighz < 0 ||
-                                    z + neighz >= maxIndex.z) {
-                                    continue;
+                    if (x == 0 || x == maxIndex.x || y == 0 || y == maxIndex.y || z == 0 ||
+                        z == maxIndex.z) {
+                        // skip neighbor propagation for bordering probes
+                    } else {
+
+                        /*for (int neighx : {-1, 0, 1}) {
+                            for (int neighy : {-1, 0, 1}) {
+                                for (int neighz : {-1, 0, 1}) {
+                                    if ((neighx == 0 && neighy == 0 && neighz == 0) || x + neighx <
+                        0 || x + neighx >= maxIndex.x || y + neighy < 0 || y + neighy >= maxIndex.y
+                        || z + neighz < 0 || z + neighz >= maxIndex.z) { continue;
+                                    }
+                                    probe.neighborIndices.push_back(
+                                        getIndex({x + neighx, y + neighy, z + neighz}));
                                 }
-                                probe.neighborIndices.push_back(
-                                    getIndex({x + neighx, y + neighy, z + neighz}));
                             }
-                        }
+                        }*/
+
+                        probe.neighborIndices.push_back(getIndex({x - 1, y, z}));
+                        probe.neighborIndices.push_back(getIndex({x + 1, y, z}));
+                        probe.neighborIndices.push_back(getIndex({x, y - 1, z}));
+                        probe.neighborIndices.push_back(getIndex({x, y + 1, z}));
+                        probe.neighborIndices.push_back(getIndex({x, y, z - 1}));
+                        probe.neighborIndices.push_back(getIndex({x, y, z + 1}));
                     }
                 }
             }

@@ -247,7 +247,11 @@ void giGenerateTransfers() {
         }
     }
 
-    buffer_gpuLeavingPremulFactors.elements[probeIndex].face[myDirInd] = 1.0 / totalLeaving;
+    if (totalLeaving > 0.0) {
+        buffer_gpuLeavingPremulFactors.elements[probeIndex].face[myDirInd] = 1.0 / totalLeaving;
+    } else {
+        buffer_gpuLeavingPremulFactors.elements[probeIndex].face[myDirInd] = 0.0;
+    }
 }
                 )",
                 .functionName = "giGenerateTransfers"}});
