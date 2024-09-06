@@ -29,6 +29,11 @@ void OpenGLRawSharedBuffer::synchronize()
     if (m_bufferPtr) {
         glUnmapNamedBuffer(m_glBufferHandle);
         m_bufferPtr = nullptr;
+
+        // wait (for profiling)
+#ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
+        glFinish();
+#endif
     }
 }
 

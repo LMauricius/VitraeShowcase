@@ -228,6 +228,11 @@ void OpenGLFrameStore::WindowContextSwitcher::exitContext() {}
 void OpenGLFrameStore::WindowContextSwitcher::sync()
 {
     glfwSwapBuffers(window);
+
+    // wait (for profiling)
+#ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
+    glFinish();
+#endif
 }
 
 } // namespace Vitrae
