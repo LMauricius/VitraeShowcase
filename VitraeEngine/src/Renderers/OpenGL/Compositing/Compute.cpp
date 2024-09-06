@@ -92,7 +92,7 @@ const StableMap<StringId, PropertySpec> &OpenGLComposeCompute::getOutputSpecs() 
 
 void OpenGLComposeCompute::run(RenderRunContext args) const
 {
-    MMETER_SCOPE_PROFILER("OpenGLComposeCompute::run");
+    MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
     if (m_executeCondition && !m_executeCondition(args)) {
         return;
