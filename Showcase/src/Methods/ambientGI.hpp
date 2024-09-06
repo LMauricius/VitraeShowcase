@@ -185,6 +185,9 @@ struct MethodsAmbientGI : MethodCollection
                         PropertySpec{.name = "gpuLeavingPremulFactors",
                                      .typeInfo =
                                          Variant::getTypeInfo<LeavingPremulFactorBufferPtr>()},
+
+                        PropertySpec{.name = "gi_utilities",
+                                     .typeInfo = Variant::getTypeInfo<void>()},
                     },
                 .outputSpecs =
                     {
