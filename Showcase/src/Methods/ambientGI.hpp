@@ -100,7 +100,7 @@ struct MethodsAmbientGI : MethodCollection
                         bvec3 normalIsNeg = lessThan(normal, vec3(0.0));
                         vec3 absNormal = abs(normal);
 
-                        shade_ambient = 
+                        /*shade_ambient = 
                                 buffer_gpuProbeStates.elements[ind].illumination[
                                     0 + int(normalIsNeg.x)
                                 ].rgb * absNormal.x +
@@ -109,7 +109,13 @@ struct MethodsAmbientGI : MethodCollection
                                 ].rgb * absNormal.y +
                                 buffer_gpuProbeStates.elements[ind].illumination[
                                     4 + int(normalIsNeg.z)
-                                ].rgb * absNormal.z;
+                                ].rgb * absNormal.z;*/
+
+                        shade_ambient = vec3(0.0);
+                        for (int i = 0; i < 6; i++) {
+                            shade_ambient = buffer_gpuProbeStates.elements[ind].illumination[i].rgb;
+                        }
+                        shade_ambient /= 6.0;
                     }
                     )",
                     .functionName = "setGlobalLighting"}});
@@ -122,55 +128,81 @@ struct MethodsAmbientGI : MethodCollection
         COMPUTE SHADING
         */
 
-        auto p_giPropagate =
-            root.getComponent<ShaderFunctionKeeper>().new_asset(
-                {ShaderFunction::StringParams{
-                    .inputSpecs =
-                        {
-                            PropertySpec{.name = "gpuProbeStates_prev",
-                                         .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
-                            PropertySpec{.name = "gpuProbeStates",
-                                         .typeInfo = Variant::getTypeInfo<ProbeStateBufferPtr>()},
-                            PropertySpec{.name = "gpuProbes",
-                                         .typeInfo = Variant::getTypeInfo<ProbeBufferPtr>()},
-                            PropertySpec{.name = "giWorldSize",
-                                         .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "camera_position",
-                                         .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+        auto
+            p_giPropagate = root.getComponent<ShaderFunctionKeeper>()
+                                .new_asset(
+                                    {ShaderFunction::StringParams{
+                                        .inputSpecs =
+                                            {
+                                                PropertySpec{.name = "gpuProbeStates_prev",
+                                                             .typeInfo = Variant::getTypeInfo<
+                                                                 ProbeStateBufferPtr>()},
+                                                PropertySpec{.name = "gpuProbeStates",
+                                                             .typeInfo = Variant::getTypeInfo<
+                                                                 ProbeStateBufferPtr>()},
+                                                PropertySpec{
+                                                    .name = "gpuProbes",
+                                                    .typeInfo =
+                                                        Variant::getTypeInfo<ProbeBufferPtr>()},
+                                                PropertySpec{
+                                                    .name = "gpuNeighborIndices",
+                                                    .typeInfo = Variant::getTypeInfo<NeighborIndexBufferPtr>()},
+                                                PropertySpec{
+                                                    .name = "gpuNeighborTransfer",
+                                                    .typeInfo = Variant::
+                                                        getTypeInfo<NeighborTransferBufferPtr>()},
+                                                PropertySpec{
+                                                    .name = "gpuLeavingPremulFactors",
+                                                    .typeInfo = Variant::getTypeInfo<LeavingPremulFactorBufferPtr>()},
+                                                PropertySpec{
+                                                    .name = "giWorldSize", .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                                                PropertySpec{
+                                                    .name = "camera_position",
+                                                    .typeInfo = Variant::getTypeInfo<glm::vec3>()},
 
-                            PropertySpec{.name = "gi_utilities",
-                                         .typeInfo = Variant::getTypeInfo<void>()},
-                            PropertySpec{.name = "swapped_probes",
-                                         .typeInfo = Variant::getTypeInfo<void>()},
-                        },
-                    .outputSpecs =
-                        {
-                            PropertySpec{.name = "updated_probes",
-                                         .typeInfo = Variant::getTypeInfo<void>()},
-                        },
-                    .snippet = R"(
-                    void giPropagate(
-                        in vec3 giWorldSize, in vec3 camera_position
-                    ) {
-                        uint probeIndex = gl_GlobalInvocationID.x;
-                        uint faceIndex = gl_GlobalInvocationID.y;
+                                                PropertySpec{
+                                                    .name = "gi_utilities", .typeInfo = Variant::getTypeInfo<void>()},
+                                                PropertySpec{
+                                                    .name = "swapped_probes",
+                                                    .typeInfo = Variant::getTypeInfo<void>()},
+                                            },
+                                        .outputSpecs =
+                                            {
+                                                PropertySpec{.name = "updated_probes",
+                                                             .typeInfo =
+                                                                 Variant::getTypeInfo<void>()},
+                                            },
+                                        .snippet = R"(
+void giPropagate(
+    in vec3 giWorldSize, in vec3 camera_position
+) {
+    uint probeIndex = gl_GlobalInvocationID.x;
+    uint faceIndex = gl_GlobalInvocationID.y;
 
-                        vec3 probeSize = buffer_gpuProbes.elements[probeIndex].size;
-                        vec3 probePos = buffer_gpuProbes.elements[probeIndex].position;
+    vec3 probeSize = buffer_gpuProbes.elements[probeIndex].size;
+    vec3 probePos = buffer_gpuProbes.elements[probeIndex].position;
+    uint neighborStartInd = buffer_gpuProbes.elements[probeIndex].neighborSpecBufStart;
+    uint neighborCount = buffer_gpuProbes.elements[probeIndex].neighborSpecCount;
 
-                        float worldScale = max(giWorldSize.x, max(giWorldSize.y, giWorldSize.z));
-                        float scaledDist = distance(probePos, camera_position) / worldScale;
-
-                        buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = vec4(min(
-                            vec3(1.0),
-                            vec3(5.0) / scaledDist / 100
-                        ), 1.0) * dot(
-                            DIRECTIONS[faceIndex],
-                            normalize(camera_position - probePos)
-                        );
-                    }
-                    )",
-                    .functionName = "giPropagate"}});
+    // if camera is inside probe, glow
+    if (all(lessThan(abs(camera_position - probePos), probeSize * 0.5))) {
+        buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = vec4(50.0);
+    } else {
+        buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] = vec4(0.0);
+    }
+    for (uint i = neighborStartInd; i < neighborStartInd + neighborCount; i++) {
+        uint neighInd = buffer_gpuNeighborIndices.elements[i];
+        for (uint neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
+            buffer_gpuProbeStates.elements[probeIndex].illumination[faceIndex] += (
+                buffer_gpuProbeStates_prev.elements[neighInd].illumination[neighDirInd] *
+                buffer_gpuNeighborTransfer.elements[neighInd].source[faceIndex].face[neighDirInd].color *
+                buffer_gpuLeavingPremulFactors.elements[probeIndex].face[faceIndex]
+            );
+        }
+    }
+}
+                )",
+                                        .functionName = "giPropagate"}});
 
         auto p_generateTransfersShader =
             root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
@@ -207,13 +239,13 @@ struct MethodsAmbientGI : MethodCollection
                         for (uint neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
                             buffer_gpuNeighborTransfer.elements[i].source[neighDirInd].face[myDirInd].color =
                                 vec4(1, 1, 1, 1) *
-                                factorTo(i, probeIndex, neighDirInd, myDirInd);
+                                1.0;//factorTo(i, probeIndex, neighDirInd, myDirInd);
                             totalLeaving +=
-                                factorTo(probeIndex, i, myDirInd, neighDirInd);
+                                1.0;//factorTo(probeIndex, i, myDirInd, neighDirInd);
                         }
                     }
 
-                    buffer_gpuLeavingPremulFactors.elements[probeIndex].face[myDirInd] = totalLeaving;
+                    buffer_gpuLeavingPremulFactors.elements[probeIndex].face[myDirInd] = 1.0 / totalLeaving;
                 }
                 )",
                 .functionName = "giGenerateTransfers"}});
@@ -253,9 +285,20 @@ struct MethodsAmbientGI : MethodCollection
                         if (auto pv_gpuProbeStates_prev =
                                 context.properties.getPtr("gpuProbeStates_prev");
                             pv_gpuProbeStates_prev == nullptr) {
+
                             gpuProbeStates_prev = ProbeStateBufferPtr(
-                                root, BufferUsageHint::GPU_COMPUTE | BufferUsageHint::GPU_DRAW,
+                                root,
+                                BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_COMPUTE |
+                                    BufferUsageHint::GPU_DRAW,
                                 gpuProbeStates.numElements());
+                            for (uint i = 0; i < gpuProbeStates.numElements(); i++) {
+                                for (uint j = 0; j < 6; j++) {
+                                    gpuProbeStates_prev.getElement(i).illumination[j] =
+                                        glm::vec4(0.0f);
+                                }
+                            }
+
+                            gpuProbeStates_prev.getRawBuffer()->synchronize();
                         } else {
                             gpuProbeStates_prev =
                                 pv_gpuProbeStates_prev->get<ProbeStateBufferPtr>();
@@ -497,6 +540,12 @@ struct MethodsAmbientGI : MethodCollection
             root.getInfoStream() << "gpuNeighborIndices size: " << gpuNeighborIndices.byteSize()
                                  << std::endl;
             root.getInfoStream() << "gpuNeighborTransfer size: " << gpuNeighborTransfer.byteSize()
+                                 << std::endl;
+            root.getInfoStream() << "Total GPU size: " << (
+                gpuProbes.byteSize() + gpuProbeStates.byteSize() +
+                gpuReflectionTransfers.byteSize() + gpuLeavingPremulFactors.byteSize() +
+                gpuNeighborIndices.byteSize() + gpuNeighborTransfer.byteSize()
+            ) / 1000000.0f << " MB"
                                  << std::endl;
             root.getInfoStream() << "=== /GI STATISTICS ===" << std::endl;
         });
