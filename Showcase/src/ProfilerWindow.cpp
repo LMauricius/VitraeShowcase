@@ -4,6 +4,7 @@
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QScrollBar>
 
 #include <mutex>
 
@@ -19,5 +20,7 @@ ProfilerWindow::~ProfilerWindow() {}
 
 void ProfilerWindow::updateValues()
 {
+    int pos = ui.profilerMetrics->verticalScrollBar()->value();
     ui.profilerMetrics->setText(QString::fromStdString(m_status.mmeterMetrics));
+    ui.profilerMetrics->verticalScrollBar()->setValue(pos);
 }
