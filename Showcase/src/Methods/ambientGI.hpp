@@ -378,6 +378,22 @@ struct MethodsAmbientGI : MethodCollection
             dict.set("giWorldSize", sceneAABB.getExtent());
             dict.set("giGridSize", gridSize);
             dict.set("gpuProbeCount", gpuProbes.numElements());
+
+            // Print stats
+            root.getInfoStream() << "=== GI STATISTICS ===" << std::endl;
+            root.getInfoStream() << "Probe count: " << probes.size() << std::endl;
+            root.getInfoStream() << "gpuProbes size: " << gpuProbes.byteSize() << std::endl;
+            root.getInfoStream() << "gpuProbeStates size: " << gpuProbeStates.byteSize()
+                                 << std::endl;
+            root.getInfoStream() << "gpuReflectionTransfers size: "
+                                 << gpuReflectionTransfers.byteSize() << std::endl;
+            root.getInfoStream() << "gpuLeavingPremulFactors size: "
+                                 << gpuLeavingPremulFactors.byteSize() << std::endl;
+            root.getInfoStream() << "gpuNeighborIndices size: " << gpuNeighborIndices.byteSize()
+                                 << std::endl;
+            root.getInfoStream() << "gpuNeighborTransfer size: " << gpuNeighborTransfer.byteSize()
+                                 << std::endl;
+            root.getInfoStream() << "=== /GI STATISTICS ===" << std::endl;
         });
     }
 };
