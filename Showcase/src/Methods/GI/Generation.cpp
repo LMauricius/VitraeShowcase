@@ -97,13 +97,13 @@ float factorTo(uint srcProbeindex, uint dstProbeindex, uint srcDirIndex, uint ds
 }
 )";
 
-void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridSize,
+void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::uvec3 &gridSize,
                        glm::vec3 &worldStart, glm::vec3 worldCenter, glm::vec3 worldSize,
                        float minProbeSize, bool cpuTransferGen)
 {
     MMETER_FUNC_PROFILER;
 
-    gridSize = glm::ivec3(worldSize / minProbeSize);
+    gridSize = glm::uvec3(worldSize / minProbeSize);
     worldStart = worldCenter - worldSize / 2.0f;
 
     probes.resize(gridSize.x * gridSize.y * gridSize.z);
@@ -116,7 +116,7 @@ void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridS
     // edge probes' edges are put at world edges
     glm::vec3 probeSize = worldSize / glm::vec3(gridSize);
     glm::ivec3 minIndex = glm::ivec3(0, 0, 0);
-    glm::ivec3 maxIndex = gridSize - 1;
+    glm::uvec3 maxIndex = gridSize - 1u;
     glm::vec3 ind2OffsetConversion = worldSize / glm::vec3(gridSize);
 
     {
@@ -131,31 +131,33 @@ void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::ivec3 &gridS
                         worldStart + (glm::vec3(x, y, z) + 0.5f) * ind2OffsetConversion;
                     probe.size = probeSize;
 
-                    if (x == 0 || x == maxIndex.x || y == 0 || y == maxIndex.y || z == 0 ||
-                        z == maxIndex.z) {
-                        // skip neighbor propagation for bordering probes
-                    } else {
-
-                        /*for (int neighx : {-1, 0, 1}) {
-                            for (int neighy : {-1, 0, 1}) {
-                                for (int neighz : {-1, 0, 1}) {
-                                    if ((neighx == 0 && neighy == 0 && neighz == 0) || x + neighx <
-                        0 || x + neighx >= maxIndex.x || y + neighy < 0 || y + neighy >= maxIndex.y
-                        || z + neighz < 0 || z + neighz >= maxIndex.z) { continue;
-                                    }
-                                    probe.neighborIndices.push_back(
-                                        getIndex({x + neighx, y + neighy, z + neighz}));
+                    /*for (int neighx : {-1, 0, 1}) {
+                        for (int neighy : {-1, 0, 1}) {
+                            for (int neighz : {-1, 0, 1}) {
+                                if ((neighx == 0 && neighy == 0 && neighz == 0) || x + neighx <
+                    0 || x + neighx >= maxIndex.x || y + neighy < 0 || y + neighy >= maxIndex.y
+                    || z + neighz < 0 || z + neighz >= maxIndex.z) { continue;
                                 }
+                                probe.neighborIndices.push_back(
+                                    getIndex({x + neighx, y + neighy, z + neighz}));
                             }
-                        }*/
+                        }
+                    }*/
 
+                    if (x > 0)
                         probe.neighborIndices.push_back(getIndex({x - 1, y, z}));
+                    if (x < maxIndex.x)
                         probe.neighborIndices.push_back(getIndex({x + 1, y, z}));
+
+                    if (y > 0)
                         probe.neighborIndices.push_back(getIndex({x, y - 1, z}));
+                    if (y < maxIndex.y)
                         probe.neighborIndices.push_back(getIndex({x, y + 1, z}));
+
+                    if (z > 0)
                         probe.neighborIndices.push_back(getIndex({x, y, z - 1}));
+                    if (z < maxIndex.z)
                         probe.neighborIndices.push_back(getIndex({x, y, z + 1}));
-                    }
                 }
             }
         }
