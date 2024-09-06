@@ -390,6 +390,11 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
     if (needsRebuild) {
         throw ComposeTaskRequirementsChangedException();
     }
+
+    // wait (for profiling)
+#ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
+    glFinish();
+#endif
 }
 
 void OpenGLComposeSceneRender::prepareRequiredLocalAssets(

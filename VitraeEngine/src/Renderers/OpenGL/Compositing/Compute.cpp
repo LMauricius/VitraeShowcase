@@ -50,7 +50,11 @@ OpenGLComposeCompute::OpenGLComposeCompute(const SetupParams &params)
     mp_outputComponents = dynasma::makeStandalone<PropertyList>(m_outputSpecs.values());
 
     // friendly name gen
-    m_friendlyName = "Compute\n[";
+    m_friendlyName = "Compute\n";
+    for (const auto &spec : params.outputSpecs) {
+        m_friendlyName += "- " + spec.name + "\n";
+    }
+    m_friendlyName += "[";
 
     if (params.computeSetup.invocationCountX.isFixed()) {
         m_friendlyName += std::to_string(params.computeSetup.invocationCountX.getFixedValue());
@@ -171,6 +175,11 @@ void OpenGLComposeCompute::run(RenderRunContext args) const
 
     // the outputs should be the same pointers as inputs
     /// TODO: allow non-SSBO outputs
+
+    // wait (for profiling)
+#ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
+    glFinish();
+#endif
 }
 
 void OpenGLComposeCompute::prepareRequiredLocalAssets(

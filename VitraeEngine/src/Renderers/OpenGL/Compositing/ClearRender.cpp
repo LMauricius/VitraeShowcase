@@ -54,6 +54,11 @@ void OpenGLComposeClearRender::run(RenderRunContext args) const
     frame.exitRender();
 
     args.properties.set(m_displayOutputNameId, p_frame);
+
+    // wait (for profiling)
+#ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
+    glFinish();
+#endif
 }
 
 void OpenGLComposeClearRender::prepareRequiredLocalAssets(
