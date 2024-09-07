@@ -26,6 +26,7 @@ class Compositor : public dynasma::PolymorphicBase
                                  dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod);
     void setDefaultComputeMethod(dynasma::FirmPtr<Method<ShaderTask>> p_method);
     void setOutput(dynasma::FirmPtr<FrameStore> p_store);
+    void setDesiredProperties(const PropertyList &properties);
 
     void compose();
 
@@ -44,6 +45,7 @@ class Compositor : public dynasma::PolymorphicBase
     dynasma::FirmPtr<Method<ComposeTask>> mp_composeMethod;
     dynasma::FirmPtr<Method<ShaderTask>> m_defaultVertexMethod, m_defaultFragmentMethod,
         m_defaultComputeMethod;
+    PropertyList m_desiredProperties;
 
     void rebuildPipeline();
     void regenerateFrameStores();

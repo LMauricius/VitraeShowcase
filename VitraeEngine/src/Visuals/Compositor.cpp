@@ -49,6 +49,13 @@ void Compositor::setOutput(dynasma::FirmPtr<FrameStore> p_store)
     m_needsFrameStoreRegeneration = true;
 }
 
+void Compositor::setDesiredProperties(const PropertyList &properties)
+{
+    m_desiredProperties = properties;
+
+    m_needsRebuild = true;
+}
+
 void Compositor::compose()
 {
     MMETER_SCOPE_PROFILER("Compositor::compose");
@@ -124,11 +131,8 @@ void Compositor::rebuildPipeline()
         .p_defaultComputeMethod = m_defaultComputeMethod,
     };
 
-    m_pipeline = Pipeline<ComposeTask>(
-        mp_composeMethod,
-        {{PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
-                       .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}}},
-        context);
+    m_pipeline =
+        Pipeline<ComposeTask>(mp_composeMethod, m_desiredProperties.getSpecList(), context);
 
     m_localProperties.clear();
 
