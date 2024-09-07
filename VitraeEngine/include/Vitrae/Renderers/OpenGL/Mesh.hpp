@@ -43,10 +43,10 @@ class OpenGLMesh : public Mesh
     std::optional<dynasma::LazyPtr<Material>> mMaterial;
     std::vector<Triangle> mTriangles;
     BoundingBox m_aabb;
-    StableMap<StringId, std::valarray<glm::vec1>> namedVec1Buffers;
-    StableMap<StringId, std::valarray<glm::vec2>> namedVec2Buffers;
-    StableMap<StringId, std::valarray<glm::vec3>> namedVec3Buffers;
-    StableMap<StringId, std::valarray<glm::vec4>> namedVec4Buffers;
+    StableMap<StringId, std::vector<glm::vec1>> namedVec1Buffers;
+    StableMap<StringId, std::vector<glm::vec2>> namedVec2Buffers;
+    StableMap<StringId, std::vector<glm::vec3>> namedVec3Buffers;
+    StableMap<StringId, std::vector<glm::vec4>> namedVec4Buffers;
 
     bool m_sentToGPU;
 
