@@ -195,7 +195,7 @@ template <class KeyT, class MappedT> class StableMap
     {}
 
     template <class OKeyT, class OMappedT>
-    StableMap(std::map<OKeyT, OMappedT> orderedList)
+    StableMap(const std::map<OKeyT, OMappedT> &orderedList)
         requires std::convertible_to<OKeyT, KeyT> && std::convertible_to<OMappedT, MappedT>
     {
         m_size = orderedList.size();
@@ -205,6 +205,21 @@ template <class KeyT, class MappedT> class StableMap
         for (const auto &keyVal : orderedList) {
             new (getKeyList() + i) KeyT(keyVal.first);
             new (getValueList() + i) MappedT(keyVal.second);
+            ++i;
+        }
+    }
+
+    template <class OKeyT, class OMappedT>
+    StableMap(std::map<OKeyT, OMappedT> &&orderedList)
+        requires std::convertible_to<OKeyT, KeyT> && std::convertible_to<OMappedT, MappedT>
+    {
+        m_size = orderedList.size();
+        m_data = new std::byte[getBufferSize(m_size)];
+
+        int i = 0;
+        for (auto &keyVal : orderedList) {
+            new (getKeyList() + i) KeyT(keyVal.first);
+            new (getValueList() + i) MappedT(std::move(keyVal.second));
             ++i;
         }
     }
