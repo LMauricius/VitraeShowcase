@@ -38,6 +38,7 @@ class Compositor : public dynasma::PolymorphicBase
     bool m_needsFrameStoreRegeneration;
     Pipeline<ComposeTask> m_pipeline;
     ScopedDict m_localProperties;
+    dynasma::FirmPtr<FrameStore> mp_frameStore;
     MethodCombinator<ShaderTask> m_shadingMethodCombinator;
     StableMap<StringId, dynasma::FirmPtr<FrameStore>> m_preparedFrameStores;
     std::set<dynasma::FirmPtr<FrameStore>> m_uniqueFrameStores;

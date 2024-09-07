@@ -44,7 +44,7 @@ void Compositor::setDefaultComputeMethod(dynasma::FirmPtr<Method<ShaderTask>> p_
 
 void Compositor::setOutput(dynasma::FirmPtr<FrameStore> p_store)
 {
-    m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_store;
+    mp_frameStore = p_store;
 
     m_needsFrameStoreRegeneration = true;
 }
@@ -63,8 +63,9 @@ void Compositor::compose()
     // ScopedDict localVars(&parameters);
 
     // set the output frame property
-    parameters.set(StandardCompositorOutputNames::OUTPUT,
-                   m_preparedFrameStores.at(StandardCompositorOutputNames::OUTPUT));
+    for (auto desiredNameId : m_desiredProperties.getSpecNameIds()) {
+        parameters.set(desiredNameId, mp_frameStore);
+    }
 
     // setup the rendering context
     Renderer &rend = m_root.getComponent<Renderer>();
@@ -159,11 +160,12 @@ void Compositor::regenerateFrameStores()
     m_needsFrameStoreRegeneration = false;
 
     // clear the buffers (except for the final output)
-    auto p_finalFrame = m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT];
     m_preparedFrameStores.clear();
     m_uniqueFrameStores.clear();
     m_preparedTextures.clear();
-    m_preparedFrameStores[StandardCompositorOutputNames::OUTPUT] = p_finalFrame;
+    for (auto desiredNameId : m_desiredProperties.getSpecNameIds()) {
+        m_preparedFrameStores[desiredNameId] = mp_frameStore;
+    }
 
     // fill the buffers
     for (auto &pipeitem : std::ranges::reverse_view{m_pipeline.items}) {
