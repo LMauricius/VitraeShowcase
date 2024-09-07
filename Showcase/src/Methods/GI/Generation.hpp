@@ -17,6 +17,9 @@ struct Sample
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec4 color;
+
+    bool operator==(const Sample &) const = default;
+    auto operator<=>(const Sample &) const = default;
 };
 
 struct SamplingTriangle
