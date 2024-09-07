@@ -158,4 +158,23 @@ BoundingBox OpenGLMesh::getBoundingBox() const
     return m_aabb;
 }
 
+Variant OpenGLMesh::getVertexData(StringId bufferName, const TypeInfo &type) const
+{
+    if (type == Variant::getTypeInfo<glm::vec1>()) {
+        auto &buf = namedVec1Buffers.at(bufferName);
+        return buf[std::slice(0, buf.size(), 1)];
+    } else if (type == Variant::getTypeInfo<glm::vec2>()) {
+        auto &buf = namedVec2Buffers.at(bufferName);
+        return buf[std::slice(0, buf.size(), 1)];
+    } else if (type == Variant::getTypeInfo<glm::vec3>()) {
+        auto &buf = namedVec3Buffers.at(bufferName);
+        return buf[std::slice(0, buf.size(), 1)];
+    } else if (type == Variant::getTypeInfo<glm::vec4>()) {
+        auto &buf = namedVec4Buffers.at(bufferName);
+        return buf[std::slice(0, buf.size(), 1)];
+    } else {
+        throw std::out_of_range("Unused vertex element type");
+    }
+}
+
 } // namespace Vitrae

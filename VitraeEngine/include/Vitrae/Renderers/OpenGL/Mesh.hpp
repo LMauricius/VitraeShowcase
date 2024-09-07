@@ -8,7 +8,6 @@
 
 #include <map>
 #include <optional>
-#include <valarray>
 
 namespace Vitrae
 {
@@ -50,5 +49,7 @@ class OpenGLMesh : public Mesh
     StableMap<StringId, std::valarray<glm::vec4>> namedVec4Buffers;
 
     bool m_sentToGPU;
+
+    Variant getVertexData(StringId bufferName, const TypeInfo &type) const override;
 };
 } // namespace Vitrae
