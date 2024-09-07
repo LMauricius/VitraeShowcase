@@ -33,7 +33,7 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
     auto extractVertexData =
         [&]<class aiType, class glmType = typename aiTypeCvt<aiType>::glmType>(
             std::span<const ComponentRoot::AiMeshBufferInfo<aiType>> aiBufferInfos,
-            StableMap<StringId, std::valarray<glmType>> &namedBuffers) {
+            StableMap<StringId, std::vector<glmType>> &namedBuffers) {
             for (auto &info : aiBufferInfos) {
                 // get buffers
                 std::size_t layoutInd = rend.getVertexBufferLayoutIndex(info.name);
@@ -42,7 +42,7 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
 
                 // fill buffers
                 if (src != nullptr) {
-                    std::valarray<glmType> &buffer = namedBuffers[info.name];
+                    std::vector<glmType> &buffer = namedBuffers[info.name];
                     buffer.resize(params.p_extMesh->mNumVertices);
 
                     for (int i = 0; i < params.p_extMesh->mNumVertices; i++) {
@@ -91,7 +91,7 @@ void OpenGLMesh::loadToGPU(OpenGLRenderer &rend)
         glBindVertexArray(VAO);
 
         auto sendVertexData =
-            [&]<class glmType>(const StableMap<StringId, std::valarray<glmType>> &namedBuffers) {
+            [&]<class glmType>(const StableMap<StringId, std::vector<glmType>> &namedBuffers) {
                 for (auto [name, buffer] : namedBuffers) {
                     std::size_t layoutInd = rend.getVertexBufferLayoutIndex(name);
                     GLuint &vbo = VBOs[layoutInd];
@@ -162,16 +162,16 @@ Variant OpenGLMesh::getVertexData(StringId bufferName, const TypeInfo &type) con
 {
     if (type == Variant::getTypeInfo<glm::vec1>()) {
         auto &buf = namedVec1Buffers.at(bufferName);
-        return buf[std::slice(0, buf.size(), 1)];
+        return std::span<const glm::vec1>(buf);
     } else if (type == Variant::getTypeInfo<glm::vec2>()) {
         auto &buf = namedVec2Buffers.at(bufferName);
-        return buf[std::slice(0, buf.size(), 1)];
+        return std::span<const glm::vec2>(buf);
     } else if (type == Variant::getTypeInfo<glm::vec3>()) {
         auto &buf = namedVec3Buffers.at(bufferName);
-        return buf[std::slice(0, buf.size(), 1)];
+        return std::span<const glm::vec3>(buf);
     } else if (type == Variant::getTypeInfo<glm::vec4>()) {
         auto &buf = namedVec4Buffers.at(bufferName);
-        return buf[std::slice(0, buf.size(), 1)];
+        return std::span<const glm::vec4>(buf);
     } else {
         throw std::out_of_range("Unused vertex element type");
     }
