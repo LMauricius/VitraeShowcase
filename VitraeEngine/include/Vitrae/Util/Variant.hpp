@@ -124,7 +124,7 @@ class Variant
 
         // empty constructor
         if constexpr (requires { new T(); }) {
-            table.emptyConstructor = [](Variant &self) { new (&self.get<T>()) T(); };
+            table.emptyConstructor = [](Variant &self) { new (&self.getUnsafe<T>()) T(); };
         } else {
             table.emptyConstructor = [](Variant &self) {};
         }
@@ -132,7 +132,7 @@ class Variant
         // copy constructor
         if constexpr (requires(const T &t) { new T(t); }) {
             table.copyConstructor = [](Variant &self, const Variant &other) {
-                new (&self.get<T>()) T(other.get<T>());
+                new (&self.getUnsafe<T>()) T(other.getUnsafe<T>());
             };
         } else {
             table.copyConstructor = [](Variant &self, const Variant &other) {};
@@ -141,7 +141,7 @@ class Variant
         // move constructor
         if constexpr (requires(T &&t) { new T(t); }) {
             table.moveConstructor = [](Variant &self, Variant &other) {
-                new (&self.get<T>()) T(std::move(other.get<T>()));
+                new (&self.getUnsafe<T>()) T(std::move(other.getUnsafe<T>()));
             };
         } else {
             table.moveConstructor = [](Variant &self, Variant &other) {};
@@ -149,7 +149,7 @@ class Variant
 
         // destructor
         if constexpr (requires(T v) { v.~T(); }) {
-            table.destructor = [](Variant &self) { self.get<T>().~T(); };
+            table.destructor = [](Variant &self) { self.getUnsafe<T>().~T(); };
         } else {
             table.destructor = [](Variant &self) {};
         }
@@ -159,7 +159,7 @@ class Variant
                           { lhs == rhs } -> std::convertible_to<bool>;
                       }) {
             table.isEqual = [](const Variant &lhs, const Variant &rhs) -> bool {
-                return (bool)(std::any_cast<T>(lhs.m_val) == std::any_cast<T>(rhs.m_val));
+                return (bool)(lhs.getUnsafe<T>() == rhs.get<T>());
             };
         } else {
             table.isEqual = [](const Variant &lhs, const Variant &rhs) -> bool {
@@ -174,7 +174,7 @@ class Variant
                           { lhs < rhs } -> std::convertible_to<bool>;
                       }) {
             table.isLessThan = [](const Variant &lhs, const Variant &rhs) -> bool {
-                return (bool)(std::any_cast<T>(lhs.m_val) < std::any_cast<T>(rhs.m_val));
+                return (bool)(lhs.getUnsafe<T>() < rhs.get<T>());
             };
         } else {
             table.isLessThan = [](const Variant &lhs, const Variant &rhs) -> bool {
@@ -188,9 +188,7 @@ class Variant
         if constexpr (requires(T v) {
                           { bool(v) } -> std::convertible_to<bool>;
                       }) {
-            table.toBool = [](const Variant &p) -> bool {
-                return (bool)(std::any_cast<T>(p.m_val));
-            };
+            table.toBool = [](const Variant &p) -> bool { return (bool)(p.getUnsafe<T>()); };
         } else {
             table.toBool = [](const Variant &p) -> bool {
                 std::stringstream ss;
@@ -205,7 +203,7 @@ class Variant
                       }) {
             table.toString = [](const Variant &p) -> std::string {
                 std::stringstream ss;
-                ss << std::any_cast<T>(p.m_val);
+                ss << p.getUnsafe<T>();
                 return ss.str();
             };
         } else {
@@ -221,7 +219,7 @@ class Variant
                           { std::hash<T>{}(v) } -> std::convertible_to<std::size_t>;
                       }) {
             table.hash = [](const Variant &p) -> std::size_t {
-                return std::hash<T>{}(std::any_cast<T>(p.m_val));
+                return std::hash<T>{}(p.getUnsafe<T>());
             };
         } else {
             table.hash = [](const Variant &p) -> std::size_t {
@@ -331,15 +329,17 @@ class Variant
      */
     template <class T> constexpr T &get()
     {
-        return *reinterpret_cast<T *>(V_TABLE<std::decay_t<T>>.hasShortObjectOptimization
-                                          ? (void *)m_val.m_shortBufferVal
-                                          : m_val.mp_longVal);
+        if (*m_table != V_TABLE<std::decay_t<T>>) {
+            throw std::bad_any_cast();
+        }
+        return getUnsafe<T>();
     }
     template <class T> constexpr const T &get() const
     {
-        return *reinterpret_cast<const T *>(V_TABLE<std::decay_t<T>>.hasShortObjectOptimization
-                                                ? (const void *)m_val.m_shortBufferVal
-                                                : m_val.mp_longVal);
+        if (*m_table != V_TABLE<std::decay_t<T>>) {
+            throw std::bad_any_cast();
+        }
+        return getUnsafe<T>();
     }
 
     // comparison operators
@@ -389,6 +389,19 @@ class Variant
      * Pointer to the function table
      */
     const VariantVTable *m_table;
+
+    template <class T> constexpr T &getUnsafe()
+    {
+        return *reinterpret_cast<T *>(V_TABLE<std::decay_t<T>>.hasShortObjectOptimization
+                                          ? (void *)m_val.m_shortBufferVal
+                                          : m_val.mp_longVal);
+    }
+    template <class T> constexpr const T &getUnsafe() const
+    {
+        return *reinterpret_cast<const T *>(V_TABLE<std::decay_t<T>>.hasShortObjectOptimization
+                                                ? (const void *)m_val.m_shortBufferVal
+                                                : m_val.mp_longVal);
+    }
 
     // buffer management
 
