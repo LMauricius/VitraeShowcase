@@ -188,8 +188,8 @@ struct MethodsShadowEBR : MethodCollection
                 .vertexPositionOutputPropertyName = "position_shadow_view",
                 .displayInputPropertyName = "shadow_cleared",
                 .displayOutputPropertyName = "rendered_shadow",
-                .cullingMode = ComposeSceneRender::CullingMode::Frontface,
-                .rasterizingMode = ComposeSceneRender::RasterizingMode::DerivationalFillCenters,
+                .cullingMode = CullingMode::Frontface,
+                .rasterizingMode = RasterizingMode::DerivationalFillCenters,
             }});
         auto p_shadowTexture =
             dynasma::makeStandalone<ComposeFrameToTexture>(ComposeFrameToTexture::SetupParams{
