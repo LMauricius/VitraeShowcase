@@ -53,10 +53,9 @@ struct MethodsRenderShades : MethodCollection
                 .vertexPositionOutputPropertyName = "position_view",
                 .displayInputPropertyName = "display_cleared",
                 .displayOutputPropertyName = StandardCompositorOutputNames::OUTPUT,
-                .rasterizingMode =
-                    wireframe       ? ComposeSceneRender::RasterizingMode::DerivationalTraceEdges
-                    : edgeSmoothing ? ComposeSceneRender::RasterizingMode::DerivationalFillEdges
-                                    : ComposeSceneRender::RasterizingMode::DerivationalFillCenters,
+                .rasterizingMode = wireframe       ? RasterizingMode::DerivationalTraceEdges
+                                   : edgeSmoothing ? RasterizingMode::DerivationalFillEdges
+                                                   : RasterizingMode::DerivationalFillCenters,
                 .smoothTracing = edgeSmoothing,
             }});
 
