@@ -341,6 +341,38 @@ template <class KeyT, class MappedT> class StableMap
         return CStableMapIterator(getKeyList() + ind, getValueList() + ind);
     }
 
+    StableMapIterator lower_bound_next(const KeyT &key, CStableMapIterator start)
+    {
+        std::size_t ind = start - cbegin();
+        if (key < getKeyList()[ind]) {
+            throw std::out_of_range("lower_bound_next: key is not in range [start, ...)");
+        } else if (getKeyList()[ind] < key) {
+            if (ind + 1 < m_size && getKeyList()[ind + 1] < key) {
+                ind = findClosestIndex(key, ind + 2, m_size, (ind + 2 + m_size) / 2);
+                return StableMapIterator(getKeyList() + ind, getValueList() + ind);
+            }
+            return StableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+        }
+
+        return StableMapIterator(getKeyList() + ind, getValueList() + ind);
+    }
+
+    CStableMapIterator lower_bound_next(const KeyT &key, CStableMapIterator start) const
+    {
+        std::size_t ind = start - cbegin();
+        if (key < getKeyList()[ind]) {
+            throw std::out_of_range("lower_bound_next: key is not in range [start, ...)");
+        } else if (getKeyList()[ind] < key) {
+            if (ind + 1 < m_size && getKeyList()[ind + 1] < key) {
+                ind = findClosestIndex(key, ind + 2, m_size, (ind + 2 + m_size) / 2);
+                return CStableMapIterator(getKeyList() + ind, getValueList() + ind);
+            }
+            return CStableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+        }
+
+        return start;
+    }
+
     StableMapIterator upper_bound(const KeyT &key)
     {
         std::size_t ind = findClosestIndex(key);
@@ -357,6 +389,50 @@ template <class KeyT, class MappedT> class StableMap
             return CStableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
         }
         return CStableMapIterator(getKeyList() + ind, getValueList() + ind);
+    }
+
+    StableMapIterator upper_bound_next(const KeyT &key, CStableMapIterator start)
+    {
+        std::size_t ind = start - cbegin();
+        if (key < getKeyList()[ind]) {
+            throw std::out_of_range("upper_bound_next: key is not in range [start, ...)");
+        } else if (getKeyList()[ind] < key) {
+            if (ind + 1 < m_size && getKeyList()[ind + 1] < key) {
+                ind = findClosestIndex(key, ind + 2, m_size, (ind + 2 + m_size) / 2);
+                if (ind < m_size && !(key < getKeyList()[ind])) {
+                    return StableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+                }
+                return StableMapIterator(getKeyList() + ind, getValueList() + ind);
+            }
+            if (key < getKeyList()[ind + 1]) {
+                return StableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+            }
+            return StableMapIterator(getKeyList() + ind + 2, getValueList() + ind + 2);
+        }
+
+        return StableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+    }
+
+    CStableMapIterator upper_bound_next(const KeyT &key, CStableMapIterator start) const
+    {
+        std::size_t ind = start - cbegin();
+        if (key < getKeyList()[ind]) {
+            throw std::out_of_range("upper_bound_next: key is not in range [start, ...)");
+        } else if (getKeyList()[ind] < key) {
+            if (ind + 1 < m_size && getKeyList()[ind + 1] < key) {
+                ind = findClosestIndex(key, ind, m_size, (ind + m_size) / 2);
+                if (ind < m_size && !(key < getKeyList()[ind])) {
+                    return CStableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+                }
+                return CStableMapIterator(getKeyList() + ind, getValueList() + ind);
+            }
+            if (key < getKeyList()[ind + 1]) {
+                return CStableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+            }
+            return CStableMapIterator(getKeyList() + ind + 2, getValueList() + ind + 2);
+        }
+
+        return start + 1;
     }
 
     MappedT &operator[](const KeyT &key)
@@ -471,16 +547,28 @@ template <class KeyT, class MappedT> class StableMap
 
     std::size_t findClosestIndex(const KeyT &key) const
     {
+        return findClosestIndex(key, 0, m_size, m_size / 2);
+    }
+
+    std::size_t findClosestIndex(const KeyT &key, std::size_t leftIndex, std::size_t rightIndex,
+                                 std::size_t midIndex) const
+    {
         // uses binary search to find the index of the closest key
         const KeyT *keyList = getKeyList();
-        std::size_t leftIndex = 0;
-        std::size_t rightIndex = m_size;
-        while (leftIndex < rightIndex) {
-            std::size_t midIndex = (leftIndex + rightIndex) / 2;
+        if (leftIndex < rightIndex) {
             if (keyList[midIndex] < key) {
                 leftIndex = midIndex + 1;
             } else {
                 rightIndex = midIndex;
+            }
+
+            while (leftIndex < rightIndex) {
+                midIndex = (leftIndex + rightIndex) / 2;
+                if (keyList[midIndex] < key) {
+                    leftIndex = midIndex + 1;
+                } else {
+                    rightIndex = midIndex;
+                }
             }
         }
         return leftIndex;
