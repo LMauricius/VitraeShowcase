@@ -26,15 +26,17 @@ Material::Material(const AssimpLoadParams &params)
     for (auto &textureInfo : params.root.getAiMaterialTextureInfos()) {
         if (params.p_extMaterial->GetTextureCount(textureInfo.aiTextureId) > 0) {
             aiString path;
-            params.p_extMaterial->GetTexture(textureInfo.aiTextureId, 0, &path);
+            aiReturn res = params.p_extMaterial->GetTexture(textureInfo.aiTextureId, 0, &path);
 
-            String relconvPath =
-                searchAndReplace(searchAndReplace(path.C_Str(), "\\", "/"), "//", "/");
+            if (res == aiReturn_SUCCESS) {
+                String relconvPath =
+                    searchAndReplace(searchAndReplace(path.C_Str(), "\\", "/"), "//", "/");
 
-            m_textures[textureInfo.textureNameId] = textureManager.register_asset(
-                {Texture::FileLoadParams{.root = params.root,
-                                         .filepath = parentDirPath / relconvPath,
-                                         .useMipMaps = true}});
+                m_textures[textureInfo.textureNameId] = textureManager.register_asset(
+                    {Texture::FileLoadParams{.root = params.root,
+                                             .filepath = parentDirPath / relconvPath,
+                                             .useMipMaps = true}});
+            }
         } else {
             m_textures[textureInfo.textureNameId] = textureInfo.defaultTexture.getLoaded();
         }
