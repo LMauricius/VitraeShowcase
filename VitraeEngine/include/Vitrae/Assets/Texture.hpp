@@ -9,6 +9,7 @@
 #include "glm/glm.hpp"
 
 #include <filesystem>
+#include <optional>
 
 namespace Vitrae
 {
@@ -54,6 +55,11 @@ class Texture : public dynasma::PolymorphicBase
         LINEAR
     };
 
+    struct TextureStats
+    {
+        glm::vec4 averageColor;
+    };
+
     struct FileLoadParams
     {
         ComponentRoot &root;
@@ -88,9 +94,11 @@ class Texture : public dynasma::PolymorphicBase
     virtual std::size_t memory_cost() const = 0;
 
     inline glm::vec2 getSize() const { return glm::vec2(mWidth, mHeight); }
+    inline const std::optional<TextureStats> &getStats() const { return m_stats; }
 
   protected:
     int mWidth, mHeight;
+    std::optional<TextureStats> m_stats;
 };
 
 struct TextureSeed
