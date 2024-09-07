@@ -50,7 +50,8 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
         {"Indirect lighting",
          {
              std::make_shared<MethodsAmbientFlat>(root),
-             std::make_shared<MethodsAmbientGI>(root),
+             std::make_shared<MethodsAmbientGI>(root, false),
+             std::make_shared<MethodsAmbientGI>(root, true),
          },
          0},
         {"Light/shadow space", {std::make_shared<MethodsLSStable>(root)}, 0},
@@ -145,6 +146,7 @@ void AssetCollection::reapplyChoosenMethods()
     std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenFragMethods;
     std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenComputeMethods;
     std::vector<dynasma::FirmPtr<Method<ComposeTask>>> choosenComposeMethods;
+    PropertyList desiredOutputs;
     Vitrae::String vertName = "";
     Vitrae::String fragName = "";
     Vitrae::String computeName = "";
@@ -185,6 +187,9 @@ void AssetCollection::reapplyChoosenMethods()
                 category.methods[category.selectedIndex]->p_composeMethod->getFriendlyName();
             compName += "_";
         }
+
+        desiredOutputs.merge(
+            PropertyList(category.methods[category.selectedIndex]->desiredOutputs));
     }
 
     auto p_aggregateVertexMethod =
@@ -206,6 +211,7 @@ void AssetCollection::reapplyChoosenMethods()
     comp.setDefaultShadingMethod(p_aggregateVertexMethod, p_aggregateFragmentMethod);
     comp.setDefaultComputeMethod(p_aggregateComputeMethod);
     comp.setComposeMethod(p_aggregateComposeMethod);
+    comp.setDesiredProperties(PropertyList(desiredOutputs));
 
     Renderer &rend = root.getComponent<Renderer>();
     for (auto &category : methodCategories) {
