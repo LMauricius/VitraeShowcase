@@ -47,8 +47,26 @@ template <class KeyT, class MappedT> class StableMap
         AbstractStableMapIterator(const AbstractStableMapIterator &) = default;
         AbstractStableMapIterator(AbstractStableMapIterator &&) = default;
 
+        template <class OtherKeyRefT, class OtherMappedRefT>
+            requires(std::convertible_to<OtherKeyRefT, KeyRefT> &&
+                     std::convertible_to<OtherMappedRefT, MappedRefT>)
+        AbstractStableMapIterator(AbstractStableMapIterator<OtherKeyRefT, OtherMappedRefT> &&other)
+            : mp_key(other.mp_key), mp_value(other.mp_value)
+        {}
+
         AbstractStableMapIterator &operator=(const AbstractStableMapIterator &other) = default;
         AbstractStableMapIterator &operator=(AbstractStableMapIterator &&other) = default;
+
+        template <class OtherKeyRefT, class OtherMappedRefT>
+            requires(std::convertible_to<OtherKeyRefT, KeyRefT> &&
+                     std::convertible_to<OtherMappedRefT, MappedRefT>)
+        AbstractStableMapIterator &operator=(
+            AbstractStableMapIterator<OtherKeyRefT, OtherMappedRefT> &&other)
+        {
+            mp_key = other.mp_key;
+            mp_value = other.mp_value;
+            return *this;
+        }
 
         auto operator++()
         {
