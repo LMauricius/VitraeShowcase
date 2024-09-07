@@ -193,9 +193,8 @@ void OpenGLComposeDataRender::run(RenderRunContext args) const
                     }
 
                     for (auto [propertyNameId, bindingSpec] : p_compiledShader->bindingSpecs) {
-                        auto matPropIt = matProperties.find(propertyNameId);
-                        if (matPropIt == matProperties.end() &&
-                            matTextures.find(propertyNameId) == matTextures.end()) {
+                        auto matTexIt = matTextures.find(propertyNameId);
+                        if (matTexIt == matTextures.end()) {
                             auto p = args.properties.getPtr(propertyNameId);
                             if (p) {
                                 rend.getTypeConversion(bindingSpec.srcSpec.typeInfo)
@@ -205,7 +204,7 @@ void OpenGLComposeDataRender::run(RenderRunContext args) const
                             specifyInputDependency(bindingSpec.srcSpec);
                         } else {
                             rend.getTypeConversion(bindingSpec.srcSpec.typeInfo)
-                                .setBinding(bindingSpec.bindingIndex, (*matPropIt).second);
+                                .setBinding(bindingSpec.bindingIndex, (*matTexIt).second);
                         }
                     }
 
@@ -222,6 +221,8 @@ void OpenGLComposeDataRender::run(RenderRunContext args) const
                     MMETER_SCOPE_PROFILER("Render data");
 
                     OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*p_mesh);
+                    mesh.loadToGPU(rend);
+
                     glBindVertexArray(mesh.VAO);
                     std::size_t triCount = mesh.getTriangles().size();
 
