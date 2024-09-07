@@ -80,6 +80,10 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
     unsigned char *data =
         stbi_load(params.filepath.c_str(), &mWidth, &mHeight, &stbChannelFormat, STBI_default);
 
+    m_stats = TextureStats{
+        .averageColor = {0.0f, 0.0f, 0.0f, 0.0f},
+    };
+
     mGLChannelType = GL_UNSIGNED_BYTE;
     mUseSwizzle = false;
     switch (stbChannelFormat) {
@@ -88,6 +92,12 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
         mGLChannelFormat = GL_RED;
         mSwizzle = {GL_RED, GL_RED, GL_RED, GL_ONE};
         mUseSwizzle = true;
+
+        for (int i = 0; i < mWidth * mHeight; i++) {
+            m_stats.value().averageColor +=
+                glm::vec4(data[i] / 255.0f, data[i] / 255.0f, data[i] / 255.0f, 1.0f);
+        }
+        m_stats.value().averageColor /= mWidth * mHeight;
         break;
     case STBI_grey_alpha:
         params.root.getWarningStream()
@@ -96,14 +106,33 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
         mGLChannelFormat = GL_RG;
         mSwizzle = {GL_RED, GL_RED, GL_RED, GL_GREEN};
         mUseSwizzle = true;
+
+        for (int i = 0; i < mWidth * mHeight; i += 2) {
+            m_stats.value().averageColor += glm::vec4(data[i] / 255.0f, data[i] / 255.0f,
+                                                      data[i] / 255.0f, data[i + 1] / 255.0f);
+        }
+        m_stats.value().averageColor /= mWidth * mHeight;
+
         break;
     case STBI_rgb:
         mGLInternalFormat = GL_RGB;
         mGLChannelFormat = GL_RGB;
+
+        for (int i = 0; i < mWidth * mHeight; i += 3) {
+            m_stats.value().averageColor +=
+                glm::vec4(data[i] / 255.0f, data[i + 1] / 255.0f, data[i + 2] / 255.0f, 1.0f);
+        }
+        m_stats.value().averageColor /= mWidth * mHeight;
         break;
     case STBI_rgb_alpha:
         mGLInternalFormat = GL_RGBA;
         mGLChannelFormat = GL_RGBA;
+
+        for (int i = 0; i < mWidth * mHeight; i += 4) {
+            m_stats.value().averageColor += glm::vec4(data[i] / 255.0f, data[i + 1] / 255.0f,
+                                                      data[i + 2] / 255.0f, data[i + 3] / 255.0f);
+        }
+        m_stats.value().averageColor /= mWidth * mHeight;
         break;
     }
 
@@ -124,6 +153,8 @@ OpenGLTexture::OpenGLTexture(const EmptyParams &params)
     : OpenGLTexture(params.horWrap, params.verWrap, params.minFilter, params.magFilter,
                     params.useMipMaps, params.borderColor)
 {
+    m_stats.reset();
+
     mUseSwizzle = false;
     switch (params.channelType) {
     case ChannelType::GRAYSCALE:
@@ -266,6 +297,8 @@ OpenGLTexture::OpenGLTexture(const PureColorParams &params)
                         std::to_string((int)(255 * params.color.g)) + " " +
                         std::to_string((int)(255 * params.color.b)) + " " +
                         std::to_string((int)(255 * params.color.a)) + ")");
+
+    m_stats = TextureStats{params.color};
 }
 
 OpenGLTexture::~OpenGLTexture()
