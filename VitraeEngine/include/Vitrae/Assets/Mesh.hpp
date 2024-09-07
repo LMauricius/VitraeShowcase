@@ -13,6 +13,7 @@
 
 #include <filesystem>
 #include <span>
+#include <valarray>
 #include <variant>
 
 namespace Vitrae
@@ -41,7 +42,27 @@ class Mesh : public dynasma::PolymorphicBase
     virtual std::span<const Triangle> getTriangles() const = 0;
     virtual BoundingBox getBoundingBox() const = 0;
 
+    /**
+     * @tparam ElementT The type of the vertex element
+     * @param elementName The name of the vertex element to get ("position", "normal", etc.)
+     * @returns A span of ElementT values as a std::slice_array
+     * @throws std::out_of_range if the element does not exist or a wrong type is used
+     */
+    template <class ElementT>
+    std::slice_array<const ElementT> getVertexElements(StringId elementName) const
+    {
+        Variant anyArray = getVertexData(elementName, Variant::getTypeInfo<ElementT>());
+        assert(anyArray.getAssignedTypeInfo() == Variant::getTypeInfo<ElementT>());
+        return anyArray.get<std::slice_array<const ElementT>>();
+    }
+
     virtual std::size_t memory_cost() const = 0;
+
+  protected:
+    /**
+     * @returns std::slice_array<const ElementT> where ElementT is the type whose TypeInfo we passed
+     */
+    virtual Variant getVertexData(StringId bufferName, const TypeInfo &type) const = 0;
 };
 
 struct MeshKeeperSeed
