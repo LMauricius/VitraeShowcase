@@ -296,6 +296,36 @@ template <class KeyT, class MappedT> class StableMap
         return cend();
     }
 
+    StableMapIterator lower_bound(const KeyT &key)
+    {
+        std::size_t ind = findClosestIndex(key);
+        return StableMapIterator(getKeyList() + ind, getValueList() + ind);
+    }
+
+    CStableMapIterator lower_bound(const KeyT &key) const
+    {
+        std::size_t ind = findClosestIndex(key);
+        return CStableMapIterator(getKeyList() + ind, getValueList() + ind);
+    }
+
+    StableMapIterator upper_bound(const KeyT &key)
+    {
+        std::size_t ind = findClosestIndex(key);
+        if (ind < m_size && !(key < getKeyList()[ind])) {
+            return StableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+        }
+        return StableMapIterator(getKeyList() + ind, getValueList() + ind);
+    }
+
+    CStableMapIterator upper_bound(const KeyT &key) const
+    {
+        std::size_t ind = findClosestIndex(key);
+        if (ind < m_size && !(key < getKeyList()[ind])) {
+            return CStableMapIterator(getKeyList() + ind + 1, getValueList() + ind + 1);
+        }
+        return CStableMapIterator(getKeyList() + ind, getValueList() + ind);
+    }
+
     MappedT &operator[](const KeyT &key)
     {
         std::size_t ind;
