@@ -527,8 +527,13 @@ void giGenerateTransfers(in uvec3 giGridSize) {
                 root, (BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW),
                 "gpuNeighborFilters");
 
-            generateProbeList(probes, gridSize, worldStart, sceneAABB.getCenter(),
-                              sceneAABB.getExtent(), 3.0f, false);
+            SamplingScene smpScene;
+            std::size_t numNullMeshes = 0, numNullTris = 0;
+            prepareScene(scene, smpScene, numNullMeshes, numNullTris);
+            std::vector<Sample> samples;
+            sampleScene(smpScene, 100000, samples);
+            generateProbeList(std::span<const Sample>(samples), probes, gridSize, worldStart,
+                              sceneAABB.getCenter(), sceneAABB.getExtent(), 3.0f, false);
             convertHost2GpuBuffers(probes, gpuProbes, gpuReflectionTransfers,
                                    gpuLeavingPremulFactors, gpuNeighborIndices, gpuNeighborTransfer,
                                    gpuNeighborFilters);
@@ -564,6 +569,8 @@ void giGenerateTransfers(in uvec3 giGridSize) {
 
             // Print stats
             root.getInfoStream() << "=== GI STATISTICS ===" << std::endl;
+            root.getInfoStream() << "Null weight meshes: " << numNullMeshes << std::endl;
+            root.getInfoStream() << "Null weight triangles: " << numNullTris << std::endl;
             root.getInfoStream() << "Probe count: " << probes.size() << std::endl;
             root.getInfoStream() << "gpuProbes size: " << gpuProbes.byteSize() << std::endl;
             root.getInfoStream() << "gpuProbeStates size: " << gpuProbeStates.byteSize()

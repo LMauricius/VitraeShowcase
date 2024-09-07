@@ -2,6 +2,8 @@
 
 #include "MMeter.h"
 
+#include <random>
+
 namespace GI
 {
 
@@ -97,9 +99,183 @@ float factorTo(uint srcProbeindex, uint dstProbeindex, uint srcDirIndex, uint ds
 }
 )";
 
-void generateProbeList(std::vector<H_ProbeDefinition> &probes, glm::uvec3 &gridSize,
-                       glm::vec3 &worldStart, glm::vec3 worldCenter, glm::vec3 worldSize,
-                       float minProbeSize, bool cpuTransferGen)
+float getSamplingWeight(const Triangle &tri, std::span<const glm::vec3> vertexPositions)
+{
+    // just return the surface area of the triangle
+    // note: actually return double the surface, to avoid dividing by 2
+    // since the scale doesn't matter
+    glm::vec3 pos[] = {vertexPositions[tri.ind[0]], vertexPositions[tri.ind[1]],
+                       vertexPositions[tri.ind[2]]};
+
+    float surf2 = glm::length(glm::cross(pos[0] - pos[1], pos[0] - pos[2]));
+    return surf2;
+}
+
+float getSamplingWeight(const MeshProp &prop)
+{
+    BoundingBox aabb = transformed(prop.transform.getModelMatrix(), prop.p_mesh->getBoundingBox());
+
+    // based on the surface of the AABB
+    float halfSurf = aabb.getExtent().x * aabb.getExtent().y +
+                     aabb.getExtent().y * aabb.getExtent().z +
+                     aabb.getExtent().z * aabb.getExtent().x;
+
+    return halfSurf;
+}
+
+void prepareScene(const Scene &scene, SamplingScene &smpScene, std::size_t &statNumNullMeshes,
+                  std::size_t &statNumNullTris)
+{
+    MMETER_SCOPE_PROFILER("GI::prepareScene");
+
+    double accMeshWeight = 0.0f;
+    std::vector<SamplingMesh> denormMeshes;
+
+    for (auto &prop : scene.meshProps) {
+        auto positions = prop.p_mesh->getVertexElements<glm::vec3>("position");
+        auto normals = prop.p_mesh->getVertexElements<glm::vec3>("normal");
+        glm::vec4 color = prop.p_mesh->getMaterial()
+                              .getLoaded()
+                              ->getTextures()[StandardMaterialTextureNames::DIFFUSE]
+                              ->getStats()
+                              .value()
+                              .averageColor;
+
+        // mesh offset
+        denormMeshes.emplace_back();
+        denormMeshes.back().relativeSampleOffset = accMeshWeight; // will be divided later
+        double meshWeight = getSamplingWeight(prop);
+        if (meshWeight > 0.0) {
+            denormMeshes.back().relativeWeight = meshWeight; // will be divided later
+            accMeshWeight += meshWeight;
+
+            // triangles
+            double accTriWeight = 0.0f;
+            std::vector<std::pair<double, SamplingTriangle>> denormTris;
+            for (auto &tri : prop.p_mesh->getTriangles()) {
+                double triWeight = getSamplingWeight(tri, positions);
+                if (triWeight > 0.0 && (tri.ind[0] != tri.ind[1] && tri.ind[0] != tri.ind[2] &&
+                                        tri.ind[1] != tri.ind[2])) {
+                    denormTris.push_back(
+                        {accTriWeight, SamplingTriangle{.ind = {tri.ind[0], tri.ind[1], tri.ind[2]},
+                                                        .relativeWeight = triWeight}});
+                    accTriWeight += triWeight;
+                } else {
+                    ++statNumNullTris;
+                }
+            }
+
+            std::map<double, SamplingTriangle> normTrisMap;
+            for (auto &[offset, tri] : denormTris) {
+                tri.relativeWeight /= accTriWeight;
+                normTrisMap.emplace(offset / accTriWeight, tri);
+            }
+            denormMeshes.back().triangles =
+                StableMap<double, SamplingTriangle>(std::move(normTrisMap));
+
+            // vertices
+            glm::mat4 trans = prop.transform.getModelMatrix();
+            glm::mat3 rotTrans = glm::mat3(trans);
+            denormMeshes.back().vertices.reserve(positions.size());
+            for (std::size_t i = 0; i < positions.size(); ++i) {
+                denormMeshes.back().vertices.emplace_back(Sample{
+                    .position = rotTrans * positions[i] + prop.transform.position,
+                    .normal = rotTrans * normals[i],
+                    .color = color,
+                });
+            }
+        } else {
+            ++statNumNullMeshes;
+        }
+    }
+
+    std::map<double, SamplingMesh> normMeshesMap;
+    for (auto &mesh : denormMeshes) {
+        mesh.relativeSampleOffset /= accMeshWeight;
+        mesh.relativeWeight /= accMeshWeight;
+        normMeshesMap.emplace(mesh.relativeSampleOffset, std::move(mesh));
+    }
+    smpScene.meshes = StableMap<double, SamplingMesh>(std::move(normMeshesMap));
+}
+
+void sampleScene(const SamplingScene &smpScene, std::size_t numSamples,
+                 std::vector<Sample> &outSamples)
+{
+    static std::random_device s_rd;
+    static std::mt19937 s_gen(s_rd());
+    static std::uniform_real_distribution<double> s_dist(0.0f, 1.0f);
+
+    MMETER_SCOPE_PROFILER("GI::sampleScene");
+
+    outSamples.reserve(numSamples);
+
+    // generate random floats
+    std::vector<double> sampleOffsets;
+    sampleOffsets.reserve(numSamples);
+    for (std::size_t i = 0; i < numSamples; ++i) {
+        sampleOffsets.push_back(s_dist(s_gen));
+    }
+
+    // order (for performance)
+    std::sort(sampleOffsets.begin(), sampleOffsets.end());
+
+    // process points
+    StableMap<double, SamplingMesh>::const_iterator meshIt = smpScene.meshes.begin();
+    StableMap<double, SamplingTriangle>::const_iterator triIt = (*meshIt).second.triangles.begin();
+
+    for (double sampleOffset : sampleOffsets) {
+        if (meshIt + 1 != smpScene.meshes.end() && (*(meshIt + 1)).first <= sampleOffset) {
+            do {
+                ++meshIt;
+            } while (meshIt + 1 != smpScene.meshes.end() && (*(meshIt + 1)).first <= sampleOffset);
+
+            triIt = (*meshIt).second.triangles.begin();
+        }
+        const SamplingMesh &smpMesh = (*meshIt).second;
+
+        assert(sampleOffset >= smpMesh.relativeSampleOffset &&
+               sampleOffset < smpMesh.relativeSampleOffset + smpMesh.relativeWeight);
+
+        double triSampleOffset =
+            (sampleOffset - smpMesh.relativeSampleOffset) / smpMesh.relativeWeight;
+
+        while (triIt + 1 != smpMesh.triangles.end() && (*(triIt + 1)).first <= triSampleOffset) {
+            ++triIt;
+        }
+        const SamplingTriangle &smpTri = (*triIt).second;
+
+        // uniformly distribute sample in triangle
+        double vertexSampleOffset = (triSampleOffset - (*triIt).first) / smpTri.relativeWeight;
+        assert(vertexSampleOffset >= 0.0 && vertexSampleOffset <= 1.0);
+
+        float sampleS = (float)s_dist(s_gen);
+        float sampleT = (float)s_dist(s_gen);
+
+        assert(sampleS >= 0.0 && sampleS <= 1.0 && sampleT >= 0.0 && sampleT <= 1.0);
+
+        bool in_triangle = sampleS + sampleT <= 1.0;
+        glm::vec3 p[] = {
+            smpMesh.vertices[smpTri.ind[0]].position,
+            smpMesh.vertices[smpTri.ind[1]].position,
+            smpMesh.vertices[smpTri.ind[2]].position,
+        };
+        glm::vec3 n[] = {
+            smpMesh.vertices[smpTri.ind[0]].normal,
+            smpMesh.vertices[smpTri.ind[1]].normal,
+            smpMesh.vertices[smpTri.ind[2]].normal,
+        };
+
+        outSamples.push_back(Sample{
+            .position = p[0] + (in_triangle ? sampleS * (p[1] - p[0]) + sampleT * (p[2] - p[0])
+                                            : (1.0f - sampleS) * (p[1] - p[0]) +
+                                                  (1.0f - sampleT) * (p[2] - p[0])),
+        });
+    }
+}
+
+void generateProbeList(std::span<const Sample> samples, std::vector<H_ProbeDefinition> &probes,
+                       glm::uvec3 &gridSize, glm::vec3 &worldStart, glm::vec3 worldCenter,
+                       glm::vec3 worldSize, float minProbeSize, bool cpuTransferGen)
 {
     MMETER_FUNC_PROFILER;
 
