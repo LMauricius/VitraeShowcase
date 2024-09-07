@@ -62,5 +62,9 @@ struct MethodsRenderShades : MethodCollection
         p_composeMethod =
             dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
                 .tasks = {p_clear, p_normalRender}, .friendlyName = name});
+
+        desiredOutputs.push_back(
+            PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
+                         .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE});
     }
 };
