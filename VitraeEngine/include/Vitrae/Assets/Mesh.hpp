@@ -58,10 +58,10 @@ struct MeshKeeperSeed
  */
 namespace StandardVertexBufferNames
 {
-constexpr const char POSITION[] = "position";
-constexpr const char NORMAL[] = "normal";
-constexpr const char TEXTURE_COORD[] = "textureCoord0";
-constexpr const char COLOR[] = "color0";
+inline constexpr const char POSITION[] = "position";
+inline constexpr const char NORMAL[] = "normal";
+inline constexpr const char TEXTURE_COORD[] = "textureCoord0";
+inline constexpr const char COLOR[] = "color0";
 } // namespace StandardVertexBufferNames
 
 // using MeshManager = dynasma::AbstractManager<MeshSeed>;
