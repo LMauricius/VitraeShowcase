@@ -8,6 +8,7 @@
 
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
 #include "Vitrae/Pipelines/Compositing/Compute.hpp"
+#include "Vitrae/Pipelines/Compositing/DataRender.hpp"
 #include "Vitrae/Pipelines/Compositing/FrameToTexture.hpp"
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
@@ -26,9 +27,14 @@ using namespace Vitrae;
 
 struct MethodsAmbientGI : MethodCollection
 {
-    inline MethodsAmbientGI(ComponentRoot &root) : MethodCollection(root)
+    inline MethodsAmbientGI(ComponentRoot &root, bool allowVisualization) : MethodCollection(root)
     {
         using namespace GI;
+
+        String friendlyName = "GlobalIllumination";
+        if (allowVisualization) {
+            friendlyName += "_visualization";
+        }
 
         /*
         VERTEX SHADING
@@ -47,9 +53,8 @@ struct MethodsAmbientGI : MethodCollection
                                         .snippet = GI::GLSL_PROBE_UTILITY_SNIPPET,
                                         .friendlyName = "giConstants"}});
 
-        p_genericShaderMethod =
-            dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-                .tasks = {p_giHeader}, .friendlyName = "GlobalIllumination"});
+        p_genericShaderMethod = dynasma::makeStandalone<Method<ShaderTask>>(
+            Method<ShaderTask>::MethodParams{.tasks = {p_giHeader}, .friendlyName = friendlyName});
 
         /*
         FRAGMENT SHADING
@@ -116,7 +121,7 @@ struct MethodsAmbientGI : MethodCollection
 
         p_fragmentMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-                .tasks = {p_shadeAmbient}, .friendlyName = "GlobalIllumination"});
+                .tasks = {p_shadeAmbient}, .friendlyName = friendlyName});
 
         /*
         COMPUTE SHADING
@@ -292,9 +297,9 @@ void giGenerateTransfers(in uvec3 giGridSize) {
                 )",
                 .functionName = "giGenerateTransfers"}});
 
-        p_computeMethod = dynasma::makeStandalone<Method<ShaderTask>>(
-            Method<ShaderTask>::MethodParams{.tasks = {p_giPropagate, p_generateTransfersShader},
-                                             .friendlyName = "GlobalIllumination"});
+        p_computeMethod =
+            dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
+                .tasks = {p_giPropagate, p_generateTransfersShader}, .friendlyName = friendlyName});
 
         /*
         COMPOSING
@@ -392,10 +397,44 @@ void giGenerateTransfers(in uvec3 giGridSize) {
                     .groupSizeY = 6,
                 }}});
 
+        auto p_visualScene = dynasma::makeStandalone<Scene>(
+            Scene::FileLoadParams{.root = root, .filepath = "../../Showcase/media/dataPoint.obj"});
+        auto p_visualMesh = p_visualScene->meshProps[0].p_mesh;
+
+        auto p_dataRender =
+            root.getComponent<ComposeDataRenderKeeper>().new_asset({ComposeDataRender::SetupParams{
+                .root = root,
+                .inputSpecs =
+                    {
+                        PropertySpec{.name = "giSamples",
+                                     .typeInfo = Variant::getTypeInfo<std::vector<Sample>>()},
+                    },
+                .displayInputPropertyName = "display_cleared",
+                .displayOutputPropertyName = "visualized_samples",
+                .p_dataPointVisual = p_visualMesh,
+                .dataGenerator =
+                    [](const RenderRunContext &context,
+                       ComposeDataRender::RenderCallback callback) {
+                        auto &samples =
+                            context.properties.get("giSamples").get<std::vector<Sample>>();
+
+                        for (auto &sample : samples) {
+                            SimpleTransformation trans;
+                            trans.position = sample.position;
+                            trans.rotation = glm::quat();
+                            trans.scaling = {1.0f, 1.0f, 1.0f};
+
+                            callback(trans.getModelMatrix());
+                        }
+                    },
+                .vertexPositionOutputPropertyName = "position_view",
+            }});
+
         p_composeMethod =
             dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
-                .tasks = {p_swapProbeBuffers, p_generateProbeTransfers, p_updateProbes},
-                .friendlyName = "GlobalIllumination"});
+                .tasks = {p_swapProbeBuffers, p_generateProbeTransfers, p_updateProbes,
+                          p_dataRender},
+                .friendlyName = friendlyName});
 
         /*
         SETUP
@@ -555,6 +594,7 @@ void giGenerateTransfers(in uvec3 giGridSize) {
             gpuNeighborFilters.getRawBuffer()->synchronize();
 
             // store properties
+            dict.set("giSamples", samples);
             dict.set("gpuProbes", gpuProbes);
             dict.set("gpuProbeStates", gpuProbeStates);
             dict.set("gpuReflectionTransfers", gpuReflectionTransfers);
@@ -565,7 +605,7 @@ void giGenerateTransfers(in uvec3 giGridSize) {
             dict.set("giWorldStart", worldStart);
             dict.set("giWorldSize", sceneAABB.getExtent());
             dict.set("giGridSize", gridSize);
-            dict.set("gpuProbeCount", gpuProbes.numElements());
+            dict.set("gpuProbeCount", (std::uint32_t)gpuProbes.numElements());
 
             // Print stats
             root.getInfoStream() << "=== GI STATISTICS ===" << std::endl;
@@ -596,5 +636,11 @@ void giGenerateTransfers(in uvec3 giGridSize) {
                                  << " MB" << std::endl;
             root.getInfoStream() << "=== /GI STATISTICS ===" << std::endl;
         });
+
+        if (allowVisualization) {
+            desiredOutputs =
+                PropertyList{PropertySpec{.name = "visualized_samples",
+                                          .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}};
+        }
     }
 };
