@@ -421,7 +421,8 @@ void giGenerateTransfers(in uvec3 giGridSize) {
                         for (auto &sample : samples) {
                             SimpleTransformation trans;
                             trans.position = sample.position;
-                            trans.rotation = glm::quat();
+                            // trans.rotation = glm::quatLookAt(sample.normal, glm::vec3(0, 1, 0));
+                            trans.rotation = glm::quat(glm::vec3(0, 1, 0), sample.normal);
                             trans.scaling = {1.0f, 1.0f, 1.0f};
 
                             callback(trans.getModelMatrix());
@@ -570,7 +571,7 @@ void giGenerateTransfers(in uvec3 giGridSize) {
             std::size_t numNullMeshes = 0, numNullTris = 0;
             prepareScene(scene, smpScene, numNullMeshes, numNullTris);
             std::vector<Sample> samples;
-            sampleScene(smpScene, 100000, samples);
+            sampleScene(smpScene, 30000, samples);
             generateProbeList(std::span<const Sample>(samples), probes, gridSize, worldStart,
                               sceneAABB.getCenter(), sceneAABB.getExtent(), 3.0f, false);
             convertHost2GpuBuffers(probes, gpuProbes, gpuReflectionTransfers,

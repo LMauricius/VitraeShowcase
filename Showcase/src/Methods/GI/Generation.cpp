@@ -269,7 +269,11 @@ void sampleScene(const SamplingScene &smpScene, std::size_t numSamples,
             .position = p[0] + (in_triangle ? sampleS * (p[1] - p[0]) + sampleT * (p[2] - p[0])
                                             : (1.0f - sampleS) * (p[1] - p[0]) +
                                                   (1.0f - sampleT) * (p[2] - p[0])),
-        });
+            .normal = glm::normalize(
+                n[0] + (in_triangle
+                            ? sampleS * (n[1] - n[0]) + sampleT * (n[2] - n[0])
+                            : (1.0f - sampleS) * (n[1] - n[0]) + (1.0f - sampleT) * (n[2] - n[0]))),
+            .color = smpMesh.vertices[smpTri.ind[0]].color});
     }
 }
 
