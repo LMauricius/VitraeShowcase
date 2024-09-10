@@ -16,3 +16,9 @@ target_include_directories(
     include 
     ${CMAKE_CURRENT_BINARY_DIR}
 )
+
+add_custom_command(TARGET VitraeShowcase POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+                       ${CMAKE_CURRENT_SOURCE_DIR}/media/dataPoint
+                       ${CMAKE_CURRENT_BINARY_DIR}/media/dataPoint
+                   )

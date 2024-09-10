@@ -398,7 +398,7 @@ void giGenerateTransfers(in uvec3 giGridSize) {
                 }}});
 
         auto p_visualScene = dynasma::makeStandalone<Scene>(
-            Scene::FileLoadParams{.root = root, .filepath = "../../Showcase/media/dataPoint.obj"});
+            Scene::FileLoadParams{.root = root, .filepath = "media/dataPoint/dataPoint.obj"});
         auto p_visualMesh = p_visualScene->meshProps[0].p_mesh;
 
         auto p_dataRender =
@@ -422,7 +422,7 @@ void giGenerateTransfers(in uvec3 giGridSize) {
                             SimpleTransformation trans;
                             trans.position = sample.position;
                             // trans.rotation = glm::quatLookAt(sample.normal, glm::vec3(0, 1, 0));
-                            trans.rotation = glm::quat(glm::vec3(0, 1, 0), sample.normal);
+                            trans.rotation = glm::quat(glm::vec3(0, 0, 1), sample.normal);
                             trans.scaling = {1.0f, 1.0f, 1.0f};
 
                             callback(trans.getModelMatrix());
@@ -573,7 +573,7 @@ void giGenerateTransfers(in uvec3 giGridSize) {
             std::vector<Sample> samples;
             sampleScene(smpScene, 30000, samples);
             generateProbeList(std::span<const Sample>(samples), probes, gridSize, worldStart,
-                              sceneAABB.getCenter(), sceneAABB.getExtent(), 3.0f, false);
+                              sceneAABB.getCenter(), sceneAABB.getExtent(), 1.5f, false);
             convertHost2GpuBuffers(probes, gpuProbes, gpuReflectionTransfers,
                                    gpuLeavingPremulFactors, gpuNeighborIndices, gpuNeighborTransfer,
                                    gpuNeighborFilters);
