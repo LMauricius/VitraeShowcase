@@ -3,6 +3,9 @@
 #include "../shadingModes.hpp"
 #include "abstract.hpp"
 
+#include "Vitrae/Assets/FrameStore.hpp"
+#include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Assets/Mesh.hpp"
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
 #include "Vitrae/Pipelines/Compositing/FrameToTexture.hpp"
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
