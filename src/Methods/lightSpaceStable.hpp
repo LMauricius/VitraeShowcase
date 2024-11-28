@@ -9,7 +9,7 @@
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Constant.hpp"
-#include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Pipelines/Shading/Snippet.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -26,33 +26,33 @@ struct MethodsLSStable : MethodCollection
         VERTEX SHADING
         */
         auto p_shadowPosition =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "position_world",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec4>()},
-                        PropertySpec{.name = "mat_shadow_view",
-                                     .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                        PropertySpec{.name = "mat_shadow_persp",
-                                     .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "position_shadow",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "position_shadow_view",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec4>()},
-                    },
-                .snippet = R"(
-                    void shadowPosition(
-                        in vec4 position_world, in mat4 mat_shadow_view, in mat4 mat_shadow_persp,
-                        out vec3 position_shadow, out vec4 position_shadow_view
-                    ) {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "position_world",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec4>()},
+                            PropertySpec{.name = "mat_shadow_view",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::mat4>()},
+                            PropertySpec{.name = "mat_shadow_persp",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::mat4>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "position_shadow",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "position_shadow_view",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec4>()},
+                        },
+                    .snippet = R"(
                         position_shadow_view = mat_shadow_persp * mat_shadow_view * position_world;
                         position_shadow = position_shadow_view.xyz / position_shadow_view.w * 0.5 + 0.5;
-                    }
-                )",
-                .functionName = "shadowPosition"}});
+                )"}});
 
         p_vertexMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{

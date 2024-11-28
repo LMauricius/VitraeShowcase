@@ -8,7 +8,7 @@
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Constant.hpp"
-#include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Pipelines/Shading/Snippet.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -31,24 +31,24 @@ struct MethodsShadowPCF : MethodCollection
         */
 
         auto p_shadowLightFactor =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "tex_shadow",
-                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
-                        PropertySpec{.name = "position_shadow",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "light_shadow_factor",
-                                     .typeInfo = Variant::getTypeInfo<float>()},
-                    },
-                .snippet = R"(
-                    void lightShadowFactor(
-                        in sampler2D tex_shadow, in vec3 position_shadow,
-                        out float light_shadow_factor)
-                    {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "tex_shadow",
+                                         .typeInfo = Variant::getTypeInfo<
+                                             dynasma::FirmPtr<Texture>>()},
+                            PropertySpec{.name = "position_shadow",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "light_shadow_factor",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<float>()},
+                        },
+                    .snippet = R"(
                         const int maskSize = 2;
                         const float blurRadius = 0.8;
 
@@ -71,9 +71,7 @@ struct MethodsShadowPCF : MethodCollection
                             }
                         }
                         light_shadow_factor /= float(counter);
-                    }
-                )",
-                .functionName = "lightShadowFactor"}});
+                )"}});
 
         p_genericShaderMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{

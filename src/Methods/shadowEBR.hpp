@@ -8,7 +8,7 @@
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Constant.hpp"
-#include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Pipelines/Shading/Snippet.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -32,20 +32,22 @@ struct MethodsShadowEBR : MethodCollection
         */
 
         /*auto p_alias =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
+            root.getComponent<ShaderSnippetKeeper>().new_asset({ShaderSnippet::StringParams{
                 .inputSpecs =
                     {
                         PropertySpec{.name = "position_shadow_view",
-                                     .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT},
-                        PropertySpec{.name = "normal_view",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                                     .typeInfo =
+           StandardShaderPropertyTypes::FRAGMENT_OUTPUT}, PropertySpec{.name =
+           "normal_view", .typeInfo = Variant::getTypeInfo<glm::vec3>()},
                         PropertySpec{.name = "ShadowMapSize",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec2>()},
+                                     .typeInfo =
+           Variant::getTypeInfo<glm::vec2>()},
                     },
                 .outputSpecs =
                     {
                         PropertySpec{.name = "shadow_alias",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                                     .typeInfo =
+           Variant::getTypeInfo<glm::vec3>()},
                     },
                 .snippet = R"(
                     void shadowAlias(
@@ -53,74 +55,67 @@ struct MethodsShadowEBR : MethodCollection
                         in vec2 ShadowMapSize,
                         out vec3 alias)
                     {
-                        vec2 proper_coordinate = (position_shadow_view.xy * 0.5 + 0.5) *
-           ShadowMapSize; vec2 diff = (gl_FragCoord.xy - proper_coordinate); vec2 normal_2d =
-           normalize(normal_view.xy); float normal_based_offset = dot(normal_2d, diff) + 0.5; alias
-           = vec3(normal_2d.xy * sign(normal_based_offset),
+                        vec2 proper_coordinate = (position_shadow_view.xy * 0.5
+           + 0.5) * ShadowMapSize; vec2 diff = (gl_FragCoord.xy -
+           proper_coordinate); vec2 normal_2d = normalize(normal_view.xy); float
+           normal_based_offset = dot(normal_2d, diff) + 0.5; alias =
+           vec3(normal_2d.xy * sign(normal_based_offset),
            normal_based_offset*normal_based_offset);
                     }
                 )",
                 .functionName = "shadowAlias"}});*/
 
         auto p_viewNormal2D =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "position_shadow_view",
-                                     .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT},
-                        PropertySpec{.name = "normal_view",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "ShadowMapSize",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec2>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "shadow_alias",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .snippet = R"(
-                    void viewNormal2D(
-                        in vec3 normal_view,
-                        out vec2 normal_view2d)
-                    {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "position_shadow_view",
+                                         .typeInfo =
+                                             StandardShaderPropertyTypes::
+                                                 FRAGMENT_OUTPUT},
+                            PropertySpec{.name = "normal_view",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "ShadowMapSize",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec2>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "shadow_alias",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .snippet = R"(
                         normal_view2d = normalize(normal_view.xy);
-                    }
-                )",
-                .functionName = "viewNormal2D"}});
+                )"}});
 
         auto p_shadowLightFactor =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "tex_shadow",
-                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
-                        PropertySpec{.name = "tex_shadow_normal",
-                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
-                        PropertySpec{.name = "position_shadow",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "ebr_strength",
-                                     .typeInfo = Variant::getTypeInfo<float>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "light_shadow_factor",
-                                     .typeInfo = Variant::getTypeInfo<float>()},
-                    },
-                .snippet = R"(
-                    float inShadowTexel(sampler2D tex_shadow, ivec2 pos, float posz, float offset) {
-                        if (texelFetch(tex_shadow, pos, 0).r < posz + offset) {
-                            return 0.0;
-                        }
-                        else {
-                            return 1.0;
-                        }
-                    }
-
-                    void lightShadowFactor(
-                        in sampler2D tex_shadow, sampler2D tex_shadow_normal, in vec3 position_shadow,
-                        in float ebr_strength,
-                        out float light_shadow_factor)
-                    {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "tex_shadow",
+                                         .typeInfo = Variant::getTypeInfo<
+                                             dynasma::FirmPtr<Texture>>()},
+                            PropertySpec{.name = "tex_shadow_normal",
+                                         .typeInfo = Variant::getTypeInfo<
+                                             dynasma::FirmPtr<Texture>>()},
+                            PropertySpec{.name = "position_shadow",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "ebr_strength",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<float>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "light_shadow_factor",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<float>()},
+                        },
+                    .snippet = R"(
                         vec2 shadowSize = textureSize(tex_shadow, 0);
                         float offset = 0.5 / shadowSize.x;
 
@@ -136,22 +131,17 @@ struct MethodsShadowEBR : MethodCollection
                             vec2 pos_sample = position_shadow.xy + t * tangent2d;
 
                             vec2 texelPos = pos_sample * shadowSize;
-                            vec2 topLeftTexelPos = floor(pos_sample * shadowSize);
-                            ivec2 topLeftTexelPosI = ivec2(topLeftTexelPos);
-                            vec2 bilinOffset = texelPos - topLeftTexelPos;
+                            vec2 bilinOffset = texelPos - floor(texelPos);
+
+                            bvec4 inShadow = lessThan(
+                                textureGather(tex_shadow, pos_sample, 0),
+                                position_shadow.z + offset
+                            );
 
                             light_shadow_factor += (
-                                inShadowTexel(
-                                    tex_shadow, topLeftTexelPosI + ivec2(0,0), position_shadow.z, offset
-                                ) * (1.0 - bilinOffset.x) + inShadowTexel(
-                                    tex_shadow, topLeftTexelPosI + ivec2(1,0), position_shadow.z, offset
-                                ) * bilinOffset.x
+                                inShadow.w * (1.0 - bilinOffset.x) + inShadow.z * bilinOffset.x
                             ) * (1.0 - bilinOffset.y) + (
-                                inShadowTexel(
-                                    tex_shadow, topLeftTexelPosI + ivec2(0,1), position_shadow.z, offset
-                                ) * (1.0 - bilinOffset.x) + inShadowTexel(
-                                    tex_shadow, topLeftTexelPosI + ivec2(1,1), position_shadow.z, offset
-                                ) * bilinOffset.x
+                                inShadow.x * (1.0 - bilinOffset.x) + inShadow.y * bilinOffset.x
                             ) * bilinOffset.y;
                         }
 
@@ -164,9 +154,7 @@ struct MethodsShadowEBR : MethodCollection
                         else {
                             light_shadow_factor = 0.0;
                         }
-                    }
-                )",
-                .functionName = "lightShadowFactor"}});
+                )"}});
 
         p_genericShaderMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{

@@ -1,6 +1,6 @@
 #include "shadingModes.hpp"
 
-#include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Pipelines/Shading/Snippet.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -17,19 +17,24 @@ ShadingModeSetter::ShadingModeSetter(ComponentRoot &root)
     // Phong method takes an input called "phong_shade" and passes it to the fragment output
     p_phong_fragmentMethod = dynasma::makeStandalone<
         Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-        .tasks = {root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-            .inputSpecs = {PropertySpec{.name = ShaderModePropertyNames::PHONG_SHADE,
-                             .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT},
-            },
-            .outputSpecs = {PropertySpec{.name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
-                                         .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT}},
-            .snippet = R"(
-                            void phongShadingMode(in vec4 phong_shade, out vec4 shade) {
-                                shade = phong_shade;
-                            }
-                        )",
-            .functionName = "phongShadingMode"}})},
-        .fallbackMethods = {}, .friendlyName= "Phong"});
+        .tasks = {root.getComponent<ShaderSnippetKeeper>().new_asset(
+            {ShaderSnippet::StringParams{
+                .inputSpecs =
+                    {
+                        PropertySpec{
+                            .name = ShaderModePropertyNames::PHONG_SHADE,
+                            .typeInfo =
+                                StandardShaderPropertyTypes::FRAGMENT_OUTPUT},
+                    },
+                .outputSpecs = {PropertySpec{
+                    .name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
+                    .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT}},
+                .snippet = R"(
+                    shade = phong_shade;
+                )",
+            }})},
+        .fallbackMethods = {},
+        .friendlyName = "Phong"});
 }
 
 void ShadingModeSetter::setModes(ComponentRoot &root)

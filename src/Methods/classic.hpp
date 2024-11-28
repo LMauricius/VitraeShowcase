@@ -11,7 +11,7 @@
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Constant.hpp"
-#include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Pipelines/Shading/Snippet.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -28,74 +28,79 @@ struct MethodsClassic : MethodCollection
         */
 
         auto p_worldPosition =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs = {PropertySpec{.name = StandardShaderPropertyNames::INPUT_MODEL,
-                                            .typeInfo = StandardShaderPropertyTypes::INPUT_MODEL},
-                               PropertySpec{.name = StandardVertexBufferNames::POSITION,
-                                            .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
-                .outputSpecs = {PropertySpec{.name = "position_world",
-                                             .typeInfo = Variant::getTypeInfo<glm::vec4>()}},
-                .snippet = R"(
-                    void vertexWorldPosition(
-                        in mat4 mat_model, in vec3 position_mesh,
-                        out vec4 position_world
-                    ) {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {PropertySpec{
+                             .name = StandardShaderPropertyNames::INPUT_MODEL,
+                             .typeInfo =
+                                 StandardShaderPropertyTypes::INPUT_MODEL},
+                         PropertySpec{
+                             .name = StandardVertexBufferNames::POSITION,
+                             .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
+                    .outputSpecs = {PropertySpec{
+                        .name = "position_world",
+                        .typeInfo = Variant::getTypeInfo<glm::vec4>()}},
+                    .snippet = R"(
                         position_world = mat_model * vec4(position_mesh, 1.0);
-                    }
-                )",
-                .functionName = "vertexWorldPosition"}});
+                    )"}});
 
         auto p_viewPosition =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = StandardShaderPropertyNames::INPUT_VIEW,
-                                     .typeInfo = StandardShaderPropertyTypes::INPUT_VIEW},
-                        PropertySpec{.name = StandardShaderPropertyNames::INPUT_PROJECTION,
-                                     .typeInfo = StandardShaderPropertyTypes::INPUT_PROJECTION},
-                        PropertySpec{.name = "position_world",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec4>()},
-                    },
-                .outputSpecs = {PropertySpec{.name = "position_view",
-                                             .typeInfo =
-                                                 StandardShaderPropertyTypes::VERTEX_OUTPUT}},
-                .snippet = R"(
-                    void vertexViewPosition(
-                        in mat4 mat_view, in mat4 mat_proj, in vec4 position_world,
-                        out vec4 position_view
-                    ) {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{
+                                .name = StandardShaderPropertyNames::INPUT_VIEW,
+                                .typeInfo =
+                                    StandardShaderPropertyTypes::INPUT_VIEW},
+                            PropertySpec{.name = StandardShaderPropertyNames::
+                                             INPUT_PROJECTION,
+                                         .typeInfo =
+                                             StandardShaderPropertyTypes::
+                                                 INPUT_PROJECTION},
+                            PropertySpec{.name = "position_world",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec4>()},
+                        },
+                    .outputSpecs = {PropertySpec{
+                        .name = "position_view",
+                        .typeInfo =
+                            StandardShaderPropertyTypes::VERTEX_OUTPUT}},
+                    .snippet = R"(
                         position_view = mat_proj * mat_view * position_world;
-                    }
-                )",
-                .functionName = "vertexViewPosition"}});
+                    )"}});
 
-        auto p_viewNormal =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
+        auto p_viewNormal = root.getComponent<ShaderSnippetKeeper>().new_asset(
+            {ShaderSnippet::StringParams{
                 .inputSpecs =
                     {
-                        PropertySpec{.name = StandardShaderPropertyNames::INPUT_MODEL,
-                                     .typeInfo = StandardShaderPropertyTypes::INPUT_MODEL},
-                        PropertySpec{.name = StandardShaderPropertyNames::INPUT_VIEW,
-                                     .typeInfo = StandardShaderPropertyTypes::INPUT_VIEW},
-                        PropertySpec{.name = StandardShaderPropertyNames::INPUT_PROJECTION,
-                                     .typeInfo = StandardShaderPropertyTypes::INPUT_PROJECTION},
+                        PropertySpec{
+                            .name = StandardShaderPropertyNames::INPUT_MODEL,
+                            .typeInfo =
+                                StandardShaderPropertyTypes::INPUT_MODEL},
+                        PropertySpec{
+                            .name = StandardShaderPropertyNames::INPUT_VIEW,
+                            .typeInfo =
+                                StandardShaderPropertyTypes::INPUT_VIEW},
+                        PropertySpec{
+                            .name =
+                                StandardShaderPropertyNames::INPUT_PROJECTION,
+                            .typeInfo =
+                                StandardShaderPropertyTypes::INPUT_PROJECTION},
                         PropertySpec{.name = StandardVertexBufferNames::NORMAL,
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                                     .typeInfo =
+                                         Variant::getTypeInfo<glm::vec3>()},
                     },
-                .outputSpecs = {PropertySpec{.name = "normal_view",
-                                             .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
+                .outputSpecs = {PropertySpec{
+                    .name = "normal_view",
+                    .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
                 .snippet = R"(
-                    void vertexViewNormal(
-                        in mat4 mat_model, in mat4 mat_view, in mat4 mat_proj, in vec3 normal,
-                        out vec3 normal_view
-                    ) {
-                        mat4 mat_viewproj = mat_proj * mat_view * mat_model;
-                        vec4 origin_h = mat_viewproj * vec4(0.0, 0.0, 0.0, 1.0);
-                        vec4 normal_h = mat_viewproj * vec4(normal, 1.0);
-                        normal_view = normalize(mat3(mat_viewproj) * normal);
-                    }
-                )",
-                .functionName = "vertexViewNormal"}});
+                    mat4 mat_viewproj = mat_proj * mat_view * mat_model;
+                    vec4 origin_h = mat_viewproj * vec4(0.0, 0.0, 0.0, 1.0);
+                    vec4 normal_h = mat_viewproj * vec4(normal, 1.0);
+                    normal_view = normalize(mat3(mat_viewproj) * normal);
+                )"}});
 
         p_vertexMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
@@ -107,150 +112,146 @@ struct MethodsClassic : MethodCollection
         */
 
         auto p_shadeAmbient =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "light_color_ambient",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "shade_ambient",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .snippet = R"(
-                    void setAmbient(
-                        in vec3 light_color_ambient,
-                        out vec3 shade_ambient
-                    ) {
-                        shade_ambient = light_color_ambient;
-                    }
-                )",
-                .functionName = "setAmbient"}});
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "light_color_ambient",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "shade_ambient",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .snippet = R"(
+                    shade_ambient = light_color_ambient;
+                )"}});
 
         auto p_shadeDiffuse =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "normal",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "light_direction",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "light_color_primary",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "light_shadow_factor",
-                                     .typeInfo = Variant::getTypeInfo<float>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "shade_diffuse",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .snippet = R"(
-                    void lightDiffuse(
-                        in vec3 normal, in vec3 light_direction,
-                        in vec3 light_color_primary, in float light_shadow_factor,
-                        out vec3 shade_diffuse
-                    ) {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "normal",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "light_direction",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "light_color_primary",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "light_shadow_factor",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<float>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "shade_diffuse",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .snippet = R"(
                         shade_diffuse = max(0.0, -dot(light_direction, normal)) * light_color_primary * light_shadow_factor;
-                    }
-                )",
-                .functionName = "lightDiffuse"}});
+                    )"}});
 
-        auto
-            p_shadeSpecular =
-                root.getComponent<ShaderFunctionKeeper>()
-                    .new_asset(
-                        {ShaderFunction::StringParams{
-                            .inputSpecs =
-                                {
-                                    PropertySpec{.name = "camera_position",
-                                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                                    PropertySpec{.name = "position_world",
-                                                 .typeInfo = Variant::getTypeInfo<glm::vec4>()},
-                                    PropertySpec{
-                                        .name = StandardMaterialTextureNames::SPECULAR,
-                                        .typeInfo =
-                                            Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
-                                    PropertySpec{.name = StandardVertexBufferNames::TEXTURE_COORD,
-                                                 .typeInfo = Variant::getTypeInfo<glm::vec2>()},
-                                    PropertySpec{
-                                        .name = StandardMaterialPropertyNames::COL_SPECULAR,
-                                        .typeInfo = StandardMaterialPropertyTypes::COL_SPECULAR},
-                                    PropertySpec{
-                                        .name = StandardMaterialPropertyNames::SHININESS,
-                                        .typeInfo = StandardMaterialPropertyTypes::SHININESS},
-                                    PropertySpec{.name = "normal",
-                                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                                    PropertySpec{.name = "light_direction",
-                                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                                    PropertySpec{.name = "light_color_primary",
-                                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                                    PropertySpec{.name = "light_shadow_factor",
-                                                 .typeInfo = Variant::getTypeInfo<float>()},
-                                },
-                            .outputSpecs =
-                                {
-                                    PropertySpec{.name = "shade_specular",
-                                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                                },
-                            .snippet = R"(
-                    void lightSpecular(
-                        in vec3 camera_position, in vec4 position_world,
-                        in sampler2D tex_specular, in vec2 tex_coord, in vec4 color_specular, in float shininess,
-                        in vec3 normal, in vec3 light_direction,
-                        in vec3 light_color_primary, in float light_shadow_factor,
-                        out vec3 shade_specular
-                    ) {
+        auto p_shadeSpecular =
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "camera_position",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "position_world",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec4>()},
+                            PropertySpec{
+                                .name = StandardMaterialTextureNames::SPECULAR,
+                                .typeInfo = Variant::getTypeInfo<
+                                    dynasma::FirmPtr<Texture>>()},
+                            PropertySpec{
+                                .name =
+                                    StandardVertexBufferNames::TEXTURE_COORD,
+                                .typeInfo = Variant::getTypeInfo<glm::vec2>()},
+                            PropertySpec{
+                                .name =
+                                    StandardMaterialPropertyNames::COL_SPECULAR,
+                                .typeInfo = StandardMaterialPropertyTypes::
+                                    COL_SPECULAR},
+                            PropertySpec{
+                                .name =
+                                    StandardMaterialPropertyNames::SHININESS,
+                                .typeInfo =
+                                    StandardMaterialPropertyTypes::SHININESS},
+                            PropertySpec{.name = "normal",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "light_direction",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "light_color_primary",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "light_shadow_factor",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<float>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "shade_specular",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .snippet = R"(
                         vec4 color_specular_tot = texture(tex_specular, tex_coord);
                         vec3 dirToEye = normalize(camera_position - position_world.xyz);
                         vec3 reflRay = 2 * dot(-light_direction, normal) * normal + light_direction;
                         shade_specular =
                             pow(max(dot(reflRay, dirToEye), 0.001), shininess) * light_shadow_factor *
                             color_specular_tot.rgb * light_color_primary;
-                    }
-                )",
-                            .functionName = "lightSpecular"}});
+                )"}});
 
         auto p_phongCombine =
-            root.getComponent<ShaderFunctionKeeper>()
-                .new_asset(
-                    {ShaderFunction::StringParams{
-                        .inputSpecs =
-                            {
-                                PropertySpec{.name = "shade_diffuse",
-                                             .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                                PropertySpec{.name = "shade_specular",
-                                             .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                                PropertySpec{.name = "shade_ambient",
-                                             .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                                PropertySpec{.name = StandardMaterialTextureNames::DIFFUSE,
-                                             .typeInfo =
-                                                 Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
-                                PropertySpec{.name = StandardVertexBufferNames::TEXTURE_COORD,
-                                             .typeInfo = Variant::getTypeInfo<glm::vec2>()},
-                            },
-                        .outputSpecs =
-                            {
-                                PropertySpec{
-                                    .name = ShaderModePropertyNames::PHONG_SHADE,
-                                    .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT},
-                            },
-                        .snippet = R"(
-                    void phongCombine(
-                        in vec3 shade_diffuse, in vec3 shade_specular, in vec3 shade_ambient,
-                        in sampler2D tex_diffuse,
-                        in vec2 tex_coord,
-                        out vec4 phong_shade
-                    ) {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "shade_diffuse",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "shade_specular",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{.name = "shade_ambient",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                            PropertySpec{
+                                .name = StandardMaterialTextureNames::DIFFUSE,
+                                .typeInfo = Variant::getTypeInfo<
+                                    dynasma::FirmPtr<Texture>>()},
+                            PropertySpec{
+                                .name =
+                                    StandardVertexBufferNames::TEXTURE_COORD,
+                                .typeInfo = Variant::getTypeInfo<glm::vec2>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{
+                                .name = ShaderModePropertyNames::PHONG_SHADE,
+                                .typeInfo = StandardShaderPropertyTypes::
+                                    FRAGMENT_OUTPUT},
+                        },
+                    .snippet = R"(
                         vec4 color_diffuse = texture(tex_diffuse, tex_coord);
                         phong_shade = vec4(
                             color_diffuse.rgb * (shade_diffuse + shade_ambient) +
                             shade_specular, 
                             color_diffuse.a);
-                    }
-                )",
-                        .functionName = "phongCombine"}});
+                )"}});
 
         p_genericShaderMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{

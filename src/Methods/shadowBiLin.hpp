@@ -8,7 +8,7 @@
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Constant.hpp"
-#include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Pipelines/Shading/Snippet.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -32,56 +32,40 @@ struct MethodsShadowBiLin : MethodCollection
         */
 
         auto p_shadowLightFactor =
-            root.getComponent<ShaderFunctionKeeper>().new_asset({ShaderFunction::StringParams{
-                .inputSpecs =
-                    {
-                        PropertySpec{.name = "tex_shadow",
-                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Texture>>()},
-                        PropertySpec{.name = "position_shadow",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                    },
-                .outputSpecs =
-                    {
-                        PropertySpec{.name = "light_shadow_factor",
-                                     .typeInfo = Variant::getTypeInfo<float>()},
-                    },
-                .snippet = R"(
-                    float inShadowTexel(sampler2D tex_shadow, ivec2 pos, float posz, float offset) {
-                        if (texelFetch(tex_shadow, pos, 0).r < posz + offset) {
-                            return 0.0;
-                        }
-                        else {
-                            return 1.0;
-                        }
-                    }
-
-                    void lightShadowFactor(
-                        in sampler2D tex_shadow, in vec3 position_shadow,
-                        out float light_shadow_factor)
-                    {
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            PropertySpec{.name = "tex_shadow",
+                                         .typeInfo = Variant::getTypeInfo<
+                                             dynasma::FirmPtr<Texture>>()},
+                            PropertySpec{.name = "position_shadow",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<glm::vec3>()},
+                        },
+                    .outputSpecs =
+                        {
+                            PropertySpec{.name = "light_shadow_factor",
+                                         .typeInfo =
+                                             Variant::getTypeInfo<float>()},
+                        },
+                    .snippet = R"(
                         vec2 shadowSize = textureSize(tex_shadow, 0);
                         float offset = 0.5 / shadowSize.x;
                         vec2 texelPos = position_shadow.xy * shadowSize;
-                        vec2 topLeftTexelPos = floor(position_shadow.xy * shadowSize);
-                        ivec2 topLeftTexelPosI = ivec2(topLeftTexelPos);
-                        vec2 bilinOffset = texelPos - topLeftTexelPos;
+                        vec2 bilinOffset = texelPos - floor(texelPos);
+
+                        bvec4 inShadow = lessThan(
+                            textureGather(tex_shadow, position_shadow.xy, 0),
+                            position_shadow.z + offset
+                        );
 
                         light_shadow_factor = (
-                            inShadowTexel(
-                                tex_shadow, topLeftTexelPosI + ivec2(0,0), position_shadow.z, offset
-                            ) * (1.0 - bilinOffset.x) + inShadowTexel(
-                                tex_shadow, topLeftTexelPosI + ivec2(1,0), position_shadow.z, offset
-                            ) * bilinOffset.x
+                            inShadow.w * (1.0 - bilinOffset.x) + inShadow.z * bilinOffset.x
                         ) * (1.0 - bilinOffset.y) + (
-                            inShadowTexel(
-                                tex_shadow, topLeftTexelPosI + ivec2(0,1), position_shadow.z, offset
-                            ) * (1.0 - bilinOffset.x) + inShadowTexel(
-                                tex_shadow, topLeftTexelPosI + ivec2(1,1), position_shadow.z, offset
-                            ) * bilinOffset.x
+                            inShadow.x * (1.0 - bilinOffset.x) + inShadow.y * bilinOffset.x
                         ) * bilinOffset.y;
-                    }
-                )",
-                .functionName = "lightShadowFactor"}});
+                )"}});
 
         p_genericShaderMethod =
             dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
