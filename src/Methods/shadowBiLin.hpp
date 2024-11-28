@@ -56,14 +56,14 @@ struct MethodsShadowBiLin : MethodCollection
                         vec2 bilinOffset = texelPos - floor(texelPos);
 
                         bvec4 inShadow = lessThan(
-                            textureGather(tex_shadow, position_shadow.xy, 0),
-                            position_shadow.z + offset
+                            textureGather(tex_shadow, position_shadow.xy - offset, 0),
+                            vec4(position_shadow.z + offset)
                         );
 
                         light_shadow_factor = (
-                            inShadow.w * (1.0 - bilinOffset.x) + inShadow.z * bilinOffset.x
+                            (inShadow.w? 0.0 : 1.0 - bilinOffset.x) + (inShadow.z? 0.0 : bilinOffset.x)
                         ) * (1.0 - bilinOffset.y) + (
-                            inShadow.x * (1.0 - bilinOffset.x) + inShadow.y * bilinOffset.x
+                            (inShadow.x? 0.0 : 1.0 - bilinOffset.x) + (inShadow.y? 0.0 : bilinOffset.x)
                         ) * bilinOffset.y;
                 )"}});
 

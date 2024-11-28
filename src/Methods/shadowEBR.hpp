@@ -83,9 +83,9 @@ struct MethodsShadowEBR : MethodCollection
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "shadow_alias",
+                            PropertySpec{.name = "normal_view2d",
                                          .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                                             Variant::getTypeInfo<glm::vec2>()},
                         },
                     .snippet = R"(
                         normal_view2d = normalize(normal_view.xy);
@@ -135,13 +135,13 @@ struct MethodsShadowEBR : MethodCollection
 
                             bvec4 inShadow = lessThan(
                                 textureGather(tex_shadow, pos_sample, 0),
-                                position_shadow.z + offset
+                                vec4(position_shadow.z + offset)
                             );
 
                             light_shadow_factor += (
-                                inShadow.w * (1.0 - bilinOffset.x) + inShadow.z * bilinOffset.x
+                                (inShadow.w? 0.0 : 1.0 - bilinOffset.x) + (inShadow.z? 0.0 : bilinOffset.x)
                             ) * (1.0 - bilinOffset.y) + (
-                                inShadow.x * (1.0 - bilinOffset.x) + inShadow.y * bilinOffset.x
+                                (inShadow.x? 0.0 : 1.0 - bilinOffset.x) + (inShadow.y? 0.0 : bilinOffset.x)
                             ) * bilinOffset.y;
                         }
 

@@ -42,7 +42,7 @@ struct MethodsClassic : MethodCollection
                         .name = "position_world",
                         .typeInfo = Variant::getTypeInfo<glm::vec4>()}},
                     .snippet = R"(
-                        position_world = mat_model * vec4(position_mesh, 1.0);
+                        position_world = mat_model * vec4(position, 1.0);
                     )"}});
 
         auto p_viewPosition =
@@ -207,7 +207,7 @@ struct MethodsClassic : MethodCollection
                                              Variant::getTypeInfo<glm::vec3>()},
                         },
                     .snippet = R"(
-                        vec4 color_specular_tot = texture(tex_specular, tex_coord);
+                        vec4 color_specular_tot = texture(tex_specular, textureCoord0);
                         vec3 dirToEye = normalize(camera_position - position_world.xyz);
                         vec3 reflRay = 2 * dot(-light_direction, normal) * normal + light_direction;
                         shade_specular =
@@ -246,7 +246,7 @@ struct MethodsClassic : MethodCollection
                                     FRAGMENT_OUTPUT},
                         },
                     .snippet = R"(
-                        vec4 color_diffuse = texture(tex_diffuse, tex_coord);
+                        vec4 color_diffuse = texture(tex_diffuse, textureCoord0);
                         phong_shade = vec4(
                             color_diffuse.rgb * (shade_diffuse + shade_ambient) +
                             shade_specular, 
