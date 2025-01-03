@@ -14,10 +14,14 @@ class SettingsWindow : public QMainWindow
     virtual ~SettingsWindow();
 
     void updateValues();
+    void applyCompositorSettings();
 
   private:
     Ui::MainWindow ui;
 
     AssetCollection &m_assetCollection;
     Status &m_status;
+
+    std::map<String, String> m_toBeAliases;
+    PropertyList m_desiredOutputs;
 };

@@ -1,12 +1,14 @@
 #include "assetCollection.hpp"
 
-#include "Methods/classic.hpp"
-#include "Methods/lightSpaceStable.hpp"
-#include "Methods/renderShades.hpp"
-#include "Methods/shadowBiLin.hpp"
-#include "Methods/shadowEBR.hpp"
-#include "Methods/shadowPCF.hpp"
-#include "Methods/shadowRough.hpp"
+#include "methods/renderForward.hpp"
+#include "methods/renderShadow.hpp"
+#include "methods/displayCamera.hpp"
+#include "methods/shadingPhong.hpp"
+#include "methods/shadowCommon.hpp"
+#include "methods/shadowRough.hpp"
+#include "methods/shadowBiLin.hpp"
+#include "methods/shadowPCF.hpp"
+#include "converters/aiPhongConvert.hpp"
 
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/ComponentRoot.hpp"
@@ -29,34 +31,21 @@
 
 AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
                                  std::filesystem::path scenePath, float sceneScale)
-    : root(root), rend(rend), modeSetter(root), running(true), shouldReloadPipelines(true),
+    : root(root), rend(rend), running(true), shouldReloadPipelines(true),
       comp(root)
 {
     /*
     Shading setup
     */
-    modeSetter.setModes(root);
-    methodCategories = {
-        {"Render mode",
-         {
-             std::make_shared<MethodsRenderShades>(root, false, false, "Normal"),
-             std::make_shared<MethodsRenderShades>(root, false, true, "Smooth normal"),
-             std::make_shared<MethodsRenderShades>(root, true, false, "Wireframe"),
-         },
-         0},
-        {"Base shading", {std::make_shared<MethodsClassic>(root)}, 0},
-        {"Light/shadow space", {std::make_shared<MethodsLSStable>(root)}, 0},
-        {"Shadow filtering",
-         {
-             std::make_shared<MethodsShadowRough>(root),
-             std::make_shared<MethodsShadowBiLin>(root),
-             std::make_shared<MethodsShadowPCF>(root),
-             std::make_shared<MethodsShadowEBR>(root),
-         },
-         2},
+    VitraeCommon::setupRenderForward(root);
+    VitraeCommon::setupRenderShadow(root);
+    VitraeCommon::setupDisplayCamera(root);
+    VitraeCommon::setupShadingPhong(root);
+    VitraeCommon::setupShadowCommon(root);
+    VitraeCommon::setupShadowRough(root);
+    VitraeCommon::setupShadowPCF(root);
 
-    };
-    reapplyChoosenMethods();
+    VitraeCommon::setupAssimpPhongConvert(root);
 
     /*
     Setup window
@@ -124,100 +113,18 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     Compositor
     */
     comp.parameters.set("scene", p_scene);
-    comp.setOutput(p_windowFrame);
+    comp.parameters.set("fs_target", p_windowFrame);
 }
 
 AssetCollection::~AssetCollection() {}
 
-void AssetCollection::reapplyChoosenMethods()
-{
-    MMETER_SCOPE_PROFILER("AssetCollection::reapplyChoosenMethods");
-
-    std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenVertexMethods;
-    std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenFragMethods;
-    std::vector<dynasma::FirmPtr<Method<ShaderTask>>> choosenComputeMethods;
-    std::vector<dynasma::FirmPtr<Method<ComposeTask>>> choosenComposeMethods;
-    PropertyList desiredOutputs;
-    Vitrae::String vertName = "";
-    Vitrae::String fragName = "";
-    Vitrae::String computeName = "";
-    Vitrae::String compName = "";
-
-    for (auto &category : methodCategories) {
-        choosenVertexMethods.push_back(category.methods[category.selectedIndex]->p_vertexMethod);
-        choosenFragMethods.push_back(category.methods[category.selectedIndex]->p_fragmentMethod);
-        choosenComputeMethods.push_back(category.methods[category.selectedIndex]->p_computeMethod);
-        choosenComposeMethods.push_back(category.methods[category.selectedIndex]->p_composeMethod);
-
-        choosenVertexMethods.push_back(
-            category.methods[category.selectedIndex]->p_genericShaderMethod);
-        choosenFragMethods.push_back(
-            category.methods[category.selectedIndex]->p_genericShaderMethod);
-        choosenComputeMethods.push_back(
-            category.methods[category.selectedIndex]->p_genericShaderMethod);
-
-        if (category.methods[category.selectedIndex]->p_vertexMethod->getFriendlyName() != "") {
-            vertName += category.methods[category.selectedIndex]->p_vertexMethod->getFriendlyName();
-            vertName += "_";
-        }
-
-        if (category.methods[category.selectedIndex]->p_fragmentMethod->getFriendlyName() != "") {
-            fragName +=
-                category.methods[category.selectedIndex]->p_fragmentMethod->getFriendlyName();
-            fragName += "_";
-        }
-
-        if (category.methods[category.selectedIndex]->p_computeMethod->getFriendlyName() != "") {
-            computeName +=
-                category.methods[category.selectedIndex]->p_computeMethod->getFriendlyName();
-            computeName += "_";
-        }
-
-        if (category.methods[category.selectedIndex]->p_composeMethod->getFriendlyName() != "") {
-            compName +=
-                category.methods[category.selectedIndex]->p_composeMethod->getFriendlyName();
-            compName += "_";
-        }
-
-        desiredOutputs.merge(
-            PropertyList(category.methods[category.selectedIndex]->desiredOutputs));
-    }
-
-    auto p_aggregateVertexMethod =
-        dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-            .fallbackMethods = choosenVertexMethods, .friendlyName = vertName});
-
-    auto p_aggregateFragmentMethod =
-        dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-            .fallbackMethods = choosenFragMethods, .friendlyName = fragName});
-
-    auto p_aggregateComputeMethod =
-        dynasma::makeStandalone<Method<ShaderTask>>(Method<ShaderTask>::MethodParams{
-            .fallbackMethods = choosenComputeMethods, .friendlyName = computeName});
-
-    auto p_aggregateComposeMethod =
-        dynasma::makeStandalone<Method<ComposeTask>>(Method<ComposeTask>::MethodParams{
-            .fallbackMethods = choosenComposeMethods, .friendlyName = compName});
-
-    comp.setDefaultShadingMethod(p_aggregateVertexMethod, p_aggregateFragmentMethod);
-    comp.setDefaultComputeMethod(p_aggregateComputeMethod);
-    comp.setComposeMethod(p_aggregateComposeMethod);
-    comp.setDesiredProperties(PropertyList(desiredOutputs));
-
-    Renderer &rend = root.getComponent<Renderer>();
-    for (auto &category : methodCategories) {
-        for (auto &setupFunction : category.methods[category.selectedIndex]->setupFunctions) {
-            setupFunction(root, rend, comp.parameters);
-        }
-    }
-}
-
 void AssetCollection::render()
 {
-    if (shouldReloadPipelines) {
+    comp.compose();
+
+    if (shouldReloadPipelines)
+    {
         shouldReloadPipelines = false;
-        reapplyChoosenMethods();
         root.cleanMemoryPools(std::numeric_limits<std::size_t>::max()); // free all possible memory
     }
-    comp.compose();
 }

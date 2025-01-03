@@ -1,9 +1,11 @@
 #include "SettingsWindow.h"
+#include "Vitrae/Collections/MethodCollection.hpp"
 
 #include <QtWidgets/QColorDialog>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QPushButton>
+#include <QtWidgets/QCheckBox>
 
 #include <mutex>
 
@@ -51,26 +53,72 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
                                           glm::vec2{ui.shadowMapSize->currentText().toInt(),
                                                     ui.shadowMapSize->currentText().toInt()});
 
-    // list methods
-    for (auto &category : assetCollection.methodCategories) {
-        auto combobox = new QComboBox(ui.shading_methods_group);
+    MethodCollection &methodCollection = assetCollection.root.getComponent<MethodCollection>();
 
-        for (auto &method : category.methods) {
-            combobox->addItem(
-                QString::fromStdString(std::string(method->p_composeMethod->getFriendlyName())));
+    // List outputs
+    bool isFirst = true;
+    for (auto outputName : methodCollection.getCompositorOutputs())
+    {
+        auto p_checkbox = new QCheckBox(ui.compositor_outputs_group);
+
+        if (isFirst)
+        {
+            p_checkbox->setChecked(true);
+            m_desiredOutputs.insert_back(PropertySpec{
+                .name = outputName,
+                .typeInfo = Variant::getTypeInfo<void>(),
+            });
+            isFirst = false;
+        }
+        else
+        {
+            p_checkbox->setChecked(false);
         }
 
-        combobox->setCurrentIndex(category.selectedIndex);
-
-        connect(combobox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-                [this, &category](int index) {
-                    std::unique_lock lock1(this->m_assetCollection.accessMutex);
-                    category.selectedIndex = index;
-                    this->m_assetCollection.shouldReloadPipelines = true;
+        connect(p_checkbox, QOverload<int>::of(&QCheckBox::stateChanged),
+                [this, outputName](int state)
+                {
+                    if (state == Qt::Checked)
+                    {
+                        this->m_desiredOutputs.insert_back(PropertySpec{
+                            .name = outputName,
+                            .typeInfo = Variant::getTypeInfo<void>(),
+                        });
+                    }
+                    else
+                    {
+                        this->m_desiredOutputs.erase(outputName);
+                    }
                 });
 
-        ui.shading_methods_layout->addRow(QString::fromStdString(category.name), combobox);
+        ui.compositor_outputs_layout->addRow(QString::fromStdString(outputName), p_checkbox);
     }
+
+    // list methods
+    for (auto [target, options] : methodCollection.getPropertyOptionsMap())
+    {
+        auto p_combobox = new QComboBox(ui.shading_methods_group);
+
+        for (auto &option : options)
+        {
+            p_combobox->addItem(
+                QString::fromStdString(option));
+        }
+
+        p_combobox->setCurrentIndex(0);
+        m_toBeAliases[target] = options[0];
+
+        connect(p_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                [this, target, p_combobox](int index)
+                {
+                    this->m_toBeAliases[target] = p_combobox->itemText(index).toStdString();
+                    this->applyCompositorSettings();
+                });
+
+        ui.shading_methods_layout->addRow(QString::fromStdString(target), p_combobox);
+    }
+
+    applyCompositorSettings();
 }
 
 SettingsWindow::~SettingsWindow() {}
@@ -117,4 +165,18 @@ void SettingsWindow::updateValues()
                         m_assetCollection.p_scene->light.color_ambient.b * 255.0);
     ui.ambient_color->setPalette(
         QPalette(Qt::black, lightColor, lightColor, lightColor, lightColor, Qt::black, lightColor));
+}
+
+void SettingsWindow::applyCompositorSettings()
+{
+    std::unique_lock lock1(m_assetCollection.accessMutex);
+
+    m_assetCollection.shouldReloadPipelines = true;
+
+    // Aliases
+    PropertyAliases aliases(m_toBeAliases);
+    m_assetCollection.comp.setPropertyAliases(aliases);
+
+    // Outputs
+    m_assetCollection.comp.setDesiredProperties(m_desiredOutputs);
 }
