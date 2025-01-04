@@ -89,6 +89,7 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
                     {
                         this->m_desiredOutputs.erase(outputName);
                     }
+                    this->applyCompositorSettings();
                 });
 
         ui.compositor_outputs_layout->addRow(QString::fromStdString(outputName), p_checkbox);

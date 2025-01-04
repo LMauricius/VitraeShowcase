@@ -68,6 +68,7 @@ namespace VitraeCommon
                     },
                     .friendlyName = "Light properties",
                 });
+        methodCollection.registerComposeTask(p_extractLightProperties);
 
         // camera matrices extractor
         auto p_extractCameraProperties =
@@ -111,6 +112,7 @@ namespace VitraeCommon
                 },
                 .friendlyName = "Camera properties",
             });
+        methodCollection.registerComposeTask(p_extractCameraProperties);
 
         auto p_renderAdaptor = dynasma::makeStandalone<ComposeAdaptTasks>(
             ComposeAdaptTasks::SetupParams{.root = root,
@@ -123,9 +125,8 @@ namespace VitraeCommon
                                                Variant::getTypeInfo<void>(),
                                            }},
                                            .friendlyName = "Render shadows"});
+        methodCollection.registerComposeTask(p_renderAdaptor);
 
         methodCollection.registerCompositorOutput("camera_displayed");
-        methodCollection.registerComposeTask(p_extractLightProperties);
-        methodCollection.registerComposeTask(p_extractCameraProperties);
     }
 }

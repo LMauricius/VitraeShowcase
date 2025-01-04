@@ -20,6 +20,7 @@ namespace VitraeCommon
             {ComposeClearRender::SetupParams{.root = root,
                                              .backgroundColor = glm::vec4(0.0f, 0.5f, 0.8f, 1.0f),
                                              .outputTokenNames = {"frame_cleared"}}});
+        methodCollection.registerComposeTask(p_clear);
 
         auto p_forwardRender = root.getComponent<ComposeSceneRenderKeeper>().new_asset(
             {ComposeSceneRender::SetupParams{
@@ -29,9 +30,8 @@ namespace VitraeCommon
                 .vertexPositionOutputPropertyName = "position_view",
                 .rasterizingMode = RasterizingMode::DerivationalFillCenters,
             }});
-
-        methodCollection.registerComposeTask(p_clear);
         methodCollection.registerComposeTask(p_forwardRender);
+
         methodCollection.registerPropertyOption("scene_rendered", "scene_forward_rendered");
     }
 }
