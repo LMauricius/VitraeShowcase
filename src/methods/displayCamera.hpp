@@ -26,7 +26,7 @@ namespace VitraeCommon
                         PropertySpec{.name = "scene",
                                      .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
                         PropertySpec{.name = "fs_shadow",
-                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
+                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()},
                     }},
                     .outputSpecs = {{
                         PropertySpec{.name = "mat_shadow_view",
@@ -76,16 +76,46 @@ namespace VitraeCommon
                 .inputSpecs = {{
                     PropertySpec{
                         .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
-                    PropertySpec{
-                        .name = "fs_target", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()},
                 }},
                 .outputSpecs = {{
                     PropertySpec{.name = "mat_camera_view",
                                  .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    PropertySpec{.name = "mat_camera_proj",
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
                     PropertySpec{.name = "camera_position",
                                  .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                }},
+                .p_function =
+                    [](const RenderComposeContext &context)
+                {
+                    try
+                    {
+                        auto p_scene =
+                            context.properties.get("scene").get<dynasma::FirmPtr<Scene>>();
+
+                        context.properties.set("mat_camera_view",
+                                               p_scene->camera.getViewMatrix());
+                        context.properties.set("camera_position", p_scene->camera.position);
+                    }
+                    catch (const std::out_of_range &e)
+                    {
+                        throw;
+                    }
+                },
+                .friendlyName = "Camera properties",
+            });
+        methodCollection.registerComposeTask(p_extractCameraProperties);
+
+        // camera matrices extractor
+        auto p_extractCameraProjection =
+            dynasma::makeStandalone<ComposeFunction>(ComposeFunction::SetupParams{
+                .inputSpecs = {{
+                    PropertySpec{
+                        .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
+                    PropertySpec{
+                        .name = "fs_target", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()},
+                }},
+                .outputSpecs = {{
+                    PropertySpec{.name = "mat_camera_proj",
+                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
                 }},
                 .p_function =
                     [](const RenderComposeContext &context)
@@ -98,33 +128,32 @@ namespace VitraeCommon
                             context.properties.get("fs_target")
                                 .get<dynasma::FirmPtr<FrameStore>>();
 
-                        context.properties.set("mat_camera_view",
-                                               p_scene->camera.getViewMatrix());
                         context.properties.set(
                             "mat_camera_proj",
                             p_scene->camera.getPerspectiveMatrix(p_windowFrame->getSize().x,
                                                                  p_windowFrame->getSize().y));
-                        context.properties.set("camera_position", p_scene->camera.position);
                     }
                     catch (const std::out_of_range &e)
                     {
+                        throw;
                     }
                 },
-                .friendlyName = "Camera properties",
+                .friendlyName = "Camera projection",
             });
-        methodCollection.registerComposeTask(p_extractCameraProperties);
+        methodCollection.registerComposeTask(p_extractCameraProjection);
 
         auto p_renderAdaptor = dynasma::makeStandalone<ComposeAdaptTasks>(
             ComposeAdaptTasks::SetupParams{.root = root,
                                            .adaptorAliases = {
                                                {"camera_displayed", "scene_rendered"},
                                                {"position_view", "position_camera_view"},
+                                               {"fs_target", "fs_display"},
                                            },
                                            .desiredOutputs = {PropertySpec{
                                                "camera_displayed",
                                                Variant::getTypeInfo<void>(),
                                            }},
-                                           .friendlyName = "Render shadows"});
+                                           .friendlyName = "Render camera"});
         methodCollection.registerComposeTask(p_renderAdaptor);
 
         methodCollection.registerCompositorOutput("camera_displayed");

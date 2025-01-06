@@ -113,7 +113,8 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     Compositor
     */
     comp.parameters.set("scene", p_scene);
-    comp.parameters.set("fs_target", p_windowFrame);
+    comp.parameters.set("fs_display", p_windowFrame);
+    comp.parameters.set("vsync", false);
 }
 
 AssetCollection::~AssetCollection() {}

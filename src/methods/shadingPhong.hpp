@@ -60,11 +60,11 @@ namespace VitraeCommon
                                              Variant::getTypeInfo<glm::vec4>()},
                         },
                     .outputSpecs = {PropertySpec{
-                        .name = "position_view",
+                        .name = "position_camera_view",
                         .typeInfo =
                             StandardShaderPropertyTypes::VERTEX_OUTPUT}},
                     .snippet = R"(
-                        position_view = mat_camera_proj * mat_camera_view * position_world;
+                        position_camera_view = mat_camera_proj * mat_camera_view * position_world;
                     )"}});
         methodCollection.registerShaderTask(p_viewPosition, ShaderStageFlag::Vertex);
 
