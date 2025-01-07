@@ -12,7 +12,7 @@ namespace VitraeCommon
 {
     using namespace Vitrae;
 
-    inline void setupRenderShadow(ComponentRoot &root)
+    inline void setupRenderSilhouette(ComponentRoot &root)
     {
         MethodCollection &methodCollection = root.getComponent<MethodCollection>();
 
@@ -26,12 +26,12 @@ namespace VitraeCommon
             {ComposeSceneRender::SetupParams{
                 .root = root,
                 .inputTokenNames = {"frame_cleared"},
-                .outputTokenNames = {"scene_shadow_rendered"},
+                .outputTokenNames = {"scene_silhouette_rendered"},
                 .vertexPositionOutputPropertyName = "position_view",
                 .cullingMode = CullingMode::Frontface,
             }});
         methodCollection.registerComposeTask(p_forwardRender);
 
-        methodCollection.registerPropertyOption("scene_rendered", "scene_shadow_rendered");
+        methodCollection.registerPropertyOption("scene_rendered", "scene_silhouette_rendered");
     }
 }

@@ -1,7 +1,7 @@
 #include "assetCollection.hpp"
 
 #include "methods/renderForward.hpp"
-#include "methods/renderShadow.hpp"
+#include "methods/renderSilhouette.hpp"
 #include "methods/displayCamera.hpp"
 #include "methods/shadingPhong.hpp"
 #include "methods/shadowCommon.hpp"
@@ -38,7 +38,7 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     Shading setup
     */
     VitraeCommon::setupRenderForward(root);
-    VitraeCommon::setupRenderShadow(root);
+    VitraeCommon::setupRenderSilhouette(root);
     VitraeCommon::setupDisplayCamera(root);
     VitraeCommon::setupShadingPhong(root);
     VitraeCommon::setupShadowCommon(root);

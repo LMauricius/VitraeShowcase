@@ -50,7 +50,7 @@ namespace VitraeCommon
 
         auto p_shadowTexture = dynasma::makeStandalone<ComposeFrameToTexture>(
             ComposeFrameToTexture::SetupParams{.root = root,
-                                               .inputTokenNames = {"scene_shadow_rendered"},
+                                               .inputTokenNames = {"scene_silhouette_rendered"},
                                                .outputColorTextureName = "",
                                                .outputDepthTextureName = "tex_shadow_adapted",
                                                .size = String("ShadowMapSize"),
