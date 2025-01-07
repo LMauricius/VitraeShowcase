@@ -43,6 +43,7 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     VitraeCommon::setupShadingPhong(root);
     VitraeCommon::setupShadowCommon(root);
     VitraeCommon::setupShadowRough(root);
+    VitraeCommon::setupShadowBiLin(root);
     VitraeCommon::setupShadowPCF(root);
 
     VitraeCommon::setupAssimpPhongConvert(root);
