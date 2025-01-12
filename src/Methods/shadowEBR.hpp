@@ -35,19 +35,19 @@ struct MethodsShadowEBR : MethodCollection
             root.getComponent<ShaderSnippetKeeper>().new_asset({ShaderSnippet::StringParams{
                 .inputSpecs =
                     {
-                        PropertySpec{.name = "position_shadow_view",
+                        ParamSpec{.name = "position_shadow_view",
                                      .typeInfo =
-           StandardShaderPropertyTypes::FRAGMENT_OUTPUT}, PropertySpec{.name =
-           "normal_view", .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "ShadowMapSize",
+           StandardShaderPropertyTypes::FRAGMENT_OUTPUT}, ParamSpec{.name =
+           "normal_view", .typeInfo = TYPE_INFO<glm::vec3>},
+                        ParamSpec{.name = "ShadowMapSize",
                                      .typeInfo =
-           Variant::getTypeInfo<glm::vec2>()},
+           TYPE_INFO<glm::vec2>},
                     },
                 .outputSpecs =
                     {
-                        PropertySpec{.name = "shadow_alias",
+                        ParamSpec{.name = "shadow_alias",
                                      .typeInfo =
-           Variant::getTypeInfo<glm::vec3>()},
+           TYPE_INFO<glm::vec3>},
                     },
                 .snippet = R"(
                     void shadowAlias(
@@ -70,22 +70,22 @@ struct MethodsShadowEBR : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "position_shadow_view",
-                                         .typeInfo =
-                                             StandardShaderPropertyTypes::
-                                                 FRAGMENT_OUTPUT},
-                            PropertySpec{.name = "normal_view",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "ShadowMapSize",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec2>()},
+                            ParamSpec{.name = "position_shadow_view",
+                                      .typeInfo =
+                                          StandardShaderPropertyTypes::
+                                              FRAGMENT_OUTPUT},
+                            ParamSpec{.name = "normal_view",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "ShadowMapSize",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec2>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "normal_view2d",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec2>()},
+                            ParamSpec{.name = "normal_view2d",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec2>},
                         },
                     .snippet = R"(
                         normal_view2d = normalize(normal_view.xy);
@@ -96,24 +96,24 @@ struct MethodsShadowEBR : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "tex_shadow",
-                                         .typeInfo = Variant::getTypeInfo<
-                                             dynasma::FirmPtr<Texture>>()},
-                            PropertySpec{.name = "tex_shadow_normal",
-                                         .typeInfo = Variant::getTypeInfo<
-                                             dynasma::FirmPtr<Texture>>()},
-                            PropertySpec{.name = "position_shadow",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "ebr_strength",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<float>()},
+                            ParamSpec{.name = "tex_shadow",
+                                      .typeInfo = Variant::getTypeInfo<
+                                          dynasma::FirmPtr<Texture>>()},
+                            ParamSpec{.name = "tex_shadow_normal",
+                                      .typeInfo = Variant::getTypeInfo<
+                                          dynasma::FirmPtr<Texture>>()},
+                            ParamSpec{.name = "position_shadow",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "ebr_strength",
+                                      .typeInfo =
+                                          TYPE_INFO<float>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "light_shadow_factor",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<float>()},
+                            ParamSpec{.name = "light_shadow_factor",
+                                      .typeInfo =
+                                          TYPE_INFO<float>},
                         },
                     .snippet = R"(
                         vec2 shadowSize = textureSize(tex_shadow, 0);
@@ -184,11 +184,11 @@ struct MethodsShadowEBR : MethodCollection
                 .root = root,
                 .frameInputPropertyName = "rendered_shadow",
                 .depthTextureOutputPropertyName = "tex_shadow",
-                .outputTexturePropertySpecs =
+                .outputTextureParamSpecs =
                     {
-                        ComposeFrameToTexture::OutputTexturePropertySpec{
+                        ComposeFrameToTexture::OutputTextureParamSpec{
                             "tex_shadow_normal",
-                            PropertySpec{"normal_view2d", Variant::getTypeInfo<glm::vec2>()}},
+                            ParamSpec{"normal_view2d", TYPE_INFO<glm::vec2>}},
                     },
                 .size = String("ShadowMapSize"),
                 .channelType = Texture::ChannelType::VEC2_SNORM8,

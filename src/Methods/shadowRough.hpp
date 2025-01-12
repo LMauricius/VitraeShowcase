@@ -36,18 +36,18 @@ struct MethodsShadowRough : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "tex_shadow",
-                                         .typeInfo = Variant::getTypeInfo<
-                                             dynasma::FirmPtr<Texture>>()},
-                            PropertySpec{.name = "position_shadow",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                            ParamSpec{.name = "tex_shadow",
+                                      .typeInfo = Variant::getTypeInfo<
+                                          dynasma::FirmPtr<Texture>>()},
+                            ParamSpec{.name = "position_shadow",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "light_shadow_factor",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<float>()},
+                            ParamSpec{.name = "light_shadow_factor",
+                                      .typeInfo =
+                                          TYPE_INFO<float>},
                         },
                     .snippet = R"(
                         vec2 shadowSize = textureSize(tex_shadow, 0);

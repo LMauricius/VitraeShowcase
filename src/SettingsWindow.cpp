@@ -64,9 +64,9 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
         if (isFirst)
         {
             p_checkbox->setChecked(true);
-            m_desiredOutputs.insert_back(PropertySpec{
+            m_desiredOutputs.insert_back(ParamSpec{
                 .name = outputName,
-                .typeInfo = Variant::getTypeInfo<void>(),
+                .typeInfo = TYPE_INFO<void>,
             });
             isFirst = false;
         }
@@ -80,9 +80,9 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
                 {
                     if (state == Qt::Checked)
                     {
-                        this->m_desiredOutputs.insert_back(PropertySpec{
+                        this->m_desiredOutputs.insert_back(ParamSpec{
                             .name = outputName,
-                            .typeInfo = Variant::getTypeInfo<void>(),
+                            .typeInfo = TYPE_INFO<void>,
                         });
                     }
                     else
@@ -175,8 +175,8 @@ void SettingsWindow::applyCompositorSettings()
     m_assetCollection.shouldReloadPipelines = true;
 
     // Aliases
-    PropertyAliases aliases(m_toBeAliases);
-    m_assetCollection.comp.setPropertyAliases(aliases);
+    ParamAliases aliases(m_toBeAliases);
+    m_assetCollection.comp.setParamAliases(aliases);
 
     // Outputs
     m_assetCollection.comp.setDesiredProperties(m_desiredOutputs);

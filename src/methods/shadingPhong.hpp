@@ -6,7 +6,7 @@
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Snippet.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 
 #include "dynasma/standalone.hpp"
@@ -27,16 +27,16 @@ namespace VitraeCommon
             root.getComponent<ShaderSnippetKeeper>().new_asset(
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
-                        {PropertySpec{
+                        {ParamSpec{
                              .name = "mat_model",
                              .typeInfo =
                                  StandardShaderPropertyTypes::INPUT_MODEL},
-                         PropertySpec{
+                         ParamSpec{
                              .name = "position",
-                             .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
-                    .outputSpecs = {PropertySpec{
+                             .typeInfo = TYPE_INFO<glm::vec3>}},
+                    .outputSpecs = {ParamSpec{
                         .name = "position_world",
-                        .typeInfo = Variant::getTypeInfo<glm::vec4>()}},
+                        .typeInfo = TYPE_INFO<glm::vec4>}},
                     .snippet = R"(
                         position_world = mat_model * vec4(position, 1.0);
                     )"}});
@@ -47,19 +47,19 @@ namespace VitraeCommon
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{
+                            ParamSpec{
                                 .name = "mat_camera_view",
                                 .typeInfo =
                                     StandardShaderPropertyTypes::INPUT_VIEW},
-                            PropertySpec{.name = "mat_camera_proj",
-                                         .typeInfo =
-                                             StandardShaderPropertyTypes::
-                                                 INPUT_PROJECTION},
-                            PropertySpec{.name = "position_world",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec4>()},
+                            ParamSpec{.name = "mat_camera_proj",
+                                      .typeInfo =
+                                          StandardShaderPropertyTypes::
+                                              INPUT_PROJECTION},
+                            ParamSpec{.name = "position_world",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec4>},
                         },
-                    .outputSpecs = {PropertySpec{
+                    .outputSpecs = {ParamSpec{
                         .name = "position_camera_view",
                         .typeInfo =
                             StandardShaderPropertyTypes::VERTEX_OUTPUT}},
@@ -72,25 +72,25 @@ namespace VitraeCommon
             {ShaderSnippet::StringParams{
                 .inputSpecs =
                     {
-                        PropertySpec{
+                        ParamSpec{
                             .name = "mat_model",
                             .typeInfo =
                                 StandardShaderPropertyTypes::INPUT_MODEL},
-                        PropertySpec{
+                        ParamSpec{
                             .name = "mat_camera_view",
                             .typeInfo =
                                 StandardShaderPropertyTypes::INPUT_VIEW},
-                        PropertySpec{
+                        ParamSpec{
                             .name = "mat_camera_proj",
                             .typeInfo =
                                 StandardShaderPropertyTypes::INPUT_PROJECTION},
-                        PropertySpec{.name = "normal",
-                                     .typeInfo =
-                                         Variant::getTypeInfo<glm::vec3>()},
+                        ParamSpec{.name = "normal",
+                                  .typeInfo =
+                                      TYPE_INFO<glm::vec3>},
                     },
-                .outputSpecs = {PropertySpec{
+                .outputSpecs = {ParamSpec{
                     .name = "normal_view",
-                    .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
+                    .typeInfo = TYPE_INFO<glm::vec3>}},
                 .snippet = R"(
                     mat4 mat_viewproj = mat_camera_proj * mat_camera_view * mat_model;
                     vec4 origin_h = mat_viewproj * vec4(0.0, 0.0, 0.0, 1.0);
@@ -108,24 +108,24 @@ namespace VitraeCommon
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "normal",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_direction",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_color_primary",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_shadow_factor",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<float>()},
+                            ParamSpec{.name = "normal",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_direction",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_color_primary",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_shadow_factor",
+                                      .typeInfo =
+                                          TYPE_INFO<float>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "shade_diffuse",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                            ParamSpec{.name = "shade_diffuse",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
                         },
                     .snippet = R"(
                         shade_diffuse = max(0.0, -dot(light_direction, normal)) * light_color_primary * light_shadow_factor;
@@ -137,48 +137,48 @@ namespace VitraeCommon
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "camera_position",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "position_world",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec4>()},
-                            PropertySpec{
+                            ParamSpec{.name = "camera_position",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "position_world",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec4>},
+                            ParamSpec{
                                 .name = StandardMaterialTextureNames::SPECULAR,
-                                .typeInfo = Variant::getTypeInfo<
-                                    dynasma::FirmPtr<Texture>>()},
-                            PropertySpec{
+                                .typeInfo = TYPE_INFO<
+                                    dynasma::FirmPtr<Texture>>},
+                            ParamSpec{
                                 .name =
                                     StandardVertexBufferNames::TEXTURE_COORD,
-                                .typeInfo = Variant::getTypeInfo<glm::vec2>()},
-                            PropertySpec{
+                                .typeInfo = TYPE_INFO<glm::vec2>},
+                            ParamSpec{
                                 .name =
                                     StandardMaterialPropertyNames::COL_SPECULAR,
                                 .typeInfo = StandardMaterialPropertyTypes::
                                     COL_SPECULAR},
-                            PropertySpec{
+                            ParamSpec{
                                 .name =
                                     StandardMaterialPropertyNames::SHININESS,
                                 .typeInfo =
                                     StandardMaterialPropertyTypes::SHININESS},
-                            PropertySpec{.name = "normal",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_direction",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_color_primary",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_shadow_factor",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<float>()},
+                            ParamSpec{.name = "normal",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_direction",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_color_primary",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_shadow_factor",
+                                      .typeInfo =
+                                          TYPE_INFO<float>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "shade_specular",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                            ParamSpec{.name = "shade_specular",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
                         },
                     .snippet = R"(
                         vec4 color_specular_tot = texture(tex_specular, textureCoord0);
@@ -195,27 +195,27 @@ namespace VitraeCommon
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "shade_diffuse",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "shade_specular",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "shade_ambient",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{
+                            ParamSpec{.name = "shade_diffuse",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "shade_specular",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "shade_ambient",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{
                                 .name = StandardMaterialTextureNames::DIFFUSE,
-                                .typeInfo = Variant::getTypeInfo<
-                                    dynasma::FirmPtr<Texture>>()},
-                            PropertySpec{
+                                .typeInfo = TYPE_INFO<
+                                    dynasma::FirmPtr<Texture>>},
+                            ParamSpec{
                                 .name =
                                     StandardVertexBufferNames::TEXTURE_COORD,
-                                .typeInfo = Variant::getTypeInfo<glm::vec2>()},
+                                .typeInfo = TYPE_INFO<glm::vec2>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{
+                            ParamSpec{
                                 .name = "phong_shade",
                                 .typeInfo = StandardShaderPropertyTypes::
                                     FRAGMENT_OUTPUT},

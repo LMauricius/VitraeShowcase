@@ -31,16 +31,16 @@ struct MethodsClassic : MethodCollection
             root.getComponent<ShaderSnippetKeeper>().new_asset(
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
-                        {PropertySpec{
+                        {ParamSpec{
                              .name = StandardShaderPropertyNames::INPUT_MODEL,
                              .typeInfo =
                                  StandardShaderPropertyTypes::INPUT_MODEL},
-                         PropertySpec{
+                         ParamSpec{
                              .name = StandardVertexBufferNames::POSITION,
-                             .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
-                    .outputSpecs = {PropertySpec{
+                             .typeInfo = TYPE_INFO<glm::vec3>}},
+                    .outputSpecs = {ParamSpec{
                         .name = "position_world",
-                        .typeInfo = Variant::getTypeInfo<glm::vec4>()}},
+                        .typeInfo = TYPE_INFO<glm::vec4>}},
                     .snippet = R"(
                         position_world = mat_model * vec4(position, 1.0);
                     )"}});
@@ -50,20 +50,20 @@ struct MethodsClassic : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{
+                            ParamSpec{
                                 .name = StandardShaderPropertyNames::INPUT_VIEW,
                                 .typeInfo =
                                     StandardShaderPropertyTypes::INPUT_VIEW},
-                            PropertySpec{.name = StandardShaderPropertyNames::
-                                             INPUT_PROJECTION,
-                                         .typeInfo =
-                                             StandardShaderPropertyTypes::
-                                                 INPUT_PROJECTION},
-                            PropertySpec{.name = "position_world",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec4>()},
+                            ParamSpec{.name = StandardShaderPropertyNames::
+                                          INPUT_PROJECTION,
+                                      .typeInfo =
+                                          StandardShaderPropertyTypes::
+                                              INPUT_PROJECTION},
+                            ParamSpec{.name = "position_world",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec4>},
                         },
-                    .outputSpecs = {PropertySpec{
+                    .outputSpecs = {ParamSpec{
                         .name = "position_view",
                         .typeInfo =
                             StandardShaderPropertyTypes::VERTEX_OUTPUT}},
@@ -75,26 +75,26 @@ struct MethodsClassic : MethodCollection
             {ShaderSnippet::StringParams{
                 .inputSpecs =
                     {
-                        PropertySpec{
+                        ParamSpec{
                             .name = StandardShaderPropertyNames::INPUT_MODEL,
                             .typeInfo =
                                 StandardShaderPropertyTypes::INPUT_MODEL},
-                        PropertySpec{
+                        ParamSpec{
                             .name = StandardShaderPropertyNames::INPUT_VIEW,
                             .typeInfo =
                                 StandardShaderPropertyTypes::INPUT_VIEW},
-                        PropertySpec{
+                        ParamSpec{
                             .name =
                                 StandardShaderPropertyNames::INPUT_PROJECTION,
                             .typeInfo =
                                 StandardShaderPropertyTypes::INPUT_PROJECTION},
-                        PropertySpec{.name = StandardVertexBufferNames::NORMAL,
-                                     .typeInfo =
-                                         Variant::getTypeInfo<glm::vec3>()},
+                        ParamSpec{.name = StandardVertexBufferNames::NORMAL,
+                                  .typeInfo =
+                                      TYPE_INFO<glm::vec3>},
                     },
-                .outputSpecs = {PropertySpec{
+                .outputSpecs = {ParamSpec{
                     .name = "normal_view",
-                    .typeInfo = Variant::getTypeInfo<glm::vec3>()}},
+                    .typeInfo = TYPE_INFO<glm::vec3>}},
                 .snippet = R"(
                     mat4 mat_viewproj = mat_proj * mat_view * mat_model;
                     vec4 origin_h = mat_viewproj * vec4(0.0, 0.0, 0.0, 1.0);
@@ -116,15 +116,15 @@ struct MethodsClassic : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "light_color_ambient",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                            ParamSpec{.name = "light_color_ambient",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "shade_ambient",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                            ParamSpec{.name = "shade_ambient",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
                         },
                     .snippet = R"(
                     shade_ambient = light_color_ambient;
@@ -135,24 +135,24 @@ struct MethodsClassic : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "normal",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_direction",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_color_primary",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_shadow_factor",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<float>()},
+                            ParamSpec{.name = "normal",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_direction",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_color_primary",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_shadow_factor",
+                                      .typeInfo =
+                                          TYPE_INFO<float>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "shade_diffuse",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                            ParamSpec{.name = "shade_diffuse",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
                         },
                     .snippet = R"(
                         shade_diffuse = max(0.0, -dot(light_direction, normal)) * light_color_primary * light_shadow_factor;
@@ -163,48 +163,48 @@ struct MethodsClassic : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "camera_position",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "position_world",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec4>()},
-                            PropertySpec{
+                            ParamSpec{.name = "camera_position",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "position_world",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec4>},
+                            ParamSpec{
                                 .name = StandardMaterialTextureNames::SPECULAR,
                                 .typeInfo = Variant::getTypeInfo<
                                     dynasma::FirmPtr<Texture>>()},
-                            PropertySpec{
+                            ParamSpec{
                                 .name =
                                     StandardVertexBufferNames::TEXTURE_COORD,
-                                .typeInfo = Variant::getTypeInfo<glm::vec2>()},
-                            PropertySpec{
+                                .typeInfo = TYPE_INFO<glm::vec2>},
+                            ParamSpec{
                                 .name =
                                     StandardMaterialPropertyNames::COL_SPECULAR,
                                 .typeInfo = StandardMaterialPropertyTypes::
                                     COL_SPECULAR},
-                            PropertySpec{
+                            ParamSpec{
                                 .name =
                                     StandardMaterialPropertyNames::SHININESS,
                                 .typeInfo =
                                     StandardMaterialPropertyTypes::SHININESS},
-                            PropertySpec{.name = "normal",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_direction",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_color_primary",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "light_shadow_factor",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<float>()},
+                            ParamSpec{.name = "normal",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_direction",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_color_primary",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "light_shadow_factor",
+                                      .typeInfo =
+                                          TYPE_INFO<float>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "shade_specular",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                            ParamSpec{.name = "shade_specular",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
                         },
                     .snippet = R"(
                         vec4 color_specular_tot = texture(tex_specular, textureCoord0);
@@ -220,27 +220,27 @@ struct MethodsClassic : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "shade_diffuse",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "shade_specular",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "shade_ambient",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{
+                            ParamSpec{.name = "shade_diffuse",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "shade_specular",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "shade_ambient",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{
                                 .name = StandardMaterialTextureNames::DIFFUSE,
                                 .typeInfo = Variant::getTypeInfo<
                                     dynasma::FirmPtr<Texture>>()},
-                            PropertySpec{
+                            ParamSpec{
                                 .name =
                                     StandardVertexBufferNames::TEXTURE_COORD,
-                                .typeInfo = Variant::getTypeInfo<glm::vec2>()},
+                                .typeInfo = TYPE_INFO<glm::vec2>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{
+                            ParamSpec{
                                 .name = ShaderModePropertyNames::PHONG_SHADE,
                                 .typeInfo = StandardShaderPropertyTypes::
                                     FRAGMENT_OUTPUT},
@@ -265,15 +265,15 @@ struct MethodsClassic : MethodCollection
         // camera matrices extractor
         auto p_extractCameraProperties =
             dynasma::makeStandalone<ComposeFunction>(ComposeFunction::SetupParams{
-                .inputSpecs = {{PropertySpec{
-                    .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()}}},
+                .inputSpecs = {{ParamSpec{
+                    .name = "scene", .typeInfo = TYPE_INFO<dynasma::FirmPtr<Scene>>}}},
                 .outputSpecs = {{
-                    PropertySpec{.name = StandardShaderPropertyNames::INPUT_VIEW,
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    PropertySpec{.name = StandardShaderPropertyNames::INPUT_PROJECTION,
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    PropertySpec{.name = "camera_position",
-                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                    ParamSpec{.name = StandardShaderPropertyNames::INPUT_VIEW,
+                              .typeInfo = TYPE_INFO<glm::mat4>},
+                    ParamSpec{.name = StandardShaderPropertyNames::INPUT_PROJECTION,
+                              .typeInfo = TYPE_INFO<glm::mat4>},
+                    ParamSpec{.name = "camera_position",
+                              .typeInfo = TYPE_INFO<glm::vec3>},
                 }},
                 .p_function =
                     [](const RenderComposeContext &context)

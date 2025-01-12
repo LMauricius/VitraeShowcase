@@ -64,7 +64,7 @@ struct MethodsRenderShades : MethodCollection
                 .tasks = {p_clear, p_normalRender}, .friendlyName = name});
 
         desiredOutputs =
-            PropertyList{PropertySpec{.name = StandardCompositorOutputNames::OUTPUT,
-                                      .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}};
+            ParamList{ParamSpec{.name = StandardCompositorOutputNames::OUTPUT,
+                                .typeInfo = StandardCompositorOutputTypes::OUTPUT_TYPE}};
     }
 };

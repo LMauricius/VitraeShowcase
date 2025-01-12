@@ -23,5 +23,5 @@ class SettingsWindow : public QMainWindow
     Status &m_status;
 
     std::map<String, String> m_toBeAliases;
-    PropertyList m_desiredOutputs;
+    ParamList m_desiredOutputs;
 };

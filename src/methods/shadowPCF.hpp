@@ -4,7 +4,7 @@
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Compositing/AdaptTasks.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 
 #include "dynasma/standalone.hpp"
@@ -22,18 +22,18 @@ namespace VitraeCommon
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "tex_shadow",
-                                         .typeInfo = Variant::getTypeInfo<
-                                             dynasma::FirmPtr<Texture>>()},
-                            PropertySpec{.name = "position_shadow",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
+                            ParamSpec{.name = "tex_shadow",
+                                      .typeInfo = TYPE_INFO<
+                                          dynasma::FirmPtr<Texture>>},
+                            ParamSpec{.name = "position_shadow",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "light_shadow_factor_PCF",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<float>()},
+                            ParamSpec{.name = "light_shadow_factor_PCF",
+                                      .typeInfo =
+                                          TYPE_INFO<float>},
                         },
                     .snippet = R"(
                         const int maskSize = 2;

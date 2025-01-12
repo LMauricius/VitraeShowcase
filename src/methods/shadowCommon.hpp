@@ -5,7 +5,7 @@
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Compositing/AdaptTasks.hpp"
 #include "Vitrae/Pipelines/Compositing/FrameToTexture.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 
 #include "dynasma/standalone.hpp"
@@ -23,24 +23,24 @@ namespace VitraeCommon
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "position_world",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec4>()},
-                            PropertySpec{.name = "mat_shadow_view",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::mat4>()},
-                            PropertySpec{.name = "mat_shadow_persp",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::mat4>()},
+                            ParamSpec{.name = "position_world",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec4>},
+                            ParamSpec{.name = "mat_shadow_view",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::mat4>},
+                            ParamSpec{.name = "mat_shadow_persp",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::mat4>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "position_shadow",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "position_shadow_view",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec4>()},
+                            ParamSpec{.name = "position_shadow",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "position_shadow_view",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec4>},
                         },
                     .snippet = R"(
                         position_shadow_view = mat_shadow_persp * mat_shadow_view * position_world;
@@ -69,9 +69,9 @@ namespace VitraeCommon
                                                {"tex_shadow", "tex_shadow_adapted"},
                                            },
                                            .desiredOutputs = {
-                                               PropertySpec{
+                                               ParamSpec{
                                                    "tex_shadow",
-                                                   Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
+                                                   TYPE_INFO<dynasma::FirmPtr<Texture>>,
                                                },
                                            },
                                            .friendlyName = "Render shadows"});

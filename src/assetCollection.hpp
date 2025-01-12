@@ -2,10 +2,10 @@
 
 #include <iostream>
 
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
-#include "Vitrae/Visuals/Compositor.hpp"
+#include "Vitrae/Assets/Compositor.hpp"
 
 #include <filesystem>
 #include <mutex>

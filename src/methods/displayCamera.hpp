@@ -5,7 +5,7 @@
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Compositing/AdaptTasks.hpp"
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 
 #include "dynasma/standalone.hpp"
@@ -23,22 +23,22 @@ namespace VitraeCommon
             dynasma::makeStandalone<ComposeFunction>(
                 ComposeFunction::SetupParams{
                     .inputSpecs = {{
-                        PropertySpec{.name = "scene",
-                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
-                        PropertySpec{.name = "fs_shadow",
-                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()},
+                        ParamSpec{.name = "scene",
+                                  .typeInfo = TYPE_INFO<dynasma::FirmPtr<Scene>>},
+                        ParamSpec{.name = "fs_shadow",
+                                  .typeInfo = TYPE_INFO<dynasma::FirmPtr<FrameStore>>},
                     }},
                     .outputSpecs = {{
-                        PropertySpec{.name = "mat_shadow_view",
-                                     .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                        PropertySpec{.name = "mat_shadow_persp",
-                                     .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                        PropertySpec{.name = "light_direction",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "light_color_primary",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "light_color_ambient",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                        ParamSpec{.name = "mat_shadow_view",
+                                  .typeInfo = TYPE_INFO<glm::mat4>},
+                        ParamSpec{.name = "mat_shadow_persp",
+                                  .typeInfo = TYPE_INFO<glm::mat4>},
+                        ParamSpec{.name = "light_direction",
+                                  .typeInfo = TYPE_INFO<glm::vec3>},
+                        ParamSpec{.name = "light_color_primary",
+                                  .typeInfo = TYPE_INFO<glm::vec3>},
+                        ParamSpec{.name = "light_color_ambient",
+                                  .typeInfo = TYPE_INFO<glm::vec3>},
                     }},
                     .p_function =
                         [](const RenderComposeContext &context)
@@ -74,14 +74,14 @@ namespace VitraeCommon
         auto p_extractCameraProperties =
             dynasma::makeStandalone<ComposeFunction>(ComposeFunction::SetupParams{
                 .inputSpecs = {{
-                    PropertySpec{
-                        .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
+                    ParamSpec{
+                        .name = "scene", .typeInfo = TYPE_INFO<dynasma::FirmPtr<Scene>>},
                 }},
                 .outputSpecs = {{
-                    PropertySpec{.name = "mat_camera_view",
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                    PropertySpec{.name = "camera_position",
-                                 .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                    ParamSpec{.name = "mat_camera_view",
+                              .typeInfo = TYPE_INFO<glm::mat4>},
+                    ParamSpec{.name = "camera_position",
+                              .typeInfo = TYPE_INFO<glm::vec3>},
                 }},
                 .p_function =
                     [](const RenderComposeContext &context)
@@ -108,14 +108,14 @@ namespace VitraeCommon
         auto p_extractCameraProjection =
             dynasma::makeStandalone<ComposeFunction>(ComposeFunction::SetupParams{
                 .inputSpecs = {{
-                    PropertySpec{
-                        .name = "scene", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
-                    PropertySpec{
-                        .name = "fs_target", .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()},
+                    ParamSpec{
+                        .name = "scene", .typeInfo = TYPE_INFO<dynasma::FirmPtr<Scene>>},
+                    ParamSpec{
+                        .name = "fs_target", .typeInfo = TYPE_INFO<dynasma::FirmPtr<FrameStore>>},
                 }},
                 .outputSpecs = {{
-                    PropertySpec{.name = "mat_camera_proj",
-                                 .typeInfo = Variant::getTypeInfo<glm::mat4>()},
+                    ParamSpec{.name = "mat_camera_proj",
+                              .typeInfo = TYPE_INFO<glm::mat4>},
                 }},
                 .p_function =
                     [](const RenderComposeContext &context)
@@ -149,9 +149,9 @@ namespace VitraeCommon
                                                {"position_view", "position_camera_view"},
                                                {"fs_target", "fs_display"},
                                            },
-                                           .desiredOutputs = {PropertySpec{
+                                           .desiredOutputs = {ParamSpec{
                                                "camera_displayed",
-                                               Variant::getTypeInfo<void>(),
+                                               TYPE_INFO<void>,
                                            }},
                                            .friendlyName = "Render camera"});
         methodCollection.registerComposeTask(p_renderAdaptor);

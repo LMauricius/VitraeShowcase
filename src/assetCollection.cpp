@@ -11,7 +11,7 @@
 #include "converters/aiPhongConvert.hpp"
 
 #include "Vitrae/Assets/FrameStore.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
@@ -19,8 +19,8 @@
 #include "Vitrae/Pipelines/Shading/Snippet.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
-#include "Vitrae/Visuals/Compositor.hpp"
-#include "Vitrae/Visuals/Scene.hpp"
+#include "Vitrae/Assets/Compositor.hpp"
+#include "Vitrae/Assets/Scene.hpp"
 
 #include "dynasma/keepers/naive.hpp"
 #include "dynasma/standalone.hpp"

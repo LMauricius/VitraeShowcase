@@ -30,24 +30,24 @@ struct MethodsLSStable : MethodCollection
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            PropertySpec{.name = "position_world",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec4>()},
-                            PropertySpec{.name = "mat_shadow_view",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::mat4>()},
-                            PropertySpec{.name = "mat_shadow_persp",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::mat4>()},
+                            ParamSpec{.name = "position_world",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec4>},
+                            ParamSpec{.name = "mat_shadow_view",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::mat4>},
+                            ParamSpec{.name = "mat_shadow_persp",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::mat4>},
                         },
                     .outputSpecs =
                         {
-                            PropertySpec{.name = "position_shadow",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec3>()},
-                            PropertySpec{.name = "position_shadow_view",
-                                         .typeInfo =
-                                             Variant::getTypeInfo<glm::vec4>()},
+                            ParamSpec{.name = "position_shadow",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec3>},
+                            ParamSpec{.name = "position_shadow_view",
+                                      .typeInfo =
+                                          TYPE_INFO<glm::vec4>},
                         },
                     .snippet = R"(
                         position_shadow_view = mat_shadow_persp * mat_shadow_view * position_world;
@@ -74,20 +74,20 @@ struct MethodsLSStable : MethodCollection
             dynasma::makeStandalone<ComposeFunction>(
                 ComposeFunction::SetupParams{
                     .inputSpecs = {{
-                        PropertySpec{.name = "scene",
-                                     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
+                        ParamSpec{.name = "scene",
+                                  .typeInfo = TYPE_INFO<dynasma::FirmPtr<Scene>>},
                     }},
                     .outputSpecs = {{
-                        PropertySpec{.name = "mat_shadow_view",
-                                     .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                        PropertySpec{.name = "mat_shadow_persp",
-                                     .typeInfo = Variant::getTypeInfo<glm::mat4>()},
-                        PropertySpec{.name = "light_direction",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "light_color_primary",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
-                        PropertySpec{.name = "light_color_ambient",
-                                     .typeInfo = Variant::getTypeInfo<glm::vec3>()},
+                        ParamSpec{.name = "mat_shadow_view",
+                                  .typeInfo = TYPE_INFO<glm::mat4>},
+                        ParamSpec{.name = "mat_shadow_persp",
+                                  .typeInfo = TYPE_INFO<glm::mat4>},
+                        ParamSpec{.name = "light_direction",
+                                  .typeInfo = TYPE_INFO<glm::vec3>},
+                        ParamSpec{.name = "light_color_primary",
+                                  .typeInfo = TYPE_INFO<glm::vec3>},
+                        ParamSpec{.name = "light_color_ambient",
+                                  .typeInfo = TYPE_INFO<glm::vec3>},
                     }},
                     .p_function =
                         [](const RenderComposeContext &context)
