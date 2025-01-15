@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "Vitrae/Assets/Scene.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
