@@ -27,8 +27,28 @@ namespace VitraeCommon
                 .root = root,
                 .inputTokenNames = {"frame_cleared"},
                 .outputTokenNames = {"scene_silhouette_rendered"},
-                .vertexPositionOutputPropertyName = "position_view",
-                .cullingMode = CullingMode::Frontface,
+
+                .rasterizing = {
+                    .vertexPositionOutputPropertyName = "position_view",
+                    .cullingMode = CullingMode::Frontface,
+                },
+                .ordering = {
+                    .generateFilterAndSort = [](const Scene &scene, const RenderComposeContext &ctx) -> std::pair<ComposeSceneRender::FilterFunc, ComposeSceneRender::SortFunc>
+                    {
+                        return {
+                            [](const MeshProp &prop)
+                            {
+                                return true;
+                            },
+                            [](const MeshProp &l, const MeshProp &r)
+                            {
+                                auto p_mat_l = l.p_mesh->getMaterial().getLoaded();
+                                auto p_mat_r = r.p_mesh->getMaterial().getLoaded();
+                                return p_mat_l->getParamAliases().hash() < p_mat_r->getParamAliases().hash() || p_mat_l < p_mat_r;
+                            },
+                        };
+                    },
+                },
             }});
         methodCollection.registerComposeTask(p_forwardRender);
 
