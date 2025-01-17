@@ -65,7 +65,10 @@ namespace VitraeCommon
                 .outputTokenNames = {"scene_forward_rendered"},
                 .rasterizing = {
                     .vertexPositionOutputPropertyName = "position_view",
+                    .sourceBlending = BlendingFunction::SourceAlpha,
+                    .destinationBlending = BlendingFunction::OneMinusSourceAlpha,
                     .rasterizingMode = RasterizingMode::DerivationalFillCenters,
+                    .writeDepth = false,
                 },
                 .ordering = {
                     .generateFilterAndSort = [](const Scene &scene, const RenderComposeContext &ctx) -> std::pair<ComposeSceneRender::FilterFunc, ComposeSceneRender::SortFunc>

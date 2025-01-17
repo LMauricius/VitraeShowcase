@@ -18,11 +18,11 @@ namespace VitraeCommon
     inline bool isOpaque(const Material &mat)
     {
         auto &matProperties = mat.getProperties();
-        if (auto it_tex_diffuse = matProperties.find("diffuse"); it_tex_diffuse != matProperties.end())
+        if (auto it_tex_diffuse = matProperties.find("tex_diffuse"); it_tex_diffuse != matProperties.end())
         {
             auto p_tex_diffuse = (*it_tex_diffuse).second.get<dynasma::FirmPtr<Texture>>();
 
-            if (p_tex_diffuse->getStats().has_value() && p_tex_diffuse->getStats().value().averageColor.a < 1.0f)
+            if (p_tex_diffuse->getStats().has_value() && p_tex_diffuse->getStats().value().averageColor.a < 0.99f)
             {
                 return false;
             }
