@@ -18,5 +18,8 @@ namespace VitraeCommon
         root.addAiMaterialParamAliases(
             aiShadingMode_Phong,
             {{"shade", "phong_shade"}});
+        root.addAiMaterialParamAliases(
+            aiShadingMode_PBR_BRDF,
+            {{"shade", "phong_shade"}});
     }
 }

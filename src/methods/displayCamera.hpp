@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
@@ -108,14 +109,12 @@ namespace VitraeCommon
         auto p_extractCameraProjection =
             dynasma::makeStandalone<ComposeFunction>(ComposeFunction::SetupParams{
                 .inputSpecs = {{
-                    ParamSpec{
-                        .name = "scene", .typeInfo = TYPE_INFO<dynasma::FirmPtr<Scene>>},
-                    ParamSpec{
-                        .name = "fs_target", .typeInfo = TYPE_INFO<dynasma::FirmPtr<FrameStore>>},
+                    StandardParam::scene,
+                    StandardParam::fs_target,
                 }},
                 .outputSpecs = {{
-                    ParamSpec{.name = "mat_camera_proj",
-                              .typeInfo = TYPE_INFO<glm::mat4>},
+                    StandardParam::mat_proj,
+                    StandardParam::mat_display,
                 }},
                 .p_function =
                     [](const RenderComposeContext &context)
@@ -128,10 +127,13 @@ namespace VitraeCommon
                             context.properties.get("fs_target")
                                 .get<dynasma::FirmPtr<FrameStore>>();
 
+                        auto mat_camera_proj = p_scene->camera.getPerspectiveMatrix(p_windowFrame->getSize().x,
+                                                                                    p_windowFrame->getSize().y);
+
                         context.properties.set(
-                            "mat_camera_proj",
-                            p_scene->camera.getPerspectiveMatrix(p_windowFrame->getSize().x,
-                                                                 p_windowFrame->getSize().y));
+                            StandardParam::mat_proj.name, mat_camera_proj);
+                        context.properties.set(
+                            StandardParam::mat_display.name, mat_camera_proj * p_scene->camera.getViewMatrix());
                     }
                     catch (const std::out_of_range &e)
                     {

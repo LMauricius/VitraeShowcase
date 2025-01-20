@@ -2,7 +2,8 @@
 
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Material.hpp"
-#include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Assets/Shapes/Mesh.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Pipelines/Shading/Snippet.hpp"
@@ -27,13 +28,10 @@ namespace VitraeCommon
             root.getComponent<ShaderSnippetKeeper>().new_asset(
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
-                        {ParamSpec{
-                             .name = "mat_model",
-                             .typeInfo =
-                                 StandardShaderPropertyTypes::INPUT_MODEL},
-                         ParamSpec{
-                             .name = "position",
-                             .typeInfo = TYPE_INFO<glm::vec3>}},
+                        {
+                            StandardParam::mat_model,
+                            StandardParam::position,
+                        },
                     .outputSpecs = {ParamSpec{
                         .name = "position_world",
                         .typeInfo = TYPE_INFO<glm::vec4>}},
@@ -47,14 +45,7 @@ namespace VitraeCommon
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            ParamSpec{
-                                .name = "mat_camera_view",
-                                .typeInfo =
-                                    StandardShaderPropertyTypes::INPUT_VIEW},
-                            ParamSpec{.name = "mat_camera_proj",
-                                      .typeInfo =
-                                          StandardShaderPropertyTypes::
-                                              INPUT_PROJECTION},
+                            StandardParam::mat_display,
                             ParamSpec{.name = "position_world",
                                       .typeInfo =
                                           TYPE_INFO<glm::vec4>},
@@ -62,9 +53,9 @@ namespace VitraeCommon
                     .outputSpecs = {ParamSpec{
                         .name = "position_camera_view",
                         .typeInfo =
-                            StandardShaderPropertyTypes::VERTEX_OUTPUT}},
+                            TYPE_INFO<glm::vec4>}},
                     .snippet = R"(
-                        position_camera_view = mat_camera_proj * mat_camera_view * position_world;
+                        position_camera_view = mat_display * position_world;
                     )"}});
         methodCollection.registerShaderTask(p_viewPosition, ShaderStageFlag::Vertex);
 
@@ -72,18 +63,7 @@ namespace VitraeCommon
             {ShaderSnippet::StringParams{
                 .inputSpecs =
                     {
-                        ParamSpec{
-                            .name = "mat_model",
-                            .typeInfo =
-                                StandardShaderPropertyTypes::INPUT_MODEL},
-                        ParamSpec{
-                            .name = "mat_camera_view",
-                            .typeInfo =
-                                StandardShaderPropertyTypes::INPUT_VIEW},
-                        ParamSpec{
-                            .name = "mat_camera_proj",
-                            .typeInfo =
-                                StandardShaderPropertyTypes::INPUT_PROJECTION},
+                        StandardParam::mat_mvp,
                         ParamSpec{.name = "normal",
                                   .typeInfo =
                                       TYPE_INFO<glm::vec3>},
@@ -92,10 +72,9 @@ namespace VitraeCommon
                     .name = "normal_view",
                     .typeInfo = TYPE_INFO<glm::vec3>}},
                 .snippet = R"(
-                    mat4 mat_viewproj = mat_camera_proj * mat_camera_view * mat_model;
-                    vec4 origin_h = mat_viewproj * vec4(0.0, 0.0, 0.0, 1.0);
-                    vec4 normal_h = mat_viewproj * vec4(normal, 1.0);
-                    normal_view = normalize(mat3(mat_viewproj) * normal);
+                    vec4 origin_h = mat_mvp * vec4(0.0, 0.0, 0.0, 1.0);
+                    vec4 normal_h = mat_mvp * vec4(normal, 1.0);
+                    normal_view = normalize(mat3(mat_mvp) * normal);
                 )"}});
         methodCollection.registerShaderTask(p_viewNormal, ShaderStageFlag::Vertex);
 
@@ -217,8 +196,7 @@ namespace VitraeCommon
                         {
                             ParamSpec{
                                 .name = "phong_shade",
-                                .typeInfo = StandardShaderPropertyTypes::
-                                    FRAGMENT_OUTPUT},
+                                .typeInfo = TYPE_INFO<glm::vec4>},
                         },
                     .snippet = R"(
                         vec4 color_diffuse = texture(tex_diffuse, textureCoord0);

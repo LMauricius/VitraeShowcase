@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Vitrae/Assets/Mesh.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Texture.hpp"

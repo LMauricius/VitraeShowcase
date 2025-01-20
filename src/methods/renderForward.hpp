@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Assets/Model.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Texture.hpp"
@@ -8,6 +8,7 @@
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
+#include "Vitrae/Params/Purposes.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -36,20 +37,21 @@ namespace VitraeCommon
                 .outputTokenNames = {"scene_forward_rendered_opaque"},
                 .rasterizing = {
                     .vertexPositionOutputPropertyName = "position_view",
+                    .modelFormPurpose = Purposes::visual,
                     .rasterizingMode = RasterizingMode::DerivationalFillCenters,
                 },
                 .ordering = {
                     .generateFilterAndSort = [](const Scene &scene, const RenderComposeContext &ctx) -> std::pair<ComposeSceneRender::FilterFunc, ComposeSceneRender::SortFunc>
                     {
                         return {
-                            [](const MeshProp &prop)
+                            [](const ModelProp &prop)
                             {
-                                return isOpaque(*prop.p_mesh->getMaterial().getLoaded());
+                                return isOpaque(*prop.p_model->getMaterial().getLoaded());
                             },
-                            [](const MeshProp &l, const MeshProp &r)
+                            [](const ModelProp &l, const ModelProp &r)
                             {
-                                auto p_mat_l = l.p_mesh->getMaterial().getLoaded();
-                                auto p_mat_r = r.p_mesh->getMaterial().getLoaded();
+                                auto p_mat_l = l.p_model->getMaterial().getLoaded();
+                                auto p_mat_r = r.p_model->getMaterial().getLoaded();
                                 return p_mat_l->getParamAliases().hash() < p_mat_r->getParamAliases().hash() || p_mat_l < p_mat_r;
                             },
                         };
@@ -65,6 +67,7 @@ namespace VitraeCommon
                 .outputTokenNames = {"scene_forward_rendered"},
                 .rasterizing = {
                     .vertexPositionOutputPropertyName = "position_view",
+                    .modelFormPurpose = Purposes::visual,
                     .sourceBlending = BlendingFunction::SourceAlpha,
                     .destinationBlending = BlendingFunction::OneMinusSourceAlpha,
                     .rasterizingMode = RasterizingMode::DerivationalFillCenters,
@@ -76,11 +79,11 @@ namespace VitraeCommon
                         glm::vec3 camPos = scene.camera.position;
 
                         return {
-                            [](const MeshProp &prop)
+                            [](const ModelProp &prop)
                             {
-                                return !isOpaque(*prop.p_mesh->getMaterial().getLoaded());
+                                return !isOpaque(*prop.p_model->getMaterial().getLoaded());
                             },
-                            [camPos](const MeshProp &l, const MeshProp &r)
+                            [camPos](const ModelProp &l, const ModelProp &r)
                             {
                                 glm::vec3 lpos = l.transform.position;
                                 glm::vec3 rpos = r.transform.position;

@@ -10,6 +10,7 @@
 #include "methods/shadowPCF.hpp"
 #include "converters/aiPhongConvert.hpp"
 
+#include "Vitrae/Data/LevelOfDetail.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
@@ -105,7 +106,8 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     p_scene->camera.zNear = 0.05f;
     p_scene->camera.zFar = 1000.0f;
     p_scene->camera.rotation = glm::quatLookAt(glm::vec3(0.8, -0.5, 0), glm::vec3(0, 1, 0));
-    for (auto &prop : p_scene->meshProps) {
+    for (auto &prop : p_scene->modelProps)
+    {
         prop.transform.position = prop.transform.position * sceneScale;
         prop.transform.scale(glm::vec3(sceneScale));
     }
@@ -116,6 +118,10 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     comp.parameters.set("scene", p_scene);
     comp.parameters.set("fs_display", p_windowFrame);
     comp.parameters.set("vsync", false);
+    comp.parameters.set(StandardParam::LoDParams.name, LoDSelectionParams{
+                                                           .method = LoDSelectionMethod::FirstBelowThreshold,
+                                                           .threshold = {.minElementSize = 2},
+                                                       });
 }
 
 AssetCollection::~AssetCollection() {}
