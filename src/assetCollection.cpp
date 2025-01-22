@@ -15,6 +15,7 @@
 #include "converters/aiPhongConvert.hpp"
 #include "converters/aiPBSConvert.hpp"
 #include "generators/meshTangents.hpp"
+#include "generators/meshNormals.hpp"
 
 #include "Vitrae/Data/LevelOfDetail.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
@@ -61,6 +62,7 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     VitraeCommon::setupAssimpPBSConvert(root);
 
     VitraeCommon::setupMeshTangentGenerator(root);
+    VitraeCommon::setupMeshNormalGenerator(root);
 
     /*
     Setup window
