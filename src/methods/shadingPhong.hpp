@@ -29,23 +29,29 @@ namespace VitraeCommon
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            StandardParam::mat_model,
-                            StandardParam::position,
+                            ::StandardParam::mat_model,
+                            ::StandardParam::position,
+                            ::StandardParam::normal,
                         },
-                    .outputSpecs = {ParamSpec{
-                        .name = "position_world",
-                        .typeInfo = TYPE_INFO<glm::vec4>}},
+                    .outputSpecs = {
+                        {.name = "position_world",
+                         .typeInfo = TYPE_INFO<glm::vec4>},
+                        {.name = "normal_world",
+                         .typeInfo = TYPE_INFO<glm::vec3>},
+                    },
                     .snippet = R"(
                         position_world = mat_model * vec4(position, 1.0);
+                        normal_world = normalize(mat3(mat_model) * normal);
                     )"}});
         methodCollection.registerShaderTask(p_worldPosition, ShaderStageFlag::Vertex);
+        methodCollection.registerPropertyOption("normal_fragment", "normal_world");
 
         auto p_viewPosition =
             root.getComponent<ShaderSnippetKeeper>().new_asset(
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            StandardParam::mat_display,
+                            ::StandardParam::mat_display,
                             ParamSpec{.name = "position_world",
                                       .typeInfo =
                                           TYPE_INFO<glm::vec4>},
@@ -63,7 +69,7 @@ namespace VitraeCommon
             {ShaderSnippet::StringParams{
                 .inputSpecs =
                     {
-                        StandardParam::mat_mvp,
+                        ::StandardParam::mat_mvp,
                         ParamSpec{.name = "normal",
                                   .typeInfo =
                                       TYPE_INFO<glm::vec3>},
@@ -81,13 +87,32 @@ namespace VitraeCommon
         /*
         FRAGMENT/GENERIC SHADING
         */
+        auto p_normalizedNormal =
+            root.getComponent<ShaderSnippetKeeper>().new_asset(
+                {ShaderSnippet::StringParams{
+                    .inputSpecs =
+                        {
+                            {.name = "normal_fragment",
+                             .typeInfo =
+                                 TYPE_INFO<glm::vec3>},
+                        },
+                    .outputSpecs =
+                        {
+                            {.name = "normal_fragment_normalized",
+                             .typeInfo =
+                                 TYPE_INFO<glm::vec3>},
+                        },
+                    .snippet = R"(
+                        normal_fragment_normalized = normalize(normal_fragment);
+                    )"}});
+        methodCollection.registerShaderTask(p_normalizedNormal, ShaderStageFlag::Fragment | ShaderStageFlag::Compute);
 
         auto p_shadeDiffuse =
             root.getComponent<ShaderSnippetKeeper>().new_asset(
                 {ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            ParamSpec{.name = "normal",
+                            ParamSpec{.name = "normal_fragment_normalized",
                                       .typeInfo =
                                           TYPE_INFO<glm::vec3>},
                             ParamSpec{.name = "light_direction",
@@ -107,7 +132,7 @@ namespace VitraeCommon
                                           TYPE_INFO<glm::vec3>},
                         },
                     .snippet = R"(
-                        shade_diffuse = max(0.0, -dot(light_direction, normal)) * light_color_primary * light_shadow_factor;
+                        shade_diffuse = max(0.0, -dot(light_direction, normal_fragment_normalized)) * light_color_primary * light_shadow_factor;
                     )"}});
         methodCollection.registerShaderTask(p_shadeDiffuse, ShaderStageFlag::Fragment | ShaderStageFlag::Compute);
 
@@ -140,7 +165,7 @@ namespace VitraeCommon
                                     StandardMaterialPropertyNames::SHININESS,
                                 .typeInfo =
                                     StandardMaterialPropertyTypes::SHININESS},
-                            ParamSpec{.name = "normal",
+                            ParamSpec{.name = "normal_fragment_normalized",
                                       .typeInfo =
                                           TYPE_INFO<glm::vec3>},
                             ParamSpec{.name = "light_direction",
@@ -162,7 +187,7 @@ namespace VitraeCommon
                     .snippet = R"(
                         vec4 color_specular_tot = texture(tex_specular, textureCoord0);
                         vec3 dirToEye = normalize(camera_position - position_world.xyz);
-                        vec3 reflRay = 2 * dot(-light_direction, normal) * normal + light_direction;
+                        vec3 reflRay = 2 * dot(-light_direction, normal_fragment_normalized) * normal_fragment_normalized + light_direction;
                         shade_specular =
                             pow(max(dot(reflRay, dirToEye), 0.001), shininess) * light_shadow_factor *
                             color_specular_tot.rgb * light_color_primary;

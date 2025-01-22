@@ -8,6 +8,7 @@
 #include "methods/shadowRough.hpp"
 #include "methods/shadowBiLin.hpp"
 #include "methods/shadowPCF.hpp"
+#include "methods/effectNormalMaps.hpp"
 #include "converters/aiPhongConvert.hpp"
 #include "generators/meshTangents.hpp"
 
@@ -47,6 +48,7 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     VitraeCommon::setupShadowRough(root);
     VitraeCommon::setupShadowBiLin(root);
     VitraeCommon::setupShadowPCF(root);
+    VitraeCommon::setupEffectNormalMaps(root);
 
     VitraeCommon::setupAssimpPhongConvert(root);
 

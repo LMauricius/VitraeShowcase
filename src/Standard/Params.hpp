@@ -14,6 +14,7 @@ namespace VitraeCommon
      */
     namespace StandardParam
     {
+        using namespace Vitrae::StandardParam;
 
         // clang-format off
 
