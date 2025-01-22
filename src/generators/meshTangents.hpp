@@ -102,7 +102,11 @@ namespace VitraeCommon
     inline void setupMeshTangentGenerator(ComponentRoot &root)
     {
         MeshGeneratorCollection &meshGenerators = root.getComponent<MeshGeneratorCollection>();
+        Renderer &renderer = root.getComponent<Renderer>();
 
         meshGenerators.registerGeneratorForComponents({{StandardParam::tangent.name, StandardParam::bitangent.name}}, generateMeshTangents);
+
+        renderer.specifyVertexBuffer(StandardParam::tangent);
+        renderer.specifyVertexBuffer(StandardParam::bitangent);
     }
 }
