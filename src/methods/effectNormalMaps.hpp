@@ -64,7 +64,7 @@ namespace VitraeCommon
                              .typeInfo = TYPE_INFO<glm::vec3>},
                             {.name = "tex_normal",
                              .typeInfo = TYPE_INFO<dynasma::FirmPtr<Texture>>},
-                            {.name = "texcoord0",
+                            {.name = "textureCoord0",
                              .typeInfo = TYPE_INFO<glm::vec2>},
                         },
                     .outputSpecs =
@@ -74,7 +74,7 @@ namespace VitraeCommon
                                           TYPE_INFO<glm::vec3>},
                         },
                     .snippet = R"(
-                        vec3 sample_normal = texture(tex_normal, texcoord0).xyz;
+                        vec3 sample_normal = texture(tex_normal, textureCoord0).xyz * 2.0 - 1.0;
                         normal_worldPixelMapped = sample_normal.x * tangent_world +
                                                   sample_normal.y * bitangent_world +
                                                   sample_normal.z * normal_world;

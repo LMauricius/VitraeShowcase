@@ -7,6 +7,7 @@
 #include "Vitrae/Assets/BufferUtil/SubPtr.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MeshGenerator.hpp"
+#include "Vitrae/Renderer.hpp"
 
 #include "dynasma/standalone.hpp"
 
@@ -17,7 +18,7 @@ namespace VitraeCommon
     inline StableMap<StringId, SharedSubBufferVariantPtr> generateMeshTangents(ComponentRoot &root, Mesh &mesh)
     {
         // ensure the dependency components are loaded
-        mesh.prepareComponents(ParamList{::StandardParam::position, ::StandardParam::normal, ::StandardParam::texcoord0});
+        mesh.prepareComponents(ParamList{::StandardParam::position, ::StandardParam::normal, ::StandardParam::textureCoord0});
 
         // Extract existing data
         std::span<const Triangle> triangles = mesh.getTriangles();
@@ -25,8 +26,8 @@ namespace VitraeCommon
             positions = mesh.getVertexComponentData<glm::vec3>(::StandardParam::position.name);
         StridedSpan<const glm::vec3>
             normals = mesh.getVertexComponentData<glm::vec3>(::StandardParam::normal.name);
-        StridedSpan<const glm::vec2>
-            texcoords = mesh.getVertexComponentData<glm::vec2>(::StandardParam::texcoord0.name);
+        StridedSpan<const glm::vec3>
+            texcoords = mesh.getVertexComponentData<glm::vec3>(::StandardParam::textureCoord0.name);
 
         // Create buffers
         auto [p_tangentBuf, p_bitangentBuf] = makeBufferInterleaved<glm::vec3, glm::vec3>(
