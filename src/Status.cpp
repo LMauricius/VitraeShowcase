@@ -33,7 +33,11 @@ void Status::update(std::chrono::duration<float> lastFrameDuration)
         aggregateTree.merge(*MMeter::getThreadLocalTreePtr());
         MMeter::getThreadLocalTreePtr()->reset();
 
-        ss << "Total:" << std::endl << aggregateTree;
+        ss << "Total:" << std::endl
+           << aggregateTree;
+
+        ss << "\nTotal flat:" << std::endl
+           << aggregateTree.totalsByDurationStr();
 
         mmeterMetrics = ss.str();
     }
