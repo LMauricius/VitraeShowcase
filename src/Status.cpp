@@ -36,8 +36,9 @@ void Status::update(std::chrono::duration<float> lastFrameDuration)
         ss << "Total:" << std::endl
            << aggregateTree;
 
-        ss << "\nTotal flat:" << std::endl
-           << aggregateTree.totalsByDurationStr();
+        ss << "Total flat:" << std::endl
+           << aggregateTree.totalsByDurationStr() << "\n\n\n"
+           << std::endl;
 
         mmeterMetrics = ss.str();
     }

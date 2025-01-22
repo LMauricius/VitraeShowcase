@@ -22,5 +22,6 @@ void ProfilerWindow::updateValues()
 {
     int pos = ui.profilerMetrics->verticalScrollBar()->value();
     ui.profilerMetrics->setText(QString::fromStdString(m_status.mmeterMetrics));
+    ui.profilerMetrics->setMaximumHeight(5000000);
     ui.profilerMetrics->verticalScrollBar()->setValue(pos);
 }
