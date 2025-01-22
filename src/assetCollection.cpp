@@ -3,7 +3,9 @@
 #include "methods/renderForward.hpp"
 #include "methods/renderSilhouette.hpp"
 #include "methods/displayCamera.hpp"
+#include "methods/shadingTransform.hpp"
 #include "methods/shadingPhong.hpp"
+#include "methods/shadingPBS.hpp"
 #include "methods/shadowCommon.hpp"
 #include "methods/shadowRough.hpp"
 #include "methods/shadowBiLin.hpp"
@@ -11,6 +13,7 @@
 #include "methods/effectNormalMaps.hpp"
 #include "methods/displayNormals.hpp"
 #include "converters/aiPhongConvert.hpp"
+#include "converters/aiPBSConvert.hpp"
 #include "generators/meshTangents.hpp"
 
 #include "Vitrae/Data/LevelOfDetail.hpp"
@@ -44,7 +47,9 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     VitraeCommon::setupRenderForward(root);
     VitraeCommon::setupRenderSilhouette(root);
     VitraeCommon::setupDisplayCamera(root);
+    VitraeCommon::setupSshadingTransform(root);
     VitraeCommon::setupShadingPhong(root);
+    VitraeCommon::setupShadingPBS(root);
     VitraeCommon::setupShadowCommon(root);
     VitraeCommon::setupShadowRough(root);
     VitraeCommon::setupShadowBiLin(root);
@@ -53,6 +58,7 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     VitraeCommon::setupDisplayNormals(root);
 
     VitraeCommon::setupAssimpPhongConvert(root);
+    VitraeCommon::setupAssimpPBSConvert(root);
 
     VitraeCommon::setupMeshTangentGenerator(root);
 
