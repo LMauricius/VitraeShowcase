@@ -9,6 +9,7 @@
 #include "methods/shadowBiLin.hpp"
 #include "methods/shadowPCF.hpp"
 #include "converters/aiPhongConvert.hpp"
+#include "generators/meshTangents.hpp"
 
 #include "Vitrae/Data/LevelOfDetail.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
@@ -48,6 +49,8 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     VitraeCommon::setupShadowPCF(root);
 
     VitraeCommon::setupAssimpPhongConvert(root);
+
+    VitraeCommon::setupMeshTangentGenerator(root);
 
     /*
     Setup window
