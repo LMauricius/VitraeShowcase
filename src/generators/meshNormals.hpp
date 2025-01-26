@@ -44,6 +44,10 @@ namespace VitraeCommon
             std::size_t i1 = tri.ind[1];
             std::size_t i2 = tri.ind[2];
 
+            if (i0 >= positions.size() || i1 >= positions.size() || i2 >= positions.size()) {
+                continue;
+            }
+
             const glm::vec3 &p0 = positions[i0];
             const glm::vec3 &p1 = positions[i1];
             const glm::vec3 &p2 = positions[i2];

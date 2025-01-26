@@ -18,12 +18,16 @@ namespace VitraeCommon
 
 using namespace Vitrae;
 
-DetailFormVector generateModelSilhouette(ComponentRoot &root, const Model &model)
+inline DetailFormVector generateModelSilhouette(ComponentRoot &root, const Model &model)
 {
     DetailFormSpan visualForms = model.getFormsWithPurpose(Purposes::visual);
 
     DetailFormVector silhouetteForms;
     silhouetteForms.reserve(visualForms.size());
+
+    for (auto [p_LoDMeasure, p_shape] : visualForms) {
+        silhouetteForms.push_back({p_LoDMeasure, p_shape});
+    }
 
     for (auto [p_LoDMeasure, p_shape] : visualForms) {
         auto p_loaded = p_shape.getLoaded();
@@ -46,6 +50,9 @@ DetailFormVector generateModelSilhouette(ComponentRoot &root, const Model &model
             std::uint32_t sepInd = 0;
             for (const Triangle &tri : p_mesh->getTriangles()) {
                 for (std::size_t i = 0; i < 3; ++i) {
+                    if (tri.ind[i] >= positions.size()) {
+                        continue;
+                    }
                     silEntries.push_back(PositionWOrigin{positions[tri.ind[i]], sepInd});
                     ++sepInd;
                 }
@@ -66,6 +73,7 @@ DetailFormVector generateModelSilhouette(ComponentRoot &root, const Model &model
                       });
             std::uint32_t newInd = 0;
             silIndices[0] = 0;
+            silIndices[silEntries[0].origin] = 0;
             for (std::size_t entryI = 1; entryI < silEntries.size(); ++entryI) {
                 if (silEntries[entryI].position != silEntries[newInd].position) {
                     ++newInd;
@@ -75,6 +83,7 @@ DetailFormVector generateModelSilhouette(ComponentRoot &root, const Model &model
                 }
                 silIndices[silEntries[entryI].origin] = newInd;
             }
+            newInd++;
 
             auto buf_silPositions = makeBuffer<void, glm::vec3>(
                 root, BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW, newInd,
@@ -84,6 +93,8 @@ DetailFormVector generateModelSilhouette(ComponentRoot &root, const Model &model
             for (std::size_t i = 0; i < newInd; ++i) {
                 silPositions[i] = silEntries[i].position;
             }
+
+            // silhouetteForms.emplace_back(p_LoDMeasure, p_shape);
 
             silhouetteForms.emplace_back(
                 p_LoDMeasure,

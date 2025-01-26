@@ -28,28 +28,30 @@ namespace VitraeCommon
                 .inputTokenNames = {"frame_cleared"},
                 .outputTokenNames = {"scene_silhouette_rendered"},
 
-                .rasterizing = {
-                    .vertexPositionOutputPropertyName = "position_view",
-                    .modelFormPurpose = Purposes::visual,
-                    .cullingMode = CullingMode::Frontface,
-                },
-                .ordering = {
-                    .generateFilterAndSort = [](const Scene &scene, const RenderComposeContext &ctx) -> std::pair<ComposeSceneRender::FilterFunc, ComposeSceneRender::SortFunc>
+                .rasterizing =
                     {
-                        return {
-                            [](const ModelProp &prop)
-                            {
-                                return true;
-                            },
-                            [](const ModelProp &l, const ModelProp &r)
-                            {
-                                auto p_mat_l = l.p_model->getMaterial().getLoaded();
-                                auto p_mat_r = r.p_model->getMaterial().getLoaded();
-                                return p_mat_l->getParamAliases().hash() < p_mat_r->getParamAliases().hash() || p_mat_l < p_mat_r;
-                            },
-                        };
+                        .vertexPositionOutputPropertyName = "position_view",
+                        .modelFormPurpose = Purposes::silhouetting,
+                        .cullingMode = CullingMode::Frontface,
                     },
-                },
+                .ordering =
+                    {
+                        .generateFilterAndSort = [](const Scene &scene,
+                                                    const RenderComposeContext &ctx)
+                            -> std::pair<ComposeSceneRender::FilterFunc,
+                                         ComposeSceneRender::SortFunc> {
+                            return {
+                                [](const ModelProp &prop) { return true; },
+                                [](const ModelProp &l, const ModelProp &r) {
+                                    auto p_mat_l = l.p_model->getMaterial().getLoaded();
+                                    auto p_mat_r = r.p_model->getMaterial().getLoaded();
+                                    return p_mat_l->getParamAliases().hash() <
+                                               p_mat_r->getParamAliases().hash() ||
+                                           p_mat_l < p_mat_r;
+                                },
+                            };
+                        },
+                    },
             }});
         methodCollection.registerComposeTask(p_forwardRender);
 
