@@ -22,47 +22,29 @@ namespace VitraeCommon
     {
         MethodCollection &methodCollection = root.getComponent<MethodCollection>();
 
-        auto p_shade =
-            root.getComponent<ShaderSnippetKeeper>().new_asset(
-                {ShaderSnippet::StringParams{
+        methodCollection.registerShaderTask(
+            root.getComponent<ShaderSnippetKeeper>().new_asset({
+                ShaderSnippet::StringParams{
                     .inputSpecs =
                         {
-                            ParamSpec{.name = "camera_position",
-                                      .typeInfo =
-                                          TYPE_INFO<glm::vec3>},
-                            ParamSpec{.name = "position_world",
-                                      .typeInfo =
-                                          TYPE_INFO<glm::vec4>},
+                            {"camera_position", TYPE_INFO<glm::vec3>},
+                            {"position_world", TYPE_INFO<glm::vec4>},
                             StandardParam::tex_base,
                             StandardParam::textureCoord0,
                             StandardParam::tex_metalness,
                             StandardParam::tex_smoothness,
-                            ParamSpec{.name = "shade_ambient",
-                                      .typeInfo =
-                                          TYPE_INFO<glm::vec3>},
-                            ParamSpec{.name = "normal_fragment_normalized",
-                                      .typeInfo =
-                                          TYPE_INFO<glm::vec3>},
-                            ParamSpec{.name = "light_direction",
-                                      .typeInfo =
-                                          TYPE_INFO<glm::vec3>},
-                            ParamSpec{.name = "light_color_primary",
-                                      .typeInfo =
-                                          TYPE_INFO<glm::vec3>},
-                            ParamSpec{.name = "light_shadow_factor",
-                                      .typeInfo =
-                                          TYPE_INFO<float>},
-                            ParamSpec{.name = "light_shadow_factor",
-                                      .typeInfo =
-                                          TYPE_INFO<float>},
+                            {"shade_ambient", TYPE_INFO<glm::vec3>},
+                            {"normal_fragment_normalized", TYPE_INFO<glm::vec3>},
+                            {"light_direction", TYPE_INFO<glm::vec3>},
+                            {"light_color_primary", TYPE_INFO<glm::vec3>},
+                            {"light_shadow_factor", TYPE_INFO<float>},
+                            {"light_shadow_factor", TYPE_INFO<float>},
                         },
                     .outputSpecs =
                         {
-                            ParamSpec{.name = "pbs_shade",
-                                      .typeInfo =
-                                          TYPE_INFO<glm::vec4>},
+                            {"pbs_shade", TYPE_INFO<glm::vec4>},
                         },
-                    .snippet = R"(
+                    .snippet = R"glsl(
                         vec3 sample_base = texture(tex_base, textureCoord0).rgb;
                         float sample_metalness = texture(tex_metalness, textureCoord0).g;
                         float sample_smoothness = texture(tex_smoothness, textureCoord0).g;
@@ -79,8 +61,10 @@ namespace VitraeCommon
                         pbs_shade =
                             pow(max(dot(reflRay, dirToEye), 0.001), -log(1.0-sample_smoothness)) * light_shadow_factor *
                             sample_base.rgb * light_color_primary;
-                )"}});
-        methodCollection.registerShaderTask(p_shade, ShaderStageFlag::Fragment | ShaderStageFlag::Compute);
+                    )glsl",
+                },
+            }),
+            ShaderStageFlag::Fragment | ShaderStageFlag::Compute);
 
         methodCollection.registerPropertyOption("shade", "pbs_shade");
     }
