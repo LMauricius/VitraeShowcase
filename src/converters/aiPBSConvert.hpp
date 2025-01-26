@@ -1,11 +1,13 @@
 #pragma once
 
-#include "Vitrae/Assets/FrameStore.hpp"
-#include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
-#include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
-#include "Vitrae/Pipelines/Compositing/AdaptTasks.hpp"
+#include "../Standard/Params.hpp"
+
+#include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
+#include "Vitrae/Pipelines/Compositing/AdaptTasks.hpp"
+#include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
+#include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
 
 #include "dynasma/standalone.hpp"
 

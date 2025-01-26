@@ -3,6 +3,7 @@
 #include "Vitrae/Data/LevelOfDetail.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Params/ParamSpec.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "dynasma/pointer.hpp"
 
 namespace VitraeCommon
