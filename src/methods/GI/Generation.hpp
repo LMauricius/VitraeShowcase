@@ -3,14 +3,17 @@
 #include "Probe.hpp"
 
 #include "Vitrae/Assets/Scene.hpp"
+#include "Vitrae/Containers/StridedSpan.hpp"
+#include "Vitrae/Data/GraphicPrimitives.hpp"
 
 namespace GI
 {
+using namespace Vitrae;
 
 extern const char *const GLSL_PROBE_GEN_SNIPPET;
 
-float getSamplingWeight(const Triangle &tri, std::span<const glm::vec3> vertexPositions);
-float getSamplingWeight(const MeshProp &prop);
+float getSamplingWeight(const Triangle &tri, StridedSpan<const glm::vec3> vertexPositions);
+float getSamplingWeight(const ModelProp &prop);
 
 struct Sample
 {
