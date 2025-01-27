@@ -58,7 +58,7 @@ inline void setupGI(ComponentRoot &root)
                     {"giWorldSize", TYPE_INFO<glm::vec3>},
                     {"giGridSize", TYPE_INFO<glm::uvec3>},
                     {"position_world", TYPE_INFO<glm::vec4>},
-                    {"normal", TYPE_INFO<glm::vec3>},
+                    {"normal_fragment_normalized", TYPE_INFO<glm::vec3>},
                     {"updated_probes", TYPE_INFO<void>},
                 },
             .outputSpecs =
@@ -75,8 +75,8 @@ inline void setupGI(ComponentRoot &root)
                 vec3 probeSize = gpuProbes[ind].size.xyz;//(giWorldSize / vec3(giGridSize));
                 vec3 probePos = gpuProbes[ind].position.xyz;//giWorldStart + (vec3(gridPos) + 0.5) * probeSize;
 
-                bvec3 normalIsNeg = lessThan(normal, vec3(0.0));
-                vec3 absNormal = abs(normal);
+                bvec3 normalIsNeg = lessThan(normal_fragment_normalized, vec3(0.0));
+                vec3 absNormal = abs(normal_fragment_normalized);
 
                 shade_gi_ambient = 
                     gpuProbeStates[ind].illumination[
@@ -138,9 +138,9 @@ inline void setupGI(ComponentRoot &root)
                         gpuReflectionTransfers[probeIndex].face[reflFaceIndex]
                     );
                 }
-
+            
                 // if camera is inside probe, glow
-                if (all(lessThan(abs(camera_position - probePos), probeSize * 0.5))) {
+                if (all(lessThan(abs(camera_position - probePos), probeSize * 0.5)) && faceIndex == 0) {
                     gpuProbeStates[probeIndex].illumination[faceIndex] += vec4(5.0);
                 } else {
                 }
@@ -155,7 +155,7 @@ inline void setupGI(ComponentRoot &root)
                         );
                     }
                 }
-
+            
                 uvec3 gridPos = uvec3(
                     probeIndex / giGridSize.y / giGridSize.z,
                     (probeIndex / giGridSize.z) % giGridSize.y,
