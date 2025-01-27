@@ -1,5 +1,12 @@
 #include "Generation.hpp"
 
+#include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Assets/Model.hpp"
+#include "Vitrae/Assets/Shapes/Mesh.hpp"
+#include "Vitrae/Assets/Texture.hpp"
+#include "Vitrae/Params/Purposes.hpp"
+#include "Vitrae/Params/Standard.hpp"
+
 #include "MMeter.h"
 
 #include <random>
@@ -56,7 +63,7 @@ float factorTo(const H_ProbeDefinition &srcProbe, const H_ProbeDefinition &dstPr
 
 } // namespace
 
-const char *const GLSL_PROBE_GEN_SNIPPET = R"(
+const char *const GLSL_PROBE_GEN_SNIPPET = R"glsl(
 const float PI2 = 3.14159265 * 2.0;
 const float LIGHT_ARC_COVERAGE = PI2 / 4;
 
@@ -66,11 +73,11 @@ float factorTo(uint srcProbeindex, uint dstProbeindex, uint srcDirIndex, uint ds
     // Since the total leaving amounts get normalized,
     // the shared scalings (such as pi^2 constants) get nullified.
 
-    vec3 srcCenter = buffer_gpuProbes.elements[srcProbeindex].position;
-    vec3 wallCenter = buffer_gpuProbes.elements[dstProbeindex].position + DIRECTIONS[dstDirIndex] * buffer_gpuProbes.elements[dstProbeindex].size / 2.0f;
+    vec3 srcCenter = gpuProbes[srcProbeindex].position;
+    vec3 wallCenter = gpuProbes[dstProbeindex].position + DIRECTIONS[dstDirIndex] * gpuProbes[dstProbeindex].size / 2.0f;
     float wallSize = 1.0;
     {
-        vec3 wallDiag = (vec3(1.0) - abs(DIRECTIONS[dstDirIndex])) * buffer_gpuProbes.elements[dstProbeindex].size;
+        vec3 wallDiag = (vec3(1.0) - abs(DIRECTIONS[dstDirIndex])) * gpuProbes[dstProbeindex].size;
         vec3 wallDiagNon0 = wallDiag + abs(DIRECTIONS[dstDirIndex]);
         wallSize = wallDiagNon0.x * wallDiagNon0.y * wallDiagNon0.z;
     }
@@ -97,9 +104,9 @@ float factorTo(uint srcProbeindex, uint dstProbeindex, uint srcDirIndex, uint ds
 
     return visibleAmount * wallAngularSurface;
 }
-)";
+)glsl";
 
-float getSamplingWeight(const Triangle &tri, std::span<const glm::vec3> vertexPositions)
+float getSamplingWeight(const Triangle &tri, StridedSpan<const glm::vec3> vertexPositions)
 {
     // just return the surface area of the triangle
     // note: actually return double the surface, to avoid dividing by 2
@@ -111,9 +118,9 @@ float getSamplingWeight(const Triangle &tri, std::span<const glm::vec3> vertexPo
     return surf2;
 }
 
-float getSamplingWeight(const MeshProp &prop)
+float getSamplingWeight(const ModelProp &prop)
 {
-    BoundingBox aabb = transformed(prop.transform.getModelMatrix(), prop.p_mesh->getBoundingBox());
+    BoundingBox aabb = transformed(prop.transform.getModelMatrix(), prop.p_model->getBoundingBox());
 
     // based on the surface of the AABB
     float halfSurf = aabb.getExtent().x * aabb.getExtent().y +
@@ -128,64 +135,81 @@ void prepareScene(const Scene &scene, SamplingScene &smpScene, std::size_t &stat
 {
     MMETER_SCOPE_PROFILER("GI::prepareScene");
 
+    Vitrae::LoDSelectionParams lodParams{
+        .method = LoDSelectionMethod::Maximum,
+        .threshold =
+            {
+                .minElementSize = 1,
+            },
+    };
+    LoDContext lodCtx{.closestPointScaling = 1.0f};
+
     double accMeshWeight = 0.0f;
     std::vector<SamplingMesh> denormMeshes;
 
-    for (auto &prop : scene.meshProps) {
-        auto positions = prop.p_mesh->getVertexElements<glm::vec3>("position");
-        auto normals = prop.p_mesh->getVertexElements<glm::vec3>("normal");
-        glm::vec4 color = prop.p_mesh->getMaterial()
-                              .getLoaded()
-                              ->getTextures()[StandardMaterialTextureNames::DIFFUSE]
-                              ->getStats()
-                              .value()
-                              .averageColor;
+    for (auto &prop : scene.modelProps) {
+        auto p_mesh = dynamic_cast<const Mesh *>(
+            &*prop.p_model->getBestForm(Purposes::visual, lodParams, lodCtx).getLoaded());
 
-        // mesh offset
-        denormMeshes.emplace_back();
-        denormMeshes.back().relativeSampleOffset = accMeshWeight; // will be divided later
-        double meshWeight = getSamplingWeight(prop);
-        if (meshWeight > 0.0) {
-            denormMeshes.back().relativeWeight = meshWeight; // will be divided later
-            accMeshWeight += meshWeight;
+        if (p_mesh) {
+            auto positions = p_mesh->getVertexComponentData<glm::vec3>("position");
+            auto normals = p_mesh->getVertexComponentData<glm::vec3>("normal");
+            glm::vec4 color = prop.p_model->getMaterial()
+                                  .getLoaded()
+                                  ->getProperties()
+                                  .at(StandardMaterialTextureNames::DIFFUSE)
+                                  .get<dynasma::FirmPtr<Texture>>()
+                                  ->getStats()
+                                  .value()
+                                  .averageColor;
 
-            // triangles
-            double accTriWeight = 0.0f;
-            std::vector<std::pair<double, SamplingTriangle>> denormTris;
-            for (auto &tri : prop.p_mesh->getTriangles()) {
-                double triWeight = getSamplingWeight(tri, positions);
-                if (triWeight > 0.0 && (tri.ind[0] != tri.ind[1] && tri.ind[0] != tri.ind[2] &&
-                                        tri.ind[1] != tri.ind[2])) {
-                    denormTris.push_back(
-                        {accTriWeight, SamplingTriangle{.ind = {tri.ind[0], tri.ind[1], tri.ind[2]},
-                                                        .relativeWeight = triWeight}});
-                    accTriWeight += triWeight;
-                } else {
-                    ++statNumNullTris;
+            // mesh offset
+            denormMeshes.emplace_back();
+            denormMeshes.back().relativeSampleOffset = accMeshWeight; // will be divided later
+            double meshWeight = getSamplingWeight(prop);
+            if (meshWeight > 0.0) {
+                denormMeshes.back().relativeWeight = meshWeight; // will be divided later
+                accMeshWeight += meshWeight;
+
+                // triangles
+                double accTriWeight = 0.0f;
+                std::vector<std::pair<double, SamplingTriangle>> denormTris;
+                for (auto &tri : p_mesh->getTriangles()) {
+                    double triWeight = getSamplingWeight(tri, positions);
+                    if (triWeight > 0.0 && (tri.ind[0] != tri.ind[1] && tri.ind[0] != tri.ind[2] &&
+                                            tri.ind[1] != tri.ind[2])) {
+                        denormTris.push_back(
+                            {accTriWeight,
+                             SamplingTriangle{.ind = {tri.ind[0], tri.ind[1], tri.ind[2]},
+                                              .relativeWeight = triWeight}});
+                        accTriWeight += triWeight;
+                    } else {
+                        ++statNumNullTris;
+                    }
                 }
-            }
 
-            std::map<double, SamplingTriangle> normTrisMap;
-            for (auto &[offset, tri] : denormTris) {
-                tri.relativeWeight /= accTriWeight;
-                normTrisMap.emplace(offset / accTriWeight, tri);
-            }
-            denormMeshes.back().triangles =
-                StableMap<double, SamplingTriangle>(std::move(normTrisMap));
+                std::map<double, SamplingTriangle> normTrisMap;
+                for (auto &[offset, tri] : denormTris) {
+                    tri.relativeWeight /= accTriWeight;
+                    normTrisMap.emplace(offset / accTriWeight, tri);
+                }
+                denormMeshes.back().triangles =
+                    StableMap<double, SamplingTriangle>(std::move(normTrisMap));
 
-            // vertices
-            glm::mat4 trans = prop.transform.getModelMatrix();
-            glm::mat3 rotTrans = glm::mat3(trans);
-            denormMeshes.back().vertices.reserve(positions.size());
-            for (std::size_t i = 0; i < positions.size(); ++i) {
-                denormMeshes.back().vertices.emplace_back(Sample{
-                    .position = rotTrans * positions[i] + prop.transform.position,
-                    .normal = rotTrans * normals[i],
-                    .color = color,
-                });
+                // vertices
+                glm::mat4 trans = prop.transform.getModelMatrix();
+                glm::mat3 rotTrans = glm::mat3(trans);
+                denormMeshes.back().vertices.reserve(positions.size());
+                for (std::size_t i = 0; i < positions.size(); ++i) {
+                    denormMeshes.back().vertices.emplace_back(Sample{
+                        .position = rotTrans * positions[i] + prop.transform.position,
+                        .normal = rotTrans * normals[i],
+                        .color = color,
+                    });
+                }
+            } else {
+                ++statNumNullMeshes;
             }
-        } else {
-            ++statNumNullMeshes;
         }
     }
 
@@ -358,8 +382,8 @@ void generateTransfers(std::vector<H_ProbeDefinition> &probes,
             for (int neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
                 for (auto neighIndex : probe.neighborIndices) {
 
-                    auto &neighTrans = gpuNeighborTransfers.getElement(neighIndex);
-                    auto &neighFilter = gpuNeighborFilters.getElement(neighIndex);
+                    auto &neighTrans = gpuNeighborTransfers.getMutableElement(neighIndex);
+                    auto &neighFilter = gpuNeighborFilters.getMutableElement(neighIndex);
 
                     neighTrans.source[neighDirInd].face[myDirInd] =
                         factorTo(probes[neighIndex], probe, neighDirInd, myDirInd);

@@ -5,6 +5,7 @@
 #include "generators/meshNormals.hpp"
 #include "generators/meshTangents.hpp"
 #include "generators/modelSilhouette.hpp"
+#include "methods/GI/ambientGI.hpp"
 #include "methods/displayCamera.hpp"
 #include "methods/displayNormals.hpp"
 #include "methods/effectNormalMaps.hpp"
@@ -65,6 +66,8 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     VitraeCommon::setupMeshTangentGenerator(root);
     VitraeCommon::setupMeshNormalGenerator(root);
     VitraeCommon::setupModelSilhouetteGenerator(root);
+
+    GI::setupGI(root);
 
     /*
     Setup window
