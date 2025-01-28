@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     */
 
     ComponentRoot root;
-    Renderer *p_rend = new OpenGLRenderer();
+    Renderer *p_rend = new OpenGLRenderer(root);
     root.setComponent<Renderer>(p_rend);
     {
         p_rend->mainThreadSetup(root);

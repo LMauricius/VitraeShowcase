@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Standard/Params.hpp"
+#include "../Standard/Textures.hpp"
 
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
@@ -24,17 +25,22 @@ namespace VitraeCommon
         /*
         Texture types
         */
-        root.addAiMaterialTextureInfo(
-            {StandardParam::tex_base.name, aiTextureType_BASE_COLOR,
-             root.getComponent<TextureManager>().register_asset(
-                 {Texture::PureColorParams{.root = root, .color = {1.0f, 1.0f, 1.0f, 1.0f}}})});
-        root.addAiMaterialTextureInfo(
-            {StandardParam::tex_metalness.name, aiTextureType_METALNESS,
-             root.getComponent<TextureManager>().register_asset(
-                 {Texture::PureColorParams{.root = root, .color = {0.0f, 0.0f, 1.0f, 1.0f}}})});
-        root.addAiMaterialTextureInfo(
-            {StandardParam::tex_smoothness.name, aiTextureType_DIFFUSE_ROUGHNESS,
-             root.getComponent<TextureManager>().register_asset(
-                 {Texture::PureColorParams{.root = root, .color = {0.0f, 0.0f, 0.0f, 1.0f}}})});
+        root.addAiMaterialParamAliases(aiShadingMode_Phong, {{"shade", "phong_shade"}});
+
+        root.addAiMaterialTextureInfo({
+            StandardTexture::base,
+            aiTextureType_BASE_COLOR,
+            {1.0f, 1.0f, 1.0f, 1.0f},
+        });
+        root.addAiMaterialTextureInfo({
+            StandardTexture::metalness,
+            aiTextureType_METALNESS,
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        });
+        root.addAiMaterialTextureInfo({
+            StandardTexture::smoothness,
+            aiTextureType_DIFFUSE_ROUGHNESS,
+            {0.0f, 0.0f, 0.0f, 1.0f},
+        });
     }
 }

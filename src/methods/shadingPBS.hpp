@@ -29,10 +29,9 @@ namespace VitraeCommon
                         {
                             {"camera_position", TYPE_INFO<glm::vec3>},
                             {"position_world", TYPE_INFO<glm::vec4>},
-                            StandardParam::tex_base,
-                            StandardParam::textureCoord0,
-                            StandardParam::tex_metalness,
-                            StandardParam::tex_smoothness,
+                            StandardParam::color_base,
+                            StandardParam::color_metalness,
+                            StandardParam::color_smoothness,
                             {"shade_ambient", TYPE_INFO<glm::vec3>},
                             {"normal_fragment_normalized", TYPE_INFO<glm::vec3>},
                             {"light_direction", TYPE_INFO<glm::vec3>},
@@ -45,17 +44,15 @@ namespace VitraeCommon
                             {"pbs_shade", TYPE_INFO<glm::vec4>},
                         },
                     .snippet = R"glsl(
-                        vec3 sample_base = texture(tex_base, textureCoord0).rgb;
-                        float sample_metalness = texture(tex_metalness, textureCoord0).g;
-                        float sample_smoothness = texture(tex_smoothness, textureCoord0).g;
+                        float smoothness = color_smoothness.g;
                         
                         vec3 dirToEye = normalize(camera_position - position_world.xyz);
                         vec3 reflRay = 2 * dot(-light_direction, normal_fragment_normalized) * normal_fragment_normalized + light_direction;
 
-                        float alpha = 1.0 - sample_smoothness;
-                        float Kd = 1.0 - sample_smoothness;
-                        float Ks = sample_smoothness;
-                        vec3 f_lambert = sample_base / 3.1415;
+                        float alpha = 1.0 - smoothness;
+                        float Kd = 1.0 - smoothness;
+                        float Ks = smoothness;
+                        vec3 f_lambert = color_base / 3.1415;
                         vec3 f_cooktorrance = dfg / (4.0 * dot(dirToEye, normal_fragment_normalized) * dot(light_direction, normal_fragment_normalized));
 
                         pbs_shade =

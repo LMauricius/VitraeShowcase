@@ -45,13 +45,8 @@ namespace VitraeCommon
                     {
                         {"camera_position", TYPE_INFO<glm::vec3>},
                         {"position_world", TYPE_INFO<glm::vec4>},
-                        ParamSpec{StandardMaterialTextureNames::SPECULAR,
-                                  TYPE_INFO<dynasma::FirmPtr<Texture>>},
-                        {StandardVertexBufferNames::TEXTURE_COORD, TYPE_INFO<glm::vec2>},
-                        ParamSpec{StandardMaterialPropertyNames::COL_SPECULAR,
-                                  StandardMaterialPropertyTypes::COL_SPECULAR},
-                        ParamSpec{StandardMaterialPropertyNames::SHININESS,
-                                  StandardMaterialPropertyTypes::SHININESS},
+                        StandardParam::color_specular,
+                        StandardParam::color_shininess,
                         {"normal_fragment_normalized", TYPE_INFO<glm::vec3>},
                         {"light_direction", TYPE_INFO<glm::vec3>},
                         {"light_color_primary", TYPE_INFO<glm::vec3>},
@@ -62,12 +57,11 @@ namespace VitraeCommon
                         {"shade_specular", TYPE_INFO<glm::vec3>},
                     },
                 .snippet = R"glsl(
-                    vec4 color_specular_tot = texture(tex_specular, textureCoord0);
                     vec3 dirToEye = normalize(camera_position - position_world.xyz);
                     vec3 reflRay = 2 * dot(-light_direction, normal_fragment_normalized) * normal_fragment_normalized + light_direction;
                     shade_specular =
-                        pow(max(dot(reflRay, dirToEye), 0.001), shininess) * light_shadow_factor *
-                        color_specular_tot.rgb * light_color_primary;
+                        pow(max(dot(reflRay, dirToEye), 0.001), color_shininess.x) * light_shadow_factor *
+                        color_specular.rgb * light_color_primary;
                 )glsl",
             }}),
             ShaderStageFlag::Fragment | ShaderStageFlag::Compute);
@@ -79,16 +73,13 @@ namespace VitraeCommon
                         {"shade_diffuse", TYPE_INFO<glm::vec3>},
                         {"shade_specular", TYPE_INFO<glm::vec3>},
                         {"shade_ambient", TYPE_INFO<glm::vec3>},
-                        {StandardMaterialTextureNames::DIFFUSE,
-                         TYPE_INFO<dynasma::FirmPtr<Texture>>},
-                        {StandardVertexBufferNames::TEXTURE_COORD, TYPE_INFO<glm::vec2>},
+                        StandardParam::color_diffuse,
                     },
                 .outputSpecs =
                     {
                         {"phong_shade", TYPE_INFO<glm::vec4>},
                     },
                 .snippet = R"glsl(
-                    vec4 color_diffuse = texture(tex_diffuse, textureCoord0);
                     phong_shade = vec4(
                         color_diffuse.rgb * (shade_diffuse + shade_ambient) +
                         shade_specular, 

@@ -24,13 +24,15 @@ namespace VitraeCommon
         inline const ParamSpec bitangent = {"bitangent", TYPE_INFO<glm::vec3>};
 
         /// @subsection Textures
-        inline const ParamSpec tex_base        = {"tex_base",  TYPE_INFO<dynasma::FirmPtr<Texture>>};
-        inline const ParamSpec tex_metalness   = {"tex_metalness",  TYPE_INFO<dynasma::FirmPtr<Texture>>};
-        inline const ParamSpec tex_smoothness  = {"tex_smoothness",  TYPE_INFO<dynasma::FirmPtr<Texture>>};
+        inline const ParamSpec color_diffuse     = {"color_diffuse",  TYPE_INFO<glm::vec4>};
+        inline const ParamSpec color_normal      = {"color_normal",  TYPE_INFO<glm::vec4>};
+        inline const ParamSpec color_specular    = {"color_specular",  TYPE_INFO<glm::vec4>};
+        inline const ParamSpec color_shininess   = {"color_shininess",  TYPE_INFO<glm::vec4>};
+        inline const ParamSpec color_emissive    = {"color_emissive",  TYPE_INFO<glm::vec4>};
 
-        inline const ParamSpec base        = {"base",  TYPE_INFO<glm::vec3>};
-        inline const ParamSpec metalness   = {"metalness",  TYPE_INFO<glm::vec1>};
-        inline const ParamSpec smoothness  = {"smoothness",  TYPE_INFO<glm::vec1>};
+        inline const ParamSpec color_base        = {"color_base",  TYPE_INFO<glm::vec4>};
+        inline const ParamSpec color_metalness   = {"color_metalness",  TYPE_INFO<glm::vec4>};
+        inline const ParamSpec color_smoothness  = {"color_smoothness",  TYPE_INFO<glm::vec4>};
 
         // clang-format on
 
