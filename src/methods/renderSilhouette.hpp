@@ -40,14 +40,16 @@ namespace VitraeCommon
                                                     const RenderComposeContext &ctx)
                             -> std::pair<ComposeSceneRender::FilterFunc,
                                          ComposeSceneRender::SortFunc> {
+                            glm::vec3 camPos = scene.camera.position;
+
                             return {
                                 [](const ModelProp &prop) { return true; },
-                                [](const ModelProp &l, const ModelProp &r) {
-                                    auto p_mat_l = l.p_model->getMaterial().getLoaded();
-                                    auto p_mat_r = r.p_model->getMaterial().getLoaded();
-                                    return p_mat_l->getParamAliases().hash() <
-                                               p_mat_r->getParamAliases().hash() ||
-                                           p_mat_l < p_mat_r;
+                                [camPos](const ModelProp &l, const ModelProp &r) {
+                                    // closest first
+                                    glm::vec3 lpos = l.transform.position;
+                                    glm::vec3 rpos = r.transform.position;
+                                    return glm::length2(camPos - rpos) <
+                                           glm::length2(camPos - lpos);
                                 },
                             };
                         },

@@ -35,28 +35,34 @@ namespace VitraeCommon
                 .root = root,
                 .inputTokenNames = {"frame_cleared"},
                 .outputTokenNames = {"scene_forward_rendered_opaque"},
-                .rasterizing = {
-                    .vertexPositionOutputPropertyName = "position_view",
-                    .modelFormPurpose = Purposes::visual,
-                    .rasterizingMode = RasterizingMode::DerivationalFillCenters,
-                },
-                .ordering = {
-                    .generateFilterAndSort = [](const Scene &scene, const RenderComposeContext &ctx) -> std::pair<ComposeSceneRender::FilterFunc, ComposeSceneRender::SortFunc>
+                .rasterizing =
                     {
-                        return {
-                            [](const ModelProp &prop)
-                            {
-                                return isOpaque(*prop.p_model->getMaterial().getLoaded());
-                            },
-                            [](const ModelProp &l, const ModelProp &r)
-                            {
-                                auto p_mat_l = l.p_model->getMaterial().getLoaded();
-                                auto p_mat_r = r.p_model->getMaterial().getLoaded();
-                                return p_mat_l->getParamAliases().hash() < p_mat_r->getParamAliases().hash() || p_mat_l < p_mat_r;
-                            },
-                        };
+                        .vertexPositionOutputPropertyName = "position_view",
+                        .modelFormPurpose = Purposes::visual,
+                        .rasterizingMode = RasterizingMode::DerivationalFillCenters,
                     },
-                },
+                .ordering =
+                    {
+                        .generateFilterAndSort = [](const Scene &scene,
+                                                    const RenderComposeContext &ctx)
+                            -> std::pair<ComposeSceneRender::FilterFunc,
+                                         ComposeSceneRender::SortFunc> {
+                            return {
+                                [](const ModelProp &prop) {
+                                    return isOpaque(*prop.p_model->getMaterial().getLoaded());
+                                },
+                                [](const ModelProp &l, const ModelProp &r) {
+                                    auto p_mat_l = l.p_model->getMaterial().getLoaded();
+                                    auto p_mat_r = r.p_model->getMaterial().getLoaded();
+                                    return p_mat_l->getParamAliases().hash() <
+                                               p_mat_r->getParamAliases().hash() ||
+                                           (p_mat_l->getParamAliases().hash() ==
+                                                p_mat_r->getParamAliases().hash() &&
+                                            p_mat_l < p_mat_r);
+                                },
+                            };
+                        },
+                    },
             }});
         methodCollection.registerComposeTask(p_forwardRenderOpaque);
 
@@ -79,12 +85,11 @@ namespace VitraeCommon
                         glm::vec3 camPos = scene.camera.position;
 
                         return {
-                            [](const ModelProp &prop)
-                            {
+                            [](const ModelProp &prop) {
                                 return !isOpaque(*prop.p_model->getMaterial().getLoaded());
                             },
-                            [camPos](const ModelProp &l, const ModelProp &r)
-                            {
+                            [camPos](const ModelProp &l, const ModelProp &r) {
+                                // furthest first
                                 glm::vec3 lpos = l.transform.position;
                                 glm::vec3 rpos = r.transform.position;
                                 return glm::length2(camPos - rpos) < glm::length2(camPos - lpos);
