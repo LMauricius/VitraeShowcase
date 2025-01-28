@@ -146,17 +146,21 @@ namespace VitraeCommon
 
         auto p_renderAdaptor = dynasma::makeStandalone<ComposeAdaptTasks>(
             ComposeAdaptTasks::SetupParams{.root = root,
-                                           .adaptorAliases = {
-                                               {"camera_displayed", "scene_rendered"},
-                                               {"position_view", "position_camera_view"},
-                                               {"fs_target", "fs_display"},
-                                           },
+                                           .adaptorAliases =
+                                               {
+                                                   {"camera_displayed", "scene_rendered"},
+                                                   {"position_view", "position_camera_view"},
+                                                   {"fs_target", "fs_display"},
+                                               },
                                            .desiredOutputs = {ParamSpec{
                                                "camera_displayed",
                                                TYPE_INFO<void>,
                                            }},
                                            .friendlyName = "Render camera"});
         methodCollection.registerComposeTask(p_renderAdaptor);
+
+        methodCollection.registerPropertyOption(StandardParam::fragment_color.name,
+                                                StandardParam::shade.name);
 
         methodCollection.registerCompositorOutput("camera_displayed");
     }
