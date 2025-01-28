@@ -1,4 +1,6 @@
 #include "Generation.hpp"
+#include "../../Standard/Params.hpp"
+#include "../../Standard/Textures.hpp"
 
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Model.hpp"
@@ -135,6 +137,9 @@ void prepareScene(const Scene &scene, SamplingScene &smpScene, std::size_t &stat
 {
     MMETER_SCOPE_PROFILER("GI::prepareScene");
 
+    StringId texDiffuseNameId = "tex_" + std::string(VitraeCommon::StandardTexture::diffuse);
+    StringId colDiffuseNameId = "color_" + std::string(VitraeCommon::StandardTexture::diffuse);
+
     Vitrae::LoDSelectionParams lodParams{
         .method = LoDSelectionMethod::Maximum,
         .threshold =
@@ -154,14 +159,16 @@ void prepareScene(const Scene &scene, SamplingScene &smpScene, std::size_t &stat
         if (p_mesh) {
             auto positions = p_mesh->getVertexComponentData<glm::vec3>("position");
             auto normals = p_mesh->getVertexComponentData<glm::vec3>("normal");
-            glm::vec4 color = prop.p_model->getMaterial()
-                                  .getLoaded()
-                                  ->getProperties()
-                                  .at(StandardMaterialTextureNames::DIFFUSE)
-                                  .get<dynasma::FirmPtr<Texture>>()
-                                  ->getStats()
-                                  .value()
-                                  .averageColor;
+            auto &properties = prop.p_model->getMaterial().getLoaded()->getProperties();
+            glm::vec4 color;
+            if (auto it = properties.find(texDiffuseNameId); it == properties.end()) {
+                color =
+                    (*it).second.get<dynasma::FirmPtr<Texture>>()->getStats().value().averageColor;
+            } else if (auto it = properties.find(colDiffuseNameId); it == properties.end()) {
+                color = (*it).second.get<glm::vec4>();
+            } else {
+                color = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+            }
 
             // mesh offset
             denormMeshes.emplace_back();
