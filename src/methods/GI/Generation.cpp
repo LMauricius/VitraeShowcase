@@ -161,10 +161,13 @@ void prepareScene(const Scene &scene, SamplingScene &smpScene, std::size_t &stat
             auto normals = p_mesh->getVertexComponentData<glm::vec3>("normal");
             auto &properties = prop.p_model->getMaterial().getLoaded()->getProperties();
             glm::vec4 color;
-            if (auto it = properties.find(texDiffuseNameId); it == properties.end()) {
-                color =
-                    (*it).second.get<dynasma::FirmPtr<Texture>>()->getStats().value().averageColor;
-            } else if (auto it = properties.find(colDiffuseNameId); it == properties.end()) {
+            if (auto it = properties.find(texDiffuseNameId); it != properties.end()) {
+                color = (*it)
+                            .second.get<dynasma::FirmPtr<Texture>>()
+                            ->getStats()
+                            .value_or(Vitrae::Texture::TextureStats{})
+                            .averageColor;
+            } else if (auto it = properties.find(colDiffuseNameId); it != properties.end()) {
                 color = (*it).second.get<glm::vec4>();
             } else {
                 color = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
