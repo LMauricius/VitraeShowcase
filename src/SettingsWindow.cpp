@@ -250,8 +250,8 @@ void SettingsWindow::relistSettings()
 
                 auto p_spinbox = new QSpinBox(ui.settings_group);
                 p_spinbox->setSingleStep(1);
-                p_spinbox->setMinimum(std::numeric_limits<std::int32_t>::lowest());
-                p_spinbox->setMaximum(std::numeric_limits<std::int32_t>::max());
+                p_spinbox->setMinimum(std::numeric_limits<int>::lowest());
+                p_spinbox->setMaximum(std::numeric_limits<int>::max());
                 p_spinbox->setValue(def);
 
                 connect(p_spinbox, QOverload<int>::of(&QSpinBox::valueChanged),
@@ -286,7 +286,7 @@ void SettingsWindow::relistSettings()
                     auto p_spinbox = new QSpinBox(ui.settings_group);
                     p_spinbox->setSingleStep(1);
                     p_spinbox->setMinimum(0);
-                    p_spinbox->setMaximum(std::numeric_limits<std::uint32_t>::max());
+                    p_spinbox->setMaximum(std::numeric_limits<int>::max());
                     p_spinbox->setValue(def);
                     connect(
                         p_spinbox, QOverload<int>::of(&QSpinBox::valueChanged),
@@ -323,7 +323,7 @@ void SettingsWindow::relistSettings()
                     auto p_spinbox = new QSpinBox(ui.settings_group);
                     p_spinbox->setSingleStep(1);
                     p_spinbox->setMinimum(0);
-                    p_spinbox->setMaximum(std::numeric_limits<std::uint32_t>::max());
+                    p_spinbox->setMaximum(std::numeric_limits<int>::max());
                     p_spinbox->setValue(def);
                     connect(
                         p_spinbox, QOverload<int>::of(&QSpinBox::valueChanged),
@@ -371,11 +371,11 @@ void SettingsWindow::relistSettings()
                     auto p_spinbox1 = new QSpinBox(ui.settings_group);
                     p_spinbox0->setSingleStep(1);
                     p_spinbox0->setMinimum(0);
-                    p_spinbox0->setMaximum(std::numeric_limits<std::uint32_t>::max());
+                    p_spinbox0->setMaximum(std::numeric_limits<int>::max());
                     p_spinbox0->setValue(def.x);
                     p_spinbox1->setSingleStep(1);
                     p_spinbox1->setMinimum(0);
-                    p_spinbox1->setMaximum(std::numeric_limits<std::uint32_t>::max());
+                    p_spinbox1->setMaximum(std::numeric_limits<int>::max());
                     p_spinbox1->setValue(def.y);
                     auto callback = [this, name = spec.name, p_spinbox0, p_spinbox1](int val) {
                         this->m_assetCollection.comp.parameters.set(
