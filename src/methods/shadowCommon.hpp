@@ -44,7 +44,7 @@ namespace VitraeCommon
                 .inputTokenNames = {"scene_silhouette_rendered"},
                 .outputColorTextureName = "",
                 .outputDepthTextureName = "tex_shadow_adapted",
-                .size = String("ShadowMapSize"),
+                .size{String("ShadowMapSize"), {1024, 1024}},
                 .horWrap = Texture::WrappingType::BORDER_COLOR,
                 .verWrap = Texture::WrappingType::BORDER_COLOR,
                 .minFilter = Texture::FilterType::NEAREST,

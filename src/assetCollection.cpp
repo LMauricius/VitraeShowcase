@@ -40,7 +40,7 @@
 
 AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
                                  std::filesystem::path scenePath, float sceneScale)
-    : root(root), rend(rend), running(true), shouldReloadPipelines(true),
+    : root(root), rend(rend), running(true), shouldReloadPipelines(true), compositorInputsHash(0),
       comp(root)
 {
     /*
@@ -145,7 +145,17 @@ AssetCollection::~AssetCollection() {}
 
 void AssetCollection::render()
 {
-    comp.compose();
+    if (shouldReloadPipelines) {
+        comp.rebuildPipeline();
+    }
+
+    try {
+        comp.compose();
+    }
+    catch (const std::exception &e) {
+        std::cout << e.what() << std::endl;
+    }
+    compositorInputsHash = comp.getInputSpecs().getHash();
 
     if (shouldReloadPipelines)
     {

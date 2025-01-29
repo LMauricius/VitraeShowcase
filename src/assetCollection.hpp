@@ -19,6 +19,7 @@ struct AssetCollection
 
     bool running;
     bool shouldReloadPipelines;
+    std::size_t compositorInputsHash;
 
     ComponentRoot &root;
     Renderer &rend;

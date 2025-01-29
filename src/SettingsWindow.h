@@ -14,6 +14,7 @@ class SettingsWindow : public QMainWindow
     virtual ~SettingsWindow();
 
     void updateValues();
+    void relistSettings();
     void applyCompositorSettings();
 
   private:
@@ -24,4 +25,5 @@ class SettingsWindow : public QMainWindow
 
     std::map<String, String> m_toBeAliases;
     ParamList m_desiredOutputs;
+    std::size_t inputSpecshash;
 };
