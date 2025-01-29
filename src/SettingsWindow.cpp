@@ -383,9 +383,7 @@ void SettingsWindow::relistSettings()
                     ui.settings_layout->addRow(QString::fromStdString(spec.name), layout);
                 }
             } else {
-                // Just add a name
-                ui.settings_layout->addRow(QString::fromStdString(spec.name),
-                                           new QLabel("Default"));
+                // ignore
             }
         }
 
