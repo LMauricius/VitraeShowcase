@@ -465,7 +465,11 @@ inline void setupGI(ComponentRoot &root)
 
     methodCollection.registerComposeTask(
         dynasma::makeStandalone<ComposeInitFunction>(ComposeInitFunction::SetupParams{
-            .inputSpecs = {StandardParam::scene},
+            .inputSpecs =
+                {
+                    StandardParam::scene,
+                    {"numGISamples", TYPE_INFO<std::size_t>, (std::size_t)30000},
+                },
             .outputSpecs =
                 {
                     {"giSamples", TYPE_INFO<std::vector<Sample>>},
@@ -484,6 +488,9 @@ inline void setupGI(ComponentRoot &root)
             .p_function =
                 [&root](const RenderComposeContext &context) {
                     MMETER_SCOPE_PROFILER("GI setup");
+
+                    std::size_t numGISamples =
+                        context.properties.get("numGISamples").get<std::size_t>();
 
                     // get the AABB of the scene
                     const Scene &scene =
@@ -531,7 +538,7 @@ inline void setupGI(ComponentRoot &root)
                     std::size_t numNullMeshes = 0, numNullTris = 0;
                     prepareScene(scene, smpScene, numNullMeshes, numNullTris);
                     std::vector<Sample> samples;
-                    sampleScene(smpScene, 30000, samples);
+                    sampleScene(smpScene, numGISamples, samples);
                     generateProbeList(std::span<const Sample>(samples), probes, gridSize,
                                       worldStart, sceneAABB.getCenter(), sceneAABB.getExtent(),
                                       1.5f, false);
