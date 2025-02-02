@@ -59,7 +59,6 @@ inline void setupGI(ComponentRoot &root)
                     {"giGridSize", TYPE_INFO<glm::uvec3>},
                     {"position_world", TYPE_INFO<glm::vec4>},
                     {"normal_fragment_normalized", TYPE_INFO<glm::vec3>},
-                    {"updated_probes", TYPE_INFO<void>},
                 },
             .outputSpecs =
                 {
@@ -75,7 +74,7 @@ inline void setupGI(ComponentRoot &root)
                 vec3 probeSize = gpuProbes[ind].size.xyz;//(giWorldSize / vec3(giGridSize));
                 vec3 probePos = gpuProbes[ind].position.xyz;//giWorldStart + (vec3(gridPos) + 0.5) * probeSize;
 
-                bvec3 normalIsNeg = lessThan(normal_fragment_normalized, vec3(0.0));
+                bvec3 normalIsNeg = lessThan(-normal_fragment_normalized, vec3(0.0));
                 vec3 absNormal = abs(normal_fragment_normalized);
 
                 shade_gi_ambient = 
@@ -113,6 +112,7 @@ inline void setupGI(ComponentRoot &root)
                     {"giWorldSize", TYPE_INFO<glm::vec3>},
                     {"giGridSize", TYPE_INFO<glm::uvec3>},
                     {"camera_position", TYPE_INFO<glm::vec3>},
+                    {"camera_light_strength", TYPE_INFO<float>, 50.0f},
 
                     {"gi_utilities", TYPE_INFO<void>},
                     {"swapped_probes", TYPE_INFO<void>},
@@ -132,16 +132,16 @@ inline void setupGI(ComponentRoot &root)
 
                 // reflection
                 gpuProbeStates[probeIndex].illumination[faceIndex] = vec4(0.0);
-                for (uint reflFaceIndex = 0; reflFaceIndex < 6; reflFaceIndex++) {
-                    gpuProbeStates[probeIndex].illumination[faceIndex] += (
-                        gpuProbeStates_prev[probeIndex].illumination[reflFaceIndex] *
-                        gpuReflectionTransfers[probeIndex].face[reflFaceIndex]
-                    );
-                }
+                //for (uint reflFaceIndex = 0; reflFaceIndex < 6; reflFaceIndex++) {
+                //    gpuProbeStates[probeIndex].illumination[faceIndex] += (
+                //        gpuProbeStates_prev[probeIndex].illumination[reflFaceIndex] *
+                //        gpuReflectionTransfers[probeIndex].face[reflFaceIndex]
+                //    );
+                //}
             
                 // if camera is inside probe, glow
                 if (all(lessThan(abs(camera_position - probePos), probeSize * 0.5)) && faceIndex == 0) {
-                    gpuProbeStates[probeIndex].illumination[faceIndex] += vec4(5.0);
+                    gpuProbeStates[probeIndex].illumination[faceIndex] += vec4(camera_light_strength);
                 } else {
                 }
                 for (uint i = neighborStartInd; i < neighborStartInd + neighborCount; i++) {
@@ -149,18 +149,20 @@ inline void setupGI(ComponentRoot &root)
                     for (uint neighDirInd = 0; neighDirInd < 6; neighDirInd++) {
                         gpuProbeStates[probeIndex].illumination[faceIndex] += (
                             gpuProbeStates_prev[neighInd].illumination[neighDirInd] *
-                            gpuNeighborFilters[neighInd] *
-                            gpuNeighborTransfers[neighInd].source[faceIndex].face[neighDirInd] *
-                            gpuLeavingPremulFactors[probeIndex].face[faceIndex]
+                            gpuNeighborFilters[i] *
+                            gpuNeighborTransfers[i].source[neighDirInd].face[faceIndex] *
+                            gpuLeavingPremulFactors[neighInd].face[neighDirInd]
                         );
                     }
                 }
-            
-                uvec3 gridPos = uvec3(
-                    probeIndex / giGridSize.y / giGridSize.z,
-                    (probeIndex / giGridSize.z) % giGridSize.y,
-                    probeIndex % giGridSize.z
-                );
+
+                // just direct light from camera (debug)
+                /*gpuProbeStates[probeIndex].illumination[faceIndex] = vec4(vec3(
+                    max(min(
+                        dot(DIRECTIONS[faceIndex], normalize(camera_position - gpuProbes[probeIndex].position )) * 100.0 / 
+                        pow(distance(gpuProbes[probeIndex].position, camera_position), 2.0),
+                        1.0), 0.0)
+                ), 1.0);*/
             )glsl",
         }}),
         ShaderStageFlag::Compute);
@@ -216,11 +218,11 @@ inline void setupGI(ComponentRoot &root)
                         if (all(lessThan(gridPos, giGridSize-2)) &&
                             all(greaterThan(gridPos, uvec3(1)))) {
                             
-                            gpuNeighborFilters[neighInd] = vec4(1.0);
+                            gpuNeighborFilters[i] = vec4(1.0);
                         } else {
-                            gpuNeighborFilters[neighInd] = vec4(0);
+                            gpuNeighborFilters[i] = vec4(0);
                         }
-                        gpuNeighborTransfers[neighInd].
+                        gpuNeighborTransfers[i].
                             source[neighDirInd].face[myDirInd] =
                             factorTo(neighInd, probeIndex, neighDirInd, myDirInd);
                         totalLeaving +=
@@ -319,6 +321,7 @@ inline void setupGI(ComponentRoot &root)
                                          .invocationCountY = 6,
                                          .groupSizeY = 6,
                                      }}}));
+    methodCollection.registerCompositorOutput("updated_probes");
 
     auto p_visualScene = dynasma::makeStandalone<Scene>(Scene::FileLoadParams{
         .root = root, .filepath = "../../VitraeShowcase/media/dataPoint/dataPoint.obj"});
@@ -483,7 +486,7 @@ inline void setupGI(ComponentRoot &root)
                     {"giWorldStart", TYPE_INFO<glm::vec3>},
                     {"giWorldSize", TYPE_INFO<glm::vec3>},
                     {"giGridSize", TYPE_INFO<glm::uvec3>},
-                    {"gpuProbecount", TYPE_INFO<unsigned int>},
+                    {"gpuProbecount", TYPE_INFO<std::uint32_t>},
                 },
             .p_function =
                 [&root](const RenderComposeContext &context) {

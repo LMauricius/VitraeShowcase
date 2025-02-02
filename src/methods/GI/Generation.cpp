@@ -66,46 +66,48 @@ float factorTo(const H_ProbeDefinition &srcProbe, const H_ProbeDefinition &dstPr
 } // namespace
 
 const char *const GLSL_PROBE_GEN_SNIPPET = R"glsl(
-const float PI2 = 3.14159265 * 2.0;
-const float LIGHT_ARC_COVERAGE = PI2 / 4;
+    const float PI2 = 3.14159265 * 2.0;
+    const float LIGHT_ARC_COVERAGE = PI2 / 4;
 
-float factorTo(uint srcProbeindex, uint dstProbeindex, uint srcDirIndex, uint dstDirIndex)
-{
-    // note: we don't need the exact angular surface for the wall, or exact scales here.
-    // Since the total leaving amounts get normalized,
-    // the shared scalings (such as pi^2 constants) get nullified.
-
-    vec3 srcCenter = gpuProbes[srcProbeindex].position;
-    vec3 wallCenter = gpuProbes[dstProbeindex].position + DIRECTIONS[dstDirIndex] * gpuProbes[dstProbeindex].size / 2.0f;
-    float wallSize = 1.0;
+    float factorTo(uint srcProbeindex, uint dstProbeindex, uint srcDirIndex, uint dstDirIndex)
     {
-        vec3 wallDiag = (vec3(1.0) - abs(DIRECTIONS[dstDirIndex])) * gpuProbes[dstProbeindex].size;
-        vec3 wallDiagNon0 = wallDiag + abs(DIRECTIONS[dstDirIndex]);
-        wallSize = wallDiagNon0.x * wallDiagNon0.y * wallDiagNon0.z;
+        // note: we don't need the exact angular surface for the wall, or exact scales here.
+        // Since the total leaving amounts get normalized,
+        // the shared scalings (such as pi^2 constants) get nullified.
+
+        vec3 srcCenter = gpuProbes[srcProbeindex].position;
+        vec3 wallCenter = gpuProbes[dstProbeindex].position + DIRECTIONS[dstDirIndex] * gpuProbes[dstProbeindex].size / 2.0f;
+
+        vec3 src2wallOffset = wallCenter - srcCenter;
+        float src2wallDist = length(src2wallOffset);
+        vec3 src2wallDir = src2wallOffset / src2wallDist;
+
+        float wallDot = dot(src2wallDir, DIRECTIONS[dstDirIndex]);
+        float lightDot = dot(src2wallDir, DIRECTIONS[srcDirIndex]);
+
+        if (wallDot <= 0.0f || lightDot <= 0.0f) {
+            return 0.0f;
+        }
+
+        float wallSize = 1.0;
+        {
+            vec3 wallDiag = (vec3(1.0) - abs(DIRECTIONS[dstDirIndex])) * gpuProbes[dstProbeindex].size;
+            vec3 wallDiagNon0 = wallDiag + abs(DIRECTIONS[dstDirIndex]);
+            wallSize = wallDiagNon0.x * wallDiagNon0.y * wallDiagNon0.z;
+        }
+
+        float wallAngularSurface = wallSize / (src2wallDist * src2wallDist) * wallDot;
+
+        float wallArcCoverage = sqrt(wallSize) / (PI2 * src2wallDist) * wallDot;
+        float wallArcOffset = abs(acos(lightDot));
+
+        float wallArcStart = wallArcOffset - wallArcCoverage / 2.0f;
+        float wallArcEnd = wallArcOffset + wallArcCoverage / 2.0f;
+        float visibleAmount =
+            max(min(LIGHT_ARC_COVERAGE / 2.0f, wallArcEnd), 0.0f) / wallArcCoverage;
+
+        return max(visibleAmount * wallAngularSurface, 0.0);
     }
-
-    vec3 src2wallOffset = wallCenter - srcCenter;
-    float src2wallDist = length(src2wallOffset);
-    vec3 src2wallDir = src2wallOffset / src2wallDist;
-
-    float wallDot = dot(src2wallDir, DIRECTIONS[dstDirIndex]);
-    float lightDot = dot(src2wallDir, DIRECTIONS[srcDirIndex]);
-    float wallAngularSurface = wallSize / (src2wallDist * src2wallDist) * wallDot;
-
-    if (wallAngularSurface <= 0.0f) {
-        return 0.0f;
-    }
-
-    float wallArcCoverage = sqrt(wallSize) / (PI2 * src2wallDist) * wallDot;
-    float wallArcOffset = abs(acos(lightDot));
-
-    float wallArcStart = wallArcOffset - wallArcCoverage / 2.0f;
-    float wallArcEnd = wallArcOffset + wallArcCoverage / 2.0f;
-    float visibleAmount =
-        max(min(LIGHT_ARC_COVERAGE / 2.0f, wallArcEnd), 0.0f) / wallArcCoverage;
-
-    return visibleAmount * wallAngularSurface;
-}
 )glsl";
 
 float getSamplingWeight(const Triangle &tri, StridedSpan<const glm::vec3> vertexPositions)
@@ -345,20 +347,22 @@ void generateProbeList(std::span<const Sample> samples, std::vector<H_ProbeDefin
                         worldStart + (glm::vec3(x, y, z) + 0.5f) * ind2OffsetConversion;
                     probe.size = probeSize;
 
-                    /*for (int neighx : {-1, 0, 1}) {
+                    for (int neighx : {-1, 0, 1}) {
                         for (int neighy : {-1, 0, 1}) {
                             for (int neighz : {-1, 0, 1}) {
-                                if ((neighx == 0 && neighy == 0 && neighz == 0) || x + neighx <
-                    0 || x + neighx >= maxIndex.x || y + neighy < 0 || y + neighy >= maxIndex.y
-                    || z + neighz < 0 || z + neighz >= maxIndex.z) { continue;
+                                if ((neighx == 0 && neighy == 0 && neighz == 0) || x + neighx < 0 ||
+                                    x + neighx >= maxIndex.x || y + neighy < 0 ||
+                                    y + neighy >= maxIndex.y || z + neighz < 0 ||
+                                    z + neighz >= maxIndex.z) {
+                                    continue;
                                 }
                                 probe.neighborIndices.push_back(
                                     getIndex({x + neighx, y + neighy, z + neighz}));
                             }
                         }
-                    }*/
+                    }
 
-                    if (x > 0)
+                    /*if (x > 0)
                         probe.neighborIndices.push_back(getIndex({x - 1, y, z}));
                     if (x < maxIndex.x)
                         probe.neighborIndices.push_back(getIndex({x + 1, y, z}));
@@ -371,7 +375,7 @@ void generateProbeList(std::span<const Sample> samples, std::vector<H_ProbeDefin
                     if (z > 0)
                         probe.neighborIndices.push_back(getIndex({x, y, z - 1}));
                     if (z < maxIndex.z)
-                        probe.neighborIndices.push_back(getIndex({x, y, z + 1}));
+                        probe.neighborIndices.push_back(getIndex({x, y, z + 1}));*/
                 }
             }
         }
