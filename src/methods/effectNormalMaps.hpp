@@ -65,10 +65,10 @@ namespace VitraeCommon
                                   .typeInfo = TYPE_INFO<glm::vec3>},
                     },
                 .snippet = R"glsl(
-                    vec3 adj_normal = color_normal.xyz * 2.0 - 1.0;
-                    normal_worldPixelMapped = adj_normal.x * tangent_world +
-                                              adj_normal.y * bitangent_world +
-                                              adj_normal.z * normal_world;
+                    vec2 adj_normal = color_normal.xy * 2.0 - 1.0;
+                    normal_worldPixelMapped = -adj_normal.x * tangent_world +
+                                              -adj_normal.y * bitangent_world +
+                                              color_normal.z * normal_world;
                 )glsl",
             }}),
             ShaderStageFlag::Fragment | ShaderStageFlag::Compute);
