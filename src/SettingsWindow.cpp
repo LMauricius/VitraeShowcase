@@ -263,7 +263,7 @@ void SettingsWindow::relistSettings()
             } else if (spec.typeInfo == TYPE_INFO<std::uint32_t>) {
                 std::uint32_t def = 1;
                 if (auto vp = m_assetCollection.comp.parameters.getPtr(spec.name); vp) {
-                    def = vp->get<std::int32_t>();
+                    def = vp->get<std::uint32_t>();
                 }
                 m_assetCollection.comp.parameters.set(spec.name, def);
 
