@@ -76,7 +76,7 @@ const char *const GLSL_PROBE_GEN_SNIPPET = R"glsl(
         // the shared scalings (such as pi^2 constants) get nullified.
 
         vec3 srcCenter = gpuProbes[srcProbeindex].position;
-        vec3 wallCenter = gpuProbes[dstProbeindex].position + DIRECTIONS[dstDirIndex] * gpuProbes[dstProbeindex].size / 2.0f;
+        vec3 wallCenter = gpuProbes[dstProbeindex].position + DIRECTIONS[dstDirIndex] * gpuProbes[dstProbeindex].size / 2.0;
 
         vec3 src2wallOffset = wallCenter - srcCenter;
         float src2wallDist = length(src2wallOffset);
@@ -85,8 +85,8 @@ const char *const GLSL_PROBE_GEN_SNIPPET = R"glsl(
         float wallDot = dot(src2wallDir, DIRECTIONS[dstDirIndex]);
         float lightDot = dot(src2wallDir, DIRECTIONS[srcDirIndex]);
 
-        if (wallDot <= 0.0f || lightDot <= 0.0f) {
-            return 0.0f;
+        if (wallDot <= 0.0 || lightDot <= 0.0) {
+            return 0.0;
         }
 
         float wallSize = 1.0;
@@ -101,10 +101,10 @@ const char *const GLSL_PROBE_GEN_SNIPPET = R"glsl(
         float wallArcCoverage = sqrt(wallSize) / (PI2 * src2wallDist) * wallDot;
         float wallArcOffset = abs(acos(lightDot));
 
-        float wallArcStart = wallArcOffset - wallArcCoverage / 2.0f;
-        float wallArcEnd = wallArcOffset + wallArcCoverage / 2.0f;
+        float wallArcStart = wallArcOffset - wallArcCoverage / 2.0;
+        float wallArcEnd = wallArcOffset + wallArcCoverage / 2.0;
         float visibleAmount =
-            max(min(LIGHT_ARC_COVERAGE / 2.0f, wallArcEnd), 0.0f) / wallArcCoverage;
+            max(min(LIGHT_ARC_COVERAGE / 2.0, wallArcEnd), 0.0) / wallArcCoverage;
 
         return max(visibleAmount * wallAngularSurface, 0.0);
     }
