@@ -10,7 +10,7 @@ set(MMeterSrcFile "../VitraeEngine/dependencies/MMeter/src/MMeter.cpp")
 qt5_wrap_cpp(MOC_SOURCES ${SrcFiles} ${MMeterSrcFile} ${HeaderFiles} TARGET VitraeShowcase)
 qt5_wrap_ui(UI_SOURCES ${FormFiles})
 add_executable(VitraeShowcase ${SrcFiles} ${MMeterSrcFile} ${HeaderFiles} ${MOC_SOURCES} ${UI_SOURCES})
-target_link_libraries(VitraeShowcase PRIVATE VitraeEngine Qt5::Core Qt5::Gui Qt5::Widgets)
+target_link_libraries(VitraeShowcase PRIVATE VitraeEngine VitraePluginOpenGL Qt5::Core Qt5::Gui Qt5::Widgets)
 target_include_directories(
     VitraeShowcase PUBLIC
     include 

@@ -7,7 +7,8 @@
 #include "Status.hpp"
 #include "assetCollection.hpp"
 
-#include "Vitrae/Renderers/OpenGL.hpp"
+#include "Vitrae/Renderer.hpp"
+#include "VitraePluginOpenGL/Setup.hpp"
 
 #include "MMeter.h"
 
@@ -15,8 +16,6 @@ using namespace Vitrae;
 
 int main(int argc, char **argv)
 {
-    std::cout << "Hello, world!\n";
-
     String path = argv[1];
     float sceneScale = 1.0f;
     if (argc > 2) {
@@ -28,8 +27,16 @@ int main(int argc, char **argv)
     */
 
     ComponentRoot root;
-    Renderer *p_rend = new OpenGLRenderer(root);
-    root.setComponent<Renderer>(p_rend);
+
+    /*
+    Load plugins
+    */
+    VitraePluginOpenGL::setup(root);
+
+    /*
+    Render and GUI loops!
+    */
+    Renderer *p_rend = &root.getComponent<Renderer>();
     {
         p_rend->mainThreadSetup(root);
 
