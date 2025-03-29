@@ -8,7 +8,12 @@
 #include "assetCollection.hpp"
 
 #include "Vitrae/Renderer.hpp"
+#include "VitraePluginBasicComposition/Setup.hpp"
+#include "VitraePluginEffects/Setup.hpp"
+#include "VitraePluginFormGeneration/Setup.hpp"
 #include "VitraePluginOpenGL/Setup.hpp"
+#include "VitraePluginPhongShading/Setup.hpp"
+#include "VitraePluginShadowFiltering/Setup.hpp"
 
 #include "MMeter.h"
 
@@ -32,6 +37,11 @@ int main(int argc, char **argv)
     Load plugins
     */
     VitraePluginOpenGL::setup(root);
+    VitraePluginBasicComposition::setup(root);
+    VitraePluginEffects::setup(root);
+    VitraePluginFormGeneration::setup(root);
+    VitraePluginPhongShading::setup(root);
+    VitraePluginShadowFiltering::setup(root);
 
     /*
     Render and GUI loops!

@@ -1,28 +1,11 @@
 #include "assetCollection.hpp"
 
-#include "converters/aiPBSConvert.hpp"
-#include "converters/aiPhongConvert.hpp"
-#include "generators/meshNormals.hpp"
-#include "generators/meshTangents.hpp"
-#include "generators/modelSilhouette.hpp"
-#include "methods/displayCamera.hpp"
-#include "methods/displayNormals.hpp"
-#include "methods/effectNormalMaps.hpp"
-#include "methods/renderForward.hpp"
-#include "methods/renderSilhouette.hpp"
-#include "methods/shadingPBS.hpp"
-#include "methods/shadingPhong.hpp"
-#include "methods/shadingTransform.hpp"
-#include "methods/shadowBiLin.hpp"
-#include "methods/shadowCommon.hpp"
-#include "methods/shadowPCF.hpp"
-#include "methods/shadowRough.hpp"
-
 #include "Vitrae/Assets/Compositor.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Scene.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Data/LevelOfDetail.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Pipelines/Compositing/ClearRender.hpp"
 #include "Vitrae/Pipelines/Compositing/Function.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
@@ -42,29 +25,6 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
     : root(root), rend(rend), running(true), shouldReloadPipelines(true), compositorInputsHash(0),
       comp(root)
 {
-    /*
-    Shading setup
-    */
-    VitraeCommon::setupRenderForward(root);
-    VitraeCommon::setupRenderSilhouette(root);
-    VitraeCommon::setupDisplayCamera(root);
-    VitraeCommon::setupSshadingTransform(root);
-    VitraeCommon::setupShadingPhong(root);
-    VitraeCommon::setupShadingPBS(root);
-    VitraeCommon::setupShadowCommon(root);
-    VitraeCommon::setupShadowRough(root);
-    VitraeCommon::setupShadowBiLin(root);
-    VitraeCommon::setupShadowPCF(root);
-    VitraeCommon::setupEffectNormalMaps(root);
-    VitraeCommon::setupDisplayNormals(root);
-
-    VitraeCommon::setupAssimpPhongConvert(root);
-    VitraeCommon::setupAssimpPBSConvert(root);
-
-    VitraeCommon::setupMeshTangentGenerator(root);
-    VitraeCommon::setupMeshNormalGenerator(root);
-    VitraeCommon::setupModelSilhouetteGenerator(root);
-
     /*
     Setup window
     */
