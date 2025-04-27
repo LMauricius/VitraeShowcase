@@ -14,6 +14,7 @@
 #include "VitraePluginOpenGL/Setup.hpp"
 #include "VitraePluginPhongShading/Setup.hpp"
 #include "VitraePluginShadowFiltering/Setup.hpp"
+#include "VitraePluginGI/Setup.hpp"
 
 #include "MMeter.h"
 
@@ -42,6 +43,7 @@ int main(int argc, char **argv)
     VitraePluginFormGeneration::setup(root);
     VitraePluginPhongShading::setup(root);
     VitraePluginShadowFiltering::setup(root);
+    VitraePluginGI::setup(root);
 
     /*
     Render and GUI loops!
