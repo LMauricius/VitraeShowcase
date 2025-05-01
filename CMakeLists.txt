@@ -5,7 +5,7 @@ find_package(Qt5Widgets)
 file(GLOB_RECURSE SrcFiles CONFIGURE_DEPENDS src/**.cpp)
 file(GLOB_RECURSE HeaderFiles CONFIGURE_DEPENDS include/**.h include/**.hpp)
 file(GLOB_RECURSE FormFiles CONFIGURE_DEPENDS forms/**.ui)
-set(MMeterSrcFile "../VitraeEngine/dependencies/MMeter/src/MMeter.cpp") 
+set(MMeterSrcFile "../Engine/dependencies/MMeter/src/MMeter.cpp") 
 
 qt5_wrap_cpp(MOC_SOURCES ${SrcFiles} ${MMeterSrcFile} ${HeaderFiles} TARGET VitraeShowcase)
 qt5_wrap_ui(UI_SOURCES ${FormFiles})
