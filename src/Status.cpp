@@ -4,7 +4,9 @@ Status::Status()
     : totalSumFrameDuration(0.0s), totalFrameCount(0), totalAvgFrameDuration(0.0s), totalFPS(0.0f),
       currentAvgFrameDuration(0.0s), currentFPS(0.0f),
       currentTimeStamp(std::chrono::steady_clock::now()), trackingSumFrameDuration(0.0s),
-      trackingFrameCount(0)
+      trackingFrameCount(0), pipelineSumFrameDuration(0.0s), pipelineAvgFrameDuration(0.0s),
+      pipelineFrameCount(0),
+      pipelineFPS(0.0f)
 {}
 
 void Status::update(std::chrono::duration<float> lastFrameDuration)
@@ -18,6 +20,11 @@ void Status::update(std::chrono::duration<float> lastFrameDuration)
 
     trackingSumFrameDuration += lastFrameDuration;
     trackingFrameCount++;
+
+    pipelineSumFrameDuration += lastFrameDuration;
+    pipelineFrameCount++;
+    pipelineAvgFrameDuration = pipelineSumFrameDuration / (double)pipelineFrameCount;
+    pipelineFPS = 1.0f / pipelineAvgFrameDuration.count();
 
     if (now - currentTimeStamp >= 1s) {
         currentAvgFrameDuration = trackingSumFrameDuration / trackingFrameCount;
@@ -42,4 +49,9 @@ void Status::update(std::chrono::duration<float> lastFrameDuration)
 
         mmeterMetrics = ss.str();
     }
+}
+
+void Status::resetPipeline() {
+    pipelineSumFrameDuration = 0s;
+    pipelineFrameCount = 0;
 }

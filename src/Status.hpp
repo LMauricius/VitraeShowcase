@@ -20,6 +20,11 @@ struct Status
     std::chrono::duration<double> trackingSumFrameDuration;
     std::size_t trackingFrameCount;
 
+    std::chrono::duration<double> pipelineSumFrameDuration;
+    std::chrono::duration<double> pipelineAvgFrameDuration;
+    std::size_t pipelineFrameCount;
+    float pipelineFPS;
+
     std::string mmeterMetrics;
     MMeter::FuncProfilerTree aggregateTree;
 
@@ -27,4 +32,5 @@ struct Status
     ~Status() = default;
 
     void update(std::chrono::duration<float> lastFrameDuration);
+    void resetPipeline();
 };

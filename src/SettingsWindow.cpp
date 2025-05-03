@@ -48,7 +48,7 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
     connect(ui.rebuildButton, &QPushButton::clicked, [this]() {
         std::unique_lock lock1(this->m_assetCollection.accessMutex);
         m_assetCollection.comp.rebuildPipeline();
-        ;
+        m_status.resetPipeline();
     });
     /*connect(ui.shadowMapSize, &QComboBox::currentTextChanged, [this](const QString &str) {
         this->m_assetCollection.comp.parameters.set("ShadowMapSize",
@@ -63,36 +63,28 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
 
     // List outputs
     bool isFirst = true;
-    for (auto outputName : methodCollection.getCompositorOutputs())
-    {
+    for (auto outputName : methodCollection.getCompositorOutputs()) {
         auto p_checkbox = new QCheckBox(ui.compositor_outputs_group);
 
-        if (isFirst)
-        {
+        if (isFirst) {
             p_checkbox->setChecked(true);
             m_desiredOutputs.insert_back(ParamSpec{
                 .name = outputName,
                 .typeInfo = TYPE_INFO<void>,
             });
             isFirst = false;
-        }
-        else
-        {
+        } else {
             p_checkbox->setChecked(false);
         }
 
         connect(p_checkbox, QOverload<int>::of(&QCheckBox::stateChanged),
-                [this, outputName](int state)
-                {
-                    if (state == Qt::Checked)
-                    {
+                [this, outputName](int state) {
+                    if (state == Qt::Checked) {
                         this->m_desiredOutputs.insert_back(ParamSpec{
                             .name = outputName,
                             .typeInfo = TYPE_INFO<void>,
                         });
-                    }
-                    else
-                    {
+                    } else {
                         this->m_desiredOutputs.erase(outputName);
                     }
                     this->applyCompositorSettings();
@@ -102,22 +94,18 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
     }
 
     // list methods
-    for (auto [target, options] : methodCollection.getPropertyOptionsMap())
-    {
+    for (auto [target, options] : methodCollection.getPropertyOptionsMap()) {
         auto p_combobox = new QComboBox(ui.shading_methods_group);
 
-        for (auto &option : options)
-        {
-            p_combobox->addItem(
-                QString::fromStdString(option));
+        for (auto &option : options) {
+            p_combobox->addItem(QString::fromStdString(option));
         }
 
         p_combobox->setCurrentIndex(0);
         m_toBeAliases[target] = options[0];
 
         connect(p_combobox, QOverload<int>::of(&QComboBox::currentIndexChanged),
-                [this, target, p_combobox](int index)
-                {
+                [this, target, p_combobox](int index) {
                     this->m_toBeAliases[target] = p_combobox->itemText(index).toStdString();
                     this->applyCompositorSettings();
                 });
@@ -146,6 +134,9 @@ void SettingsWindow::updateValues()
     ui.currentAvgDuration->setText(
         QString::number(m_status.currentAvgFrameDuration.count() * 1000.0) + "ms");
     ui.currentFPS->setText(QString::number(m_status.currentFPS));
+    ui.pipelineAvg->setText(QString::number(m_status.pipelineAvgFrameDuration.count() * 1000.0) +
+                            "ms");
+    ui.pipelineFPS->setText(QString::number(m_status.pipelineFPS));
 
     // update spinboxes and other controls
     if (ui.camera_x->value() != m_assetCollection.p_scene->camera.position.x) {
