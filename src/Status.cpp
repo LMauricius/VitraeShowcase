@@ -54,4 +54,5 @@ void Status::update(std::chrono::duration<float> lastFrameDuration)
 void Status::resetPipeline() {
     pipelineSumFrameDuration = 0s;
     pipelineFrameCount = 0;
+    aggregateTree.reset();
 }
