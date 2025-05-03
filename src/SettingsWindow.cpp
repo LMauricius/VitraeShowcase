@@ -405,4 +405,6 @@ void SettingsWindow::applyCompositorSettings()
 
     // Outputs
     m_assetCollection.comp.setDesiredProperties(m_desiredOutputs);
+
+    m_status.resetPipeline();
 }
