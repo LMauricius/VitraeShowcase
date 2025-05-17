@@ -38,6 +38,7 @@ AssetCollection::AssetCollection(ComponentRoot &root, Renderer &rend,
                 .height = 600,
                 .title = "Vitrae Showcase",
                 .isFullscreen = false,
+                .clearColor = glm::vec4{0.0f, 0.75f, 1.0f, 1.0f},
                 .onClose = [&]() { running = false; },
                 .onDrag =
                     [&](glm::vec2 motion, bool bLeft, bool bRight, bool bMiddle) {
