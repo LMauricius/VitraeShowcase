@@ -38,6 +38,9 @@ int main(int argc, char **argv)
     Load plugins
     */
     VitraePluginOpenGL::setup(root);
+    Renderer *p_rend = &root.getComponent<Renderer>();
+    p_rend->mainThreadSetup(root);
+
     VitraePluginBasicComposition::setup(root);
     VitraePluginEffects::setup(root);
     VitraePluginFormGeneration::setup(root);
@@ -48,10 +51,7 @@ int main(int argc, char **argv)
     /*
     Render and GUI loops!
     */
-    Renderer *p_rend = &root.getComponent<Renderer>();
     {
-        p_rend->mainThreadSetup(root);
-
         /*
         Assets
         */
