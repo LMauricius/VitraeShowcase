@@ -46,8 +46,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>502</width>
-         <height>719</height>
+         <width>515</width>
+         <height>700</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -432,9 +432,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="rebuildButton">
+         <widget class="QPushButton" name="resetButton">
           <property name="text">
-           <string>Rebuild pipelines</string>
+           <string>Reset pipelines</string>
           </property>
          </widget>
         </item>

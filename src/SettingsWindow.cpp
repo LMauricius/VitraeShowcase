@@ -45,8 +45,9 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
         QColor c = QColorDialog::getColor(lightColor, this);
         m_assetCollection.p_scene->light.color_ambient = {c.redF(), c.greenF(), c.blueF()};
     });
-    connect(ui.rebuildButton, &QPushButton::clicked, [this]() {
+    connect(ui.resetButton, &QPushButton::clicked, [this]() {
         std::unique_lock lock1(this->m_assetCollection.accessMutex);
+        m_assetCollection.comp.resetPipeline();
         m_assetCollection.comp.rebuildPipeline();
         m_status.resetPipeline();
     });
@@ -113,7 +114,7 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
         ui.shading_methods_layout->addRow(QString::fromStdString(target), p_combobox);
     }
 
-    connect(ui.rebuildButton, &QPushButton::clicked, [this]() {
+    connect(ui.resetButton, &QPushButton::clicked, [this]() {
         std::unique_lock lock1(this->m_assetCollection.accessMutex);
         this->m_assetCollection.shouldReloadPipelines = true;
     });
