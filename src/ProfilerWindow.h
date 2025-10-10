@@ -10,7 +10,7 @@
 class ProfilerWindow : public QMainWindow
 {
   public:
-    ProfilerWindow(AssetCollection &assetCollection, Status &status);
+    ProfilerWindow(Status &status);
     virtual ~ProfilerWindow();
 
     void updateValues();
@@ -18,6 +18,5 @@ class ProfilerWindow : public QMainWindow
   private:
     Ui::Profiler ui;
 
-    AssetCollection &m_assetCollection;
     Status &m_status;
 };

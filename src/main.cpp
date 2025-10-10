@@ -62,7 +62,7 @@ int main(int argc, char **argv)
         QApplication app(argc, argv);
         SettingsWindow settingsWindow(collection, status);
         settingsWindow.show();
-        ProfilerWindow profilerWindow(collection, status);
+        ProfilerWindow profilerWindow(status);
         profilerWindow.show();
 
         /*
@@ -82,8 +82,10 @@ int main(int argc, char **argv)
                         collection.render();
                     }
                     auto endTime = std::chrono::high_resolution_clock::now();
-
-                    status.update(endTime - startTime);
+                    {
+                        std::unique_lock lock2(status.accessMutex);
+                        status.update(endTime - startTime);
+                    }
                 }
                 std::this_thread::sleep_for(std::chrono::microseconds(1));
             }

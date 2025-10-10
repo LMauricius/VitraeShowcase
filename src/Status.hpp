@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <mutex>
 
 #include "MMeter.h"
 
@@ -8,6 +9,8 @@ using namespace std::chrono_literals;
 
 struct Status
 {
+    std::mutex accessMutex;
+
     std::chrono::duration<double> totalSumFrameDuration;
     std::size_t totalFrameCount;
     std::chrono::duration<double> totalAvgFrameDuration;

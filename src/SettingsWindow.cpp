@@ -128,15 +128,19 @@ SettingsWindow::~SettingsWindow() {}
 
 void SettingsWindow::updateValues()
 {
-    ui.totalAvgDuraion->setText(QString::number(m_status.totalAvgFrameDuration.count() * 1000.0) +
-                                "ms");
-    ui.totalFPS->setText(QString::number(m_status.totalFPS));
-    ui.currentAvgDuration->setText(
-        QString::number(m_status.currentAvgFrameDuration.count() * 1000.0) + "ms");
-    ui.currentFPS->setText(QString::number(m_status.currentFPS));
-    ui.pipelineAvg->setText(QString::number(m_status.pipelineAvgFrameDuration.count() * 1000.0) +
-                            "ms");
-    ui.pipelineFPS->setText(QString::number(m_status.pipelineFPS));
+    {
+        std::unique_lock lock1(m_status.accessMutex);
+
+        ui.totalAvgDuraion->setText(
+            QString::number(m_status.totalAvgFrameDuration.count() * 1000.0) + "ms");
+        ui.totalFPS->setText(QString::number(m_status.totalFPS));
+        ui.currentAvgDuration->setText(
+            QString::number(m_status.currentAvgFrameDuration.count() * 1000.0) + "ms");
+        ui.currentFPS->setText(QString::number(m_status.currentFPS));
+        ui.pipelineAvg->setText(
+            QString::number(m_status.pipelineAvgFrameDuration.count() * 1000.0) + "ms");
+        ui.pipelineFPS->setText(QString::number(m_status.pipelineFPS));
+    }
 
     // update spinboxes and other controls
     if (ui.camera_x->value() != m_assetCollection.p_scene->camera.position.x) {
