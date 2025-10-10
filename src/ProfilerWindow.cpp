@@ -1,8 +1,10 @@
 #include "ProfilerWindow.h"
 
+#include <QtCore/QTextStream>
 #include <QtWidgets/QColorDialog>
 #include <QtWidgets/QComboBox>
 #include <QtWidgets/QDoubleSpinBox>
+#include <QtWidgets/QFileDialog>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QScrollBar>
 
@@ -13,6 +15,31 @@ ProfilerWindow::ProfilerWindow(Status &status) : QMainWindow(), ui(), m_status(s
     ui.setupUi(this);
 
     ui.profilerMetrics->verticalScrollBar()->setTracking(true);
+
+    connect(ui.resetButton, &QPushButton::clicked, [&] {
+        std::unique_lock lock1(m_status.accessMutex);
+        m_status.aggregateTree.reset();
+    });
+
+    connect(ui.saveButton, &QPushButton::clicked, [&] {
+        QString currentText;
+        {
+            std::unique_lock lock1(m_status.accessMutex);
+            currentText = QString::fromStdString(m_status.mmeterMetrics);
+        }
+
+        // Open the save dialog
+        QString fileName =
+            QFileDialog::getSaveFileName(this, "Save Vitrae Metrics", "", "Text Files (*.txt)");
+        if (!fileName.isEmpty()) {
+            QFile file(fileName);
+            if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                QTextStream out(&file);
+                out << currentText;
+                file.close();
+            }
+        }
+    });
 
     updateValues();
 }
