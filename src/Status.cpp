@@ -1,12 +1,12 @@
 #include "Status.hpp"
+#include "MMeter.h"
 
 Status::Status()
     : totalSumFrameDuration(0.0s), totalFrameCount(0), totalAvgFrameDuration(0.0s), totalFPS(0.0f),
       currentAvgFrameDuration(0.0s), currentFPS(0.0f),
       currentTimeStamp(std::chrono::steady_clock::now()), trackingSumFrameDuration(0.0s),
       trackingFrameCount(0), pipelineSumFrameDuration(0.0s), pipelineAvgFrameDuration(0.0s),
-      pipelineFrameCount(0),
-      pipelineFPS(0.0f)
+      pipelineFrameCount(0), pipelineFPS(0.0f), aggregateTree{"Aggregate"}
 {}
 
 void Status::update(std::chrono::duration<float> lastFrameDuration)
@@ -34,18 +34,17 @@ void Status::update(std::chrono::duration<float> lastFrameDuration)
         currentTimeStamp = now;
 
         std::stringstream ss;
-        ss << "Current:" << std::endl;
-        MMeter::getThreadLocalTreePtr()->outputBranchPercentagesToOStream(ss);
+        ss << "Current:\n";
+        MMeter::getThreadLocalTreePtr()->outputBranchDurationsToOStream(ss);
 
         aggregateTree.merge(*MMeter::getThreadLocalTreePtr());
         MMeter::getThreadLocalTreePtr()->reset();
 
-        ss << "Total:" << std::endl
-           << aggregateTree;
+        ss << "\n\n\n" << "Total:\n" << aggregateTree;
 
-        ss << "Total flat:" << std::endl
-           << aggregateTree.totalsByDurationStr() << "\n\n\n"
-           << std::endl;
+        ss << "\n\n\n"
+           << "Total flat:\n"
+           << aggregateTree.totalsStrBy(MMeter::Results::ByDuration{});
 
         mmeterMetrics = ss.str();
     }
