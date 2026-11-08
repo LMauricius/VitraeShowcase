@@ -1,5 +1,5 @@
 #include "SettingsWindow.h"
-#include "Vitrae/Collections/MethodCollection.hpp"
+#include "Vitrae/Collections/TheoryCollection.hpp"
 
 #include <QtWidgets/QCheckBox>
 #include <QtWidgets/QColorDialog>
@@ -59,11 +59,11 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
                                           glm::vec2{ui.shadowMapSize->currentText().toInt(),
                                                     ui.shadowMapSize->currentText().toInt()});*/
 
-    MethodCollection &methodCollection = assetCollection.root.getComponent<MethodCollection>();
+    TheoryCollection &theoryCollection = assetCollection.root.getComponent<TheoryCollection>();
 
     // List outputs
     bool isFirst = true;
-    for (auto outputName : methodCollection.getCompositorOutputs()) {
+    for (auto outputName : theoryCollection.getCompositorOutputs()) {
         auto p_checkbox = new QCheckBox(ui.compositor_outputs_group);
 
         if (isFirst) {
@@ -94,7 +94,7 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
     }
 
     // list methods
-    for (auto [target, options] : methodCollection.getPropertyOptionsMap()) {
+    for (auto [target, options] : theoryCollection.getPropertyOptionsMap()) {
         auto p_combobox = new QComboBox(ui.shading_methods_group);
 
         for (auto &option : options) {
